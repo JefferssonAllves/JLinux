@@ -8,7 +8,7 @@ jobs:
       - name: Dependencies
         run: pacman -Syu --noconfirm --needed git base-devel meson ninja pkgconf wlroots0.20 wayland wayland-protocols gtk3 gtk-layer-shell
       - uses: actions/checkout@v4
-      - run: meson setup build --buildtype=release -Dpanel=true
+      - run: meson setup build --buildtype=release -Dshell=true
       - run: meson compile -C build
       - run: meson test -C build --print-errorlogs
       - run: DESTDIR="$PWD/staging" meson install -C build

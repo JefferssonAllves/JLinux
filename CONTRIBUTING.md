@@ -38,7 +38,7 @@ meson test -C build --print-errorlogs
 git diff --check
 ```
 
-Se `build` já existir, reconfigurar com `meson setup build --reconfigure`. Ativar `-Dpanel=true` quando alterar o painel. O teste headless verifica o ciclo de vida do compositor; não comprova correção visual, entrada ou desempenho em GPU.
+Se `build` já existir, reconfigurar com `meson setup build --reconfigure`. O shell é compilado por padrão; usar `-Dshell=false` apenas para builds exclusivos do compositor. O teste headless verifica o ciclo de vida do compositor; não comprova correção visual, entrada ou desempenho em GPU.
 
 ## Regras e proteção no GitHub
 

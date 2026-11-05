@@ -11,8 +11,8 @@ Estados: **concluído** = implementação e evidências indicadas; **em andament
 | BASE-01 | P0 · concluído | Inventariar hardware e decidir base | — | coordenador | docs/hardware.md e docs/architecture.md; capacidades e incertezas explícitas |
 | BASE-02 | P0 · concluído | Núcleo Wayland próprio | BASE-01 | compositor-engineer | Compila; saída e socket headless; SIGTERM limpa recursos; smoke test passa |
 | DEV-01 | P0 · pendente de integração | Formalizar branches e PRs | BASE-02 | coordenador | PR #1 validado e integrado por autorização; sem push direto em branches duradouras |
-| DEV-02 | P0 · em andamento | Configurar perfis, skills e ferramentas | DEV-01 para integração | coordenador | TOML/skills validados, fontes registradas e PR próprio; plugins sem conexão identificados |
-| UI-01 | P0 · em andamento | Desktop visual mínimo | BASE-02 | visual-engineer + compositor-engineer | Fundo e barra JLinux com relógio; shell em processo separado; execução reproduzível e teste de mapeamento de superfície |
+| DEV-02 | P0 · concluído na branch | Configurar perfis, skills e ferramentas | DEV-01 para integração | coordenador | PR #2; TOML/skills validados e fontes registradas; plugins sem conexão identificados |
+| UI-01 | P0 · concluído na branch | Desktop visual mínimo | BASE-02 | visual-engineer + compositor-engineer | Fundo, barra e relógio em processo separado; release/ASan/UBSan e teste de reinício headless passaram; GPU/visual físico pendentes |
 | TEST-01 | P0 · pendente | Isolar execução e instalação | BASE-02 | correctness-reviewer | Runtime temporário e cleanup; prefixo de desenvolvimento; documentar execução aninhada e recuperação sem substituir sessão cotidiana |
 | PERF-01 | P0 · pendente | Linha de base de desempenho | UI-01, TEST-01 | performance-reviewer | Registrar commit/backend, PSS, CPU ociosa e workload; distinguir medição headless de GPU; salvar metodologia e resultados reproduzíveis |
 
@@ -59,4 +59,6 @@ Estados: **concluído** = implementação e evidências indicadas; **em andament
 
 ## Próxima entrega ativa
 
-**UI-01:** fornecer a interface mais básica possível e evoluir conforme o feedback do usuário. Não antecipar efeitos caros, toolkit completo ou adaptação automática antes de haver base interativa e medições. Atualizar este arquivo no PR da interface com evidências e limitações reais.
+**UI-01 entregue na branch `feature/basic-desktop`:** fundo e barra superior, identidade JLinux e relógio, tema CSS adicional e execução com runtime isolado. `Desktop 01` é um rótulo estático, não espaços de trabalho implementados. Shell GTK temporário; toolkit próprio continua em TOOLKIT-01. Validação em docs/validation.md.
+
+Próximas tarefas: validar o visual aninhado no hardware real, iniciar PERF-01 para estabelecer linha de base e implementar WM-01/INPUT-01 para tornar o desktop interativo. Não antecipar efeitos caros ou adaptação automática antes das medições.

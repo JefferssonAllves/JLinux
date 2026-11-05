@@ -51,9 +51,11 @@ Manter política de janelas e interpretação de preferências fora dos detalhes
 
 ## Estado implementado
 
-`jlinux-compositor` inicializa servidor Wayland, backend, renderizador, alocador, cena e saídas, seleciona o modo preferido e atende solicitações de estado da saída. Publica socket Wayland, apresenta cena vazia e encerra com SIGINT/SIGTERM. Há teste headless com Pixman.
+`jlinux-compositor` inicializa servidor Wayland, backend, renderizador, alocador, cena e saídas. Publica socket, apresenta fundo sólido, organiza superfícies layer-shell por camada e encerra com SIGINT/SIGTERM. `jlinux-shell` é um cliente GTK separado com wallpaper, mensagem de boas-vindas, barra superior e relógio. O shell aceita CSS adicional via JLINUX_THEME; ainda não lê o TOML.
 
-Ainda não implementa xdg-shell, assentos/dispositivos de entrada, janelas interativas, layer-shell, animações, efeitos, leitura de configuração ou adaptação dinâmica. Portanto, ainda não inicia aplicativos utilizáveis ou o painel. O painel GTK anterior fica opcional para reaproveitar seu protótipo; não é o ambiente final.
+O teste headless/Pixman mapeia wallpaper e painel e reinicia o shell duas vezes sem derrubar o compositor. Há build ASan/UBSan separado. Não houve validação visual em monitor físico ou medição de desempenho.
+
+O global xdg-shell é publicado para inicializar o toolkit, mas ainda não há política de gerenciamento de janelas xdg ou entrada. O seat não anuncia teclado/ponteiro. Não há popups layer-shell, interação de painel, animações, efeitos ou adaptação automática. Exclusões de área são calculadas para posicionar layers; aplicação a janelas depende de WM-01. O primeiro shell usa GTK como etapa de prototipação; toolkit próprio permanece planejado.
 
 ## Etapas e critérios de entrega
 
