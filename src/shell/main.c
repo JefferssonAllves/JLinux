@@ -10,6 +10,19 @@ static gboolean update_clock(gpointer data) {
     return G_SOURCE_CONTINUE;
 }
 
+static void open_terminal(GtkButton *button, gpointer data) {
+    (void)button;
+    gboolean codex = GPOINTER_TO_INT(data);
+    gchar *plain[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL};
+    gchar *assistant[] = {"foot", "--term=xterm-256color", "--title=JLinux Codex", "codex", NULL};
+    GError *error = NULL;
+    if (!g_spawn_async(NULL, codex ? assistant : plain, NULL, G_SPAWN_SEARCH_PATH,
+                       NULL, NULL, NULL, &error)) {
+        g_warning("Não foi possível abrir terminal: %s", error->message);
+        g_clear_error(&error);
+    }
+}
+
 static GtkWidget *label(const char *text, const char *name) {
     GtkWidget *widget = gtk_label_new(text);
     gtk_widget_set_name(widget, name);
@@ -45,6 +58,7 @@ int main(int argc, char **argv) {
         "#brand { color: #6ce5c0; font-size: 15px; font-weight: bold; }"
         "#workspace { color: #a9b9cc; font-size: 12px; }"
         "#clock { font-size: 12px; }"
+        "button { background: #203448; color: #e5edf7; border: 0; padding: 4px 12px; }"
         "#eyebrow { color: #6ce5c0; font-size: 12px; letter-spacing: 3px; }"
         "#title { font-size: 72px; font-weight: bold; }"
         "#subtitle { color: #a9b9cc; font-size: 19px; }"
@@ -82,7 +96,7 @@ int main(int argc, char **argv) {
     gtk_box_pack_start(GTK_BOX(welcome), label("SEU ESPAÇO", "eyebrow"), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(welcome), label("JLinux", "title"), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(welcome), label("Uma base feita para ser sua.", "subtitle"), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(welcome), label("PRIMEIRO PROTÓTIPO  ·  COMPOSITOR PRÓPRIO", "status"), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(welcome), label("Super+Enter: terminal   ·   Super+Esc: sair", "status"), FALSE, FALSE, 0);
     gtk_container_add(GTK_CONTAINER(wallpaper), welcome);
 
     GtkWidget *panel = layer_window("jlinux-panel", GTK_LAYER_SHELL_LAYER_TOP);
@@ -94,6 +108,12 @@ int main(int argc, char **argv) {
     gtk_widget_set_margin_bottom(bar, 14);
     gtk_box_pack_start(GTK_BOX(bar), label("JLinux", "brand"), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(bar), label("Desktop 01", "workspace"), FALSE, FALSE, 0);
+    GtkWidget *terminal = gtk_button_new_with_label("Terminal");
+    g_signal_connect(terminal, "clicked", G_CALLBACK(open_terminal), GINT_TO_POINTER(FALSE));
+    gtk_box_pack_start(GTK_BOX(bar), terminal, FALSE, FALSE, 0);
+    GtkWidget *codex = gtk_button_new_with_label("Codex");
+    g_signal_connect(codex, "clicked", G_CALLBACK(open_terminal), GINT_TO_POINTER(TRUE));
+    gtk_box_pack_start(GTK_BOX(bar), codex, FALSE, FALSE, 0);
     GtkWidget *clock = label("", "clock");
     gtk_box_pack_end(GTK_BOX(bar), clock, FALSE, FALSE, 0);
     gtk_container_add(GTK_CONTAINER(panel), bar);
