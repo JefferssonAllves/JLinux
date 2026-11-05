@@ -162,12 +162,18 @@ static bool draw(struct surface *surface) {
 static void configure(void *data, struct zwlr_layer_surface_v1 *layer, uint32_t serial, uint32_t width, uint32_t height) {
     struct surface *surface = data;
     zwlr_layer_surface_v1_ack_configure(layer, serial);
-    if (width > 8192 || height > 8192 || !width || !height) { surface->app->running = false; return; }
+    if (width > 8192 || height > 8192) {
+        fprintf(stderr, "Configuração inválida de %s: %ux%u\n", surface->name, width, height);
+        surface->app->running = false; return;
+    }
+    /* Keep the last usable buffer while an output has no drawable extent. */
+    if (!width || !height) { return; }
     surface->width = (int)width; surface->height = (int)height;
     surface->configured = true; surface->dirty = true;
 }
 static void closed(void *data, struct zwlr_layer_surface_v1 *layer) {
-    (void)layer; struct surface *surface = data; surface->app->running = false;
+    (void)layer; struct surface *surface = data;
+    fprintf(stderr, "Compositor fechou a superfície %s.\n", surface->name); surface->app->running = false;
 }
 static const struct zwlr_layer_surface_v1_listener layer_listener = {.configure = configure, .closed = closed};
 static bool create_surface(struct app *app, struct surface *surface, const char *name,
@@ -351,6 +357,7 @@ int main(int argc, char **argv) {
     }
     result = 0;
 cleanup:
+    if (result) { fprintf(stderr, "Shell falhou: Wayland=%d, errno=%d\n", app.display ? wl_display_get_error(app.display) : 0, errno); }
     if (app.backdrop) { cairo_surface_destroy(app.backdrop); }
     if (app.pointer) { wl_pointer_destroy(app.pointer); }
     if (app.seat) { wl_seat_destroy(app.seat); }

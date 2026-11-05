@@ -25,6 +25,7 @@
 struct desktop {
     struct wl_display *display;
     struct wlr_backend *backend;
+    struct wlr_session *session;
     struct jlinux_renderer render;
     struct wlr_output_layout *layout;
     struct wlr_scene *scene;
@@ -54,10 +55,19 @@ struct shell_surface {
 };
 
 static void arrange_desktop(struct desktop *desktop) {
+    struct wlr_output *center = wlr_output_layout_get_center_output(desktop->layout);
+    struct shell_surface *pending;
+    wl_list_for_each(pending, &desktop->layers, link) {
+        if (!pending->layer->output && center) {
+            pending->layer->output = center;
+            wlr_scene_node_set_enabled(&pending->scene->tree->node, pending->layer->surface->mapped);
+        }
+    }
     struct monitor *monitor;
     wl_list_for_each(monitor, &desktop->monitors, link) {
         struct wlr_box bounds;
         wlr_output_layout_get_box(desktop->layout, monitor->output, &bounds);
+        if (bounds.width <= 0 || bounds.height <= 0) { continue; }
         wlr_scene_node_set_position(&monitor->background->node, bounds.x, bounds.y);
         wlr_scene_rect_set_size(monitor->background, bounds.width, bounds.height);
         struct wlr_box usable = bounds;
@@ -124,10 +134,6 @@ static void add_shell_surface(struct wl_listener *listener, void *data) {
     if (!layer->output) {
         layer->output = wlr_output_layout_get_center_output(desktop->layout);
     }
-    if (!layer->output) {
-        wlr_layer_surface_v1_destroy(layer);
-        return;
-    }
     struct shell_surface *surface = calloc(1, sizeof(*surface));
     if (!surface) {
         wlr_layer_surface_v1_destroy(layer);
@@ -172,22 +178,29 @@ static void resize_output(struct wl_listener *listener, void *data) {
 static void remove_output(struct wl_listener *listener, void *data) {
     (void)data;
     struct monitor *monitor = wl_container_of(listener, monitor, destroy);
+    struct desktop *desktop = monitor->desktop;
+    wlr_log(WLR_INFO, "Saída removida: %s", monitor->output->name);
     wl_list_remove(&monitor->frame.link);
     wl_list_remove(&monitor->request_state.link);
     wl_list_remove(&monitor->destroy.link);
+    wlr_scene_output_destroy(monitor->scene_output);
     struct shell_surface *surface, *temporary;
     wl_list_for_each_safe(surface, temporary, &monitor->desktop->layers, link) {
         if (surface->layer->output == monitor->output) {
-            wlr_layer_surface_v1_destroy(surface->layer);
+            if (desktop->session) {
+                surface->layer->output = NULL;
+                wlr_scene_node_set_enabled(&surface->scene->tree->node, false);
+            } else { wlr_layer_surface_v1_destroy(surface->layer); }
         }
     }
     wl_list_remove(&monitor->link);
     wlr_scene_node_destroy(&monitor->background->node);
     monitor->desktop->output_count--;
-    if (monitor->desktop->output_count == 0) {
+    if (monitor->desktop->output_count == 0 && !desktop->session) {
         wl_display_terminate(monitor->desktop->display);
     }
     free(monitor);
+    arrange_desktop(desktop);
 }
 
 static void add_output(struct wl_listener *listener, void *data) {
@@ -247,7 +260,7 @@ static void add_output(struct wl_listener *listener, void *data) {
 }
 
 static int stop_server(int signal_number, void *data) {
-    (void)signal_number;
+    wlr_log(WLR_INFO, "Encerrando compositor por sinal %d", signal_number);
     wl_display_terminate(data);
     return 0;
 }
@@ -267,7 +280,7 @@ int main(void) {
         return result;
     }
     struct wl_event_loop *loop = wl_display_get_event_loop(desktop.display);
-    desktop.backend = wlr_backend_autocreate(loop, NULL);
+    desktop.backend = wlr_backend_autocreate(loop, &desktop.session);
     if (!desktop.backend) { goto cleanup; }
     if (!jlinux_renderer_init(&desktop.render, desktop.backend, desktop.display)) { goto cleanup; }
     desktop.layout = wlr_output_layout_create(desktop.display);
@@ -287,7 +300,7 @@ int main(void) {
     wl_signal_add(&desktop.layout->events.change, &desktop.layout_change);
     struct wlr_layer_shell_v1 *shell = wlr_layer_shell_v1_create(desktop.display, 4);
     desktop.interaction = interaction_create(desktop.display, desktop.backend, desktop.layout,
-        desktop.scene, desktop.windows);
+        desktop.scene, desktop.windows, desktop.session);
     if (!shell || !desktop.interaction) { goto cleanup; }
     desktop.new_layer.notify = add_shell_surface;
     wl_signal_add(&shell->events.new_surface, &desktop.new_layer);

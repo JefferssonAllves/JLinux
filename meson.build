@@ -34,6 +34,19 @@ if get_option('shell')
   client_xdg_code = custom_target('xdg-client-code',
     input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-client.c',
     command: [scanner, 'private-code', '@INPUT@', '@OUTPUT@'])
+  json = dependency('json-c')
+  client_xdg_header = custom_target('xdg-client-header',
+    input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-client.h',
+    command: [scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
+  greeter = executable('jlinux-greeter', 'src/greeter/main.c', 'src/greeter/auth.c',
+    'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_xdg_header, client_xdg_code,
+    dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, json], install: true)
+  auth_test = executable('jlinux-test-login-auth', 'tests/login-auth.c', 'src/greeter/auth.c', dependencies: json)
+  test('login-auth', find_program('scripts/smoke-login-auth.py'), args: [auth_test], timeout: 20)
+  test('login-headless', find_program('scripts/smoke-login.py'), args: [compositor, greeter], timeout: 20)
+  install_data('packaging/greetd/config.toml', install_dir: get_option('datadir') / 'jlinux', rename: 'greetd.toml')
+  install_data('packaging/arch/enable-login.sh', install_dir: get_option('libexecdir') / 'jlinux', install_mode: 'rwxr-xr-x')
+  install_data('data/wayland-sessions/jlinux.desktop', install_dir: get_option('datadir') / 'wayland-sessions')
   shell = executable('jlinux-shell', 'src/shell/main.c', 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
     dependencies: [client, cursor, cairo, pango, fontconfig, math], install: true)
   blur_test = executable('jlinux-test-blur', 'tests/blur.c', 'src/renderer/blur.c', dependencies: cairo)
@@ -59,6 +72,7 @@ if foot.found() and wtype.found()
   pointer_test = executable('jlinux-test-pointer', 'tests/pointer-client.c', pointer_header, pointer_code,
     dependencies: client_dep)
   if get_option('shell')
+    test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
     test('shell-headless', shell_smoke, args: [compositor, shell, pointer_test], timeout: 20)
   endif
   test('window-frame-input', find_program('scripts/smoke-window-frame.py'), args: [compositor, pointer_test, foot, wtype], timeout: 35)
@@ -67,6 +81,7 @@ if foot.found() and wtype.found()
 else
   warning('Teste de terminal/entrada indisponível: instale foot e wtype')
   if get_option('shell')
+    test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
     test('shell-headless', shell_smoke, args: [compositor, shell], timeout: 15)
   endif
 endif

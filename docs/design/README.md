@@ -47,3 +47,9 @@ Produzida por `jlinux-shell --preview`, usando as rotinas do shell, sem janelas 
 ![Prévia do componente de moldura](native-window-frame-preview.png)
 
 Gerada por `jlinux-test-window-frame --preview`: usa os quatro buffers reais de decoração sobre um fundo e conteúdo ilustrativo. Não é captura de aplicativo. Cabeçalho de 36 px, bordas, transparência e fechar são código do compositor. Não demonstra blur de outras janelas nem personalização do interior dos aplicativos.
+
+## Tela de login nativa
+
+![Prévia nativa do login JLinux](native-login-preview.png)
+
+Imagem gerada por `jlinux-greeter --preview`, usando o toolkit C do projeto. Material Glass escuro, bordas finas e brilhos localizados. A imagem é do modo de prévia e não demonstra autenticação PAM real.

@@ -189,3 +189,25 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - Sombra interna leve, independente de REFLECTION, destaca bordas de janela sem alterar os 3 px aprovados. `JLINUX_GLASS_SHADOW=0/1` controla apenas esse sombreado, sem drop shadow externo ou blur.
 - Barra superior e cabeçalhos compactos com contorno de 0,75 px, bevel reduzido e sem segunda linha interna. Altura de 36 px e brilhos preservados; dock vertical inalterado.
 - Oito testes locais release e ASan/UBSan passaram; teste verifica sombreamento com reflexão desligada e rejeição de parâmetro inválido. Prévias inspecionadas. Aplicação à sessão corrente ainda pendente nesta etapa; próxima entrega instala sessão do Arch solicitada pelo usuário.
+
+## Instalação Arch e login próprio — feature/arch-session-install
+
+- **ARCH-SESSION · em validação:** pacote pacman, entrada Wayland, configuração greetd com backup e TTY2 de recuperação. Usuário autorizou instalar/iniciar a interface no boot; não há autorização para merge/release ou reboot automático do computador.
+- **LOGIN-01 · implementado em validação:** greeter C/Wayland com material nativo, usuário/PAM, campos secretos mascarados, compose XKB e IPC JSON limitado/não bloqueante. greetd autentica; Cage isola a tela de login. Desktop mantém compositor próprio. Prévia explicitamente não autentica.
+- **RECOVERY-VT · implementado:** compositor DRM recebe sessão wlroots emprestada e encaminha Ctrl+Alt+F1…F12; não cria/destrói a sessão do backend. Teste físico pendente.
+- **TESTES:** dez testes release e ASan/UBSan passaram antes do empacotamento; IPC usa servidor simulado, sem senha real. Instalação/boot e PAM físico ainda pendentes nesta etapa. Instruções em docs/arch-installation.md.
+
+### Instalação concluída e boot habilitado
+
+- **ARCH-SESSION · instalado/configurado:** pacote pacman `0.5.0.r33.g45c6752-1` compilado com flags Arch e dez testes aprovados. Binários/root ownership, entrada de sessão e instalador conferidos. Sessão DRM principal agora executa `/usr/bin/jlinux-session`, compositor e shell do pacote. Últimos ajustes de sombra interna/contornos superiores finos estão ativos.
+- **BOOT-LOGIN · configurado, validação física pendente:** greetd habilitado como display-manager para o próximo boot, alvo graphical, sem autologin. TTY2 habilitado/ativo e backup anterior salvo. Nenhum reboot do computador ou substituição do login TTY1 ativo foi feito.
+- **LOGIN-TEST · onze testes locais release/ASan/UBSan aprovados:** inclui fluxo completo de digitação no greeter com greetd simulado, além de prompts/recusa/cancelamento/limites. O login PAM real não foi simulado como resultado físico; aguarda usuário no próximo boot. PR permanece draft até essa confirmação.
+
+**RECOVERY-VT · correção validada no hardware:** troca real por chvt revelou remoção temporária do HDMI ao pausar DRM. Compositor passa a aguardar/reassociar saída e mantém layers em vez de encerrar. Teste de ida/volta preservou processos e confirmou modeset de retorno; combinação física de teclas e login PAM ainda dependem do usuário. Script manual incluído e onze testes release/ASan/UBSan aprovados.
+
+## Primeiro boot real e relato de travamento
+
+- **BOOT-LOGIN · confirmado no boot de 05/11/2026 16:40:** greetd ativo, PAM abriu sessão do usuário jlinux às 16:40:27; supervisor/compositor/shell executam `/usr/bin`, pacote `0.5.0.r37.g77ecbc1-1`, com terminal/Codex em uso. Não marcar mais primeiro login como pendente.
+- **STABILITY-BOOT · P0 · investigando:** usuário relatou congelamento seguido de reinício/desligamento não limpo. Journal anterior termina após testes de VT; não há evidência suficiente para atribuir a causa a GPU/kernel/compositor. Sessão atual viva, memória disponível, nenhum novo reset GPU/OOM identificado. Evitar novos testes de troca de VT na sessão de trabalho enquanto se investiga.
+- **RECOVERY-VT · evidência corrigida:** três ciclos passaram na build local com terminal; a execução final do mesmo teste no pacote foi interrompida pelo reboot e seu resultado não foi recuperado. Não afirmar que esse teste final de pacote foi concluído.
+- **EFI-DIRTY · pendente de verificação:** kernel registrou EFI FAT não desmontada corretamente após reinício abrupto. Nenhum reparo ou alteração de partição executado.

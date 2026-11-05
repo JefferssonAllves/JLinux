@@ -113,3 +113,39 @@ Oito testes release e ASan/UBSan passaram após reduzir bordas para 3 px e remov
 ## Sombra interna e contorno superior fino — fix/window-rim-shading
 
 Oito testes locais release e ASan/UBSan passaram. Novos asserts verificam sombreamento independente com REFLECTION desligado; preferência SHADOW inválida é rejeitada. Prévias de janela/barra inspecionadas. Nenhum benchmark ou novo reinício DRM nesta etapa: usuário solicitou preparar instalação/inicialização real no Arch.
+
+## Login próprio e instalação Arch — feature/arch-session-install
+
+Onze testes locais release e ASan/UBSan passaram. Novos testes: autenticação IPC com servidor simulado (prompts secretos/visíveis, info, recusa/cancelamento, resposta inválida/oversize/desconexão); greeter headless e recusa sem GREETD_SOCK; fluxo real de digitação de usuário/senha fictícios na UI, pedido de sessão e ausência da senha nos logs. Isso não valida PAM físico. CI do commit 45c6752 passou com dez testes, antes da ampliação do teste de digitação.
+
+Pacote Arch `jlinux-desktop-git 0.5.0.r33.g45c6752-1` compilado a partir do GitHub com arch-meson/makepkg, dez testes aprovados no build de pacote, instalado pelo pacman. Não houve release/tag. `pacman -Qo` confirmou propriedade de compositor/greeter/entrada Wayland; binários root:root 0755. Staging, validação desktop-file/TOML, shell syntax e systemd-analyze verify passaram. O binário instalado também iniciou sessão headless com limpeza e gerou a prévia do login.
+
+Configurador executado: greetd habilitado (alias display-manager), graphical.target padrão, TTY2 habilitado/ativo. Backup em `/var/lib/jlinux-login-backup.qsemGPVh`. Serviço greetd permanece inativo nesta sessão para não encerrar o TTY1 que sustenta o trabalho; será iniciado no próximo boot. Nenhuma regra PAM foi alterada, nenhum autologin configurado. Primeiro boot/login com senha e troca física de VT permanecem pendentes.
+
+Sessão principal anterior encerrada conforme autorização vigente e iniciada com `/usr/bin/jlinux-session --drm --codex`; processos compositor/shell também são os instalados em `/usr/bin`. Logs confirmam Codex/painel/dock mapeados. É execução instalada real, sem dependência de binários em /srv/JLinux, mas ainda não é uma sessão autenticada através do novo greeter.
+
+### Verificação adicional antes de encerrar a instalação
+
+A checagem final encontrou a primeira sessão instalada já encerrada; o log antigo não distinguia o status de compositor e shell. Foi preservado localmente e adicionada identificação de código/sinal no supervisor e diagnóstico de fechamento/configuração do shell. Uma sessão de diagnóstico foi iniciada e permaneceu ativa após o terminal inicial encerrar. A causa daquele encerramento isolado ainda não foi comprovada; não registrar como corrigida apenas por adicionar logs.
+
+Também foi corrigido um caso concreto de extensão vazia durante rearranjo de saída: não configurar layers com área de saída nula, e manter último buffer do shell diante de configure sem extensão desenhável. Onze testes locais release e ASan/UBSan passaram novamente. Reempacotamento e teste físico de recuperação estão em andamento.
+
+### Falha de recuperação por VT reproduzida e corrigida
+
+Um teste real com `chvt 2` reproduziu saída normal do compositor: logind pausou o DRM e o wlroots removeu temporariamente HDMI-A-1; a política antiga encerrava o compositor quando output_count chegava a zero e fechava os layers do shell. Essa falha concreta foi identificada; não é prova de que explica todo encerramento anterior sem logs suficientes.
+
+Correção: em sessão DRM, manter compositor vivo sem saídas, desassociar/ocultar layers até haver saída disponível e reassociá-los no retorno. Em backend aninhado/headless, comportamento de encerrar na última saída permanece. Layers novos também podem aguardar saída, sem ser destruídos imediatamente. Teste real VT1 -> VT2 -> VT1 manteve supervisor/compositor/shell vivos e os logs confirmaram novo modeset HDMI-A-1 1600×900@60 no retorno. Não equivale à inspeção visual da tela pelo assistente ou teste manual da combinação de teclas.
+
+Script manual reproduzível em scripts/check-vt-recovery.py, fora da CI. Onze testes release e ASan/UBSan passaram novamente. Nova atualização do pacote em andamento.
+
+### Recuperação com janelas abertas
+
+Repetir a troca de VT com um terminal aberto revelou uma segunda falha: assert de listener pendente em `wlr_output_finish`. A scene_output não era destruída explicitamente no callback de remoção da saída. Adicionada destruição antes de liberar monitor, removendo referências/listeners da cena em tempo. Após essa correção, três ciclos reais VT1 -> VT2 -> VT1 preservaram quatro processos (supervisor, compositor, shell e Foot) e onze testes release passaram. ASan/UBSan também repetidos nesta etapa. Não tratar o primeiro teste sem terminal como validação suficiente de lifecycle com janelas.
+
+## Boot após relato de congelamento — 05/11/2026
+
+Usuário relatou PC travado e o sistema reapareceu em novo boot. Journal atual registra greetd iniciado às 16:40:12, sessão greeter e autenticação PAM do usuário jlinux com abertura de sessão às 16:40:27. Supervisor PID 667, compositor 668 e shell 690 são binários instalados em `/usr/bin`, pacote `0.5.0.r37.g77ecbc1-1`, sob sessão logind autenticada pelo greetd. Foot/Codex em uso. Isso valida primeiro boot e login real; não é resultado simulado.
+
+O teste final de VT da instalação anterior perdeu seu processo/sessão de execução durante o reinício; resultado não recuperado, portanto não declarar aprovação desse teste de pacote. Três ciclos na build local com terminal e onze testes do pacote estão registrados separadamente.
+
+Journal anterior encerra após comandos chvt às 16:38:36, sem registro conclusivo de GPU hang/OOM/kernel panic. Journal novo indica desligamento não limpo e aviso FAT para a partição EFI. Não foi identificado evento suficiente para atribuir causa ao congelamento nem executado reparo de partição. Sessão atual apresenta memória disponível e compositor em espera epoll entre eventos; investigação do incidente permanece aberta. Não repetir testes físicos de VT nesta sessão de trabalho.

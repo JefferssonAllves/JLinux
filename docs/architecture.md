@@ -91,3 +91,9 @@ Metas iniciais: estabelecer PSS da sessão, CPU ociosa em 5 minutos, energia sob
 
 - https://wayland.freedesktop.org/architecture.html
 - https://gitlab.freedesktop.org/wlroots/wlroots
+
+## Login e instalação do Arch
+
+`jlinux-greeter` é outro cliente Wayland em C, usando Cairo/Pango/XKB e o material compartilhado. Não é o compositor nem o shell. Fala com greetd por socket UNIX/JSON; PAM permanece responsável pela autenticação. Cage isola a tela de login, e termina antes da sessão JLinux, que usa nosso compositor. A configuração de boot não usa os modos `--demo`/`--preview`.
+
+O pacote pacman instala os binários e uma entrada Wayland. Ativação do greetd é separada, com backup e TTY2. Contratos, recuperação e limites em docs/arch-installation.md. Inicialização completa/PAM físico devem ser relatados separadamente dos testes simulados.
