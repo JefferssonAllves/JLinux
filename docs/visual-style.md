@@ -77,3 +77,7 @@ Após pedido para aproximar as bordas ao dock, a moldura passa a reutilizar o me
 ### Correção após rejeição da faixa grossa
 
 O usuário rejeitou o contorno largo contínuo. Direção atual: bordas laterais/inferior de 3 px, linha discreta de 0,8 px entre quatro pontos intensos, núcleo quase branco e reflexão azul/violeta localizada. Cabeçalho retangular e raio discreto de 6 px preservados. A faixa larga da iteração anterior foi removida; dock/barra permanecem como estavam. Não declarar fidelidade exata à foto sem aprovação.
+
+### Sombreamento e contorno superior fino
+
+Sombra interna leve destaca o volume da moldura de 3 px sem engrossá-la. É controlada por `JLINUX_GLASS_SHADOW`, independentemente dos reflexos; não é sombra externa desfocada. Barra superior e cabeçalhos compactos usam contorno de 0,75 px, bevel reduzido e nenhuma linha interna duplicada, mantendo altura e pontos de brilho. Dock preservado.

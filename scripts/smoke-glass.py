@@ -18,7 +18,8 @@ with tempfile.TemporaryDirectory(prefix='jlinux-glass-test-') as directory:
         hashes.add(hashlib.sha256(output.read_bytes()).digest())
     if len(hashes) != 8:
         raise RuntimeError('Effect combinations did not produce distinct images')
-    env[names[0]] = 'invalid'
-    result = subprocess.run([sys.argv[1], '--preview', str(output)], env=env)
-    if result.returncode != 1:
-        raise RuntimeError('Invalid effect preference was accepted')
+    for name in (*names, 'JLINUX_GLASS_SHADOW'):
+        invalid_env = dict(env, **{name: 'invalid'})
+        result = subprocess.run([sys.argv[1], '--preview', str(output)], env=invalid_env)
+        if result.returncode != 1:
+            raise RuntimeError('Invalid effect preference was accepted: ' + name)

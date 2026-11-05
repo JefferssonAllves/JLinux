@@ -52,6 +52,10 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
         if (i != 0) { material.reflection = false; }
         jlinux_glass_paint(cr, (struct ui_rect){.5, .5, full_width - 1, material_height - 1},
             JLINUX_FRAME_RADIUS, NULL, 0, 0, material);
+        if (effects.shadow) {
+            jlinux_glass_window_shading(cr,
+                (struct ui_rect){.5, .5, full_width - 1, full_height - 1}, JLINUX_FRAME_RADIUS);
+        }
         if (effects.reflection) {
             jlinux_glass_window_reflections(cr,
                 (struct ui_rect){.5, .5, full_width - 1, full_height - 1}, JLINUX_FRAME_RADIUS, header);

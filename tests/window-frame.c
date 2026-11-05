@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
     struct wlr_scene *scene = wlr_scene_create(); CHECK(scene);
     struct jlinux_window_frame frame = {0};
     CHECK(jlinux_window_frame_create(&frame, &scene->tree));
-    struct jlinux_glass effects = {.blur = true, .tint = true, .reflection = true};
+    struct jlinux_glass effects = {.blur = true, .tint = true, .reflection = true, .shadow = true};
     CHECK(!jlinux_window_frame_update(&frame, 0, 400, "inválido", effects, false));
     CHECK(!jlinux_window_frame_update(&frame, 100, 8193, "inválido", effects, false));
     for (int i = 0; i < 12; i++) {
@@ -39,6 +39,19 @@ int main(int argc, char **argv) {
     uint32_t plain = *(uint32_t *)((unsigned char *)pixels + stride + 195 * 4);
     wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
     CHECK((lit >> 24) > (plain >> 24));
+    CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[3]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,
+        &pixels, &format, &stride));
+    uint32_t shaded = *(uint32_t *)((unsigned char *)pixels + stride + 280 * 4);
+    wlr_buffer_end_data_ptr_access(frame.parts[3]->buffer);
+    effects.shadow = false;
+    CHECK(jlinux_window_frame_update(&frame, 711, 411, "JLinux Terminal", effects, false));
+    CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[3]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,
+        &pixels, &format, &stride));
+    uint32_t unshaded = *(uint32_t *)((unsigned char *)pixels + stride + 280 * 4);
+    wlr_buffer_end_data_ptr_access(frame.parts[3]->buffer);
+    CHECK((shaded >> 24) > (unshaded >> 24));
+    effects.shadow = true;
+
     effects.reflection = true;
     CHECK(jlinux_window_frame_update(&frame, 711, 411, "JLinux Terminal", effects, false));
     if (argc == 3 && !strcmp(argv[1], "--preview")) {
