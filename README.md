@@ -39,7 +39,8 @@ O iniciador localiza os binários na própria pasta, cria runtime privado, aguar
 | Alternar janela | Alt+Tab |
 | Focar janela | Clique |
 | Mover / redimensionar | Super+arraste esquerdo / direito |
-| Fechar janela | Super+Q |
+| Maximizar / restaurar | Botão ao lado de fechar; Super+↑ / Super+↓ |
+| Fechar janela | Botão × ou Super+Q |
 | Encerrar sessão | Super+Esc |
 
 Layout físico padrão: `br`; alterar com `--keyboard-layout us`. O botão de energia informa como sair; suspensão/reinício/desligamento e os indicadores Wi-Fi/Bluetooth ainda não estão integrados aos serviços. Menus de aplicativos/arquivos/configurações são posições visuais iniciais, com aviso de indisponibilidade ao clicar. Não há bloqueio/suspensão integrados.

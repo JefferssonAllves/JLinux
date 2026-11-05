@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 import signal
+import re
 import subprocess
 import sys
 import tempfile
@@ -63,9 +64,16 @@ def main():
                     time.sleep(0.15)
                     assert client.poll() is None, "Shell encerrou após mapear"
                     if pointer_client:
-                        subprocess.run([pointer_client, "34", "351"], env=env, check=True, timeout=3)
+                        subprocess.run([pointer_client, "34", "377"], env=env, check=True, timeout=3)
                         wait_for(lambda: log().count("Janela mapeada: JLinux Terminal") > iteration,
                                  [server, client], "dock abriu terminal")
+                        subprocess.run(["wtype", "-s", "200", "-M", "logo", "-k", "Up", "-m", "logo"],
+                                       env=env, check=True, timeout=4)
+                        wait_for(lambda: log().count("Janela maximizada:") > iteration,
+                                 [server, client], "maximização com painel/dock")
+                        sizes = re.findall(r"Janela maximizada: .* \((\d+)x(\d+) em (\d+),(\d+)\)", log())
+                        assert tuple(map(int, sizes[-1])) == (1198, 628, 76, 86), sizes[-1]
+
                     stop(client)
                     assert client.returncode == 0, f"Shell encerrou com erro: {client.returncode}"
                     assert server.poll() is None, "Compositor encerrou com o shell"

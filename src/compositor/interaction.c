@@ -33,7 +33,8 @@ struct view {
     struct interaction *owner;
     struct wlr_xdg_toplevel *xdg;
     struct wlr_scene_tree *tree;
-    bool mapped;
+    bool mapped, maximized;
+    struct wlr_box restore;
     struct jlinux_window_frame frame;
     int frame_width, frame_height;
     struct wl_list link;
@@ -123,11 +124,56 @@ static void focus_available(struct interaction *state) {
 static void update_frame(struct view *view) {
     int width = view->xdg->base->geometry.width, height = view->xdg->base->geometry.height;
     if (width <= 0 || height <= 0) { return; }
-    if (!jlinux_window_frame_update(&view->frame, width, height, view->xdg->title, view->owner->glass)) {
+    if (!jlinux_window_frame_update(&view->frame, width, height, view->xdg->title, view->owner->glass, view->maximized)) {
         wlr_log(WLR_ERROR, "%s", "Falha ao desenhar moldura da janela");
         wl_resource_post_no_memory(view->xdg->resource); return;
     }
     view->frame_width = width; view->frame_height = height;
+}
+static bool maximize_area(struct view *view, struct wlr_box *area) {
+    struct interaction *state = view->owner;
+    if (state->has_workarea) { *area = state->workarea; }
+    else {
+        struct wlr_output *output = wlr_output_layout_get_center_output(state->layout);
+        if (!output) { return false; }
+        wlr_output_layout_get_box(state->layout, output, area);
+    }
+    area->x += JLINUX_FRAME_BORDER; area->y += JLINUX_FRAME_HEADER;
+    area->width -= 2 * JLINUX_FRAME_BORDER;
+    area->height -= JLINUX_FRAME_HEADER + JLINUX_FRAME_BORDER;
+    return area->width > 0 && area->height > 0;
+}
+static void set_maximized(struct view *view, bool maximized) {
+    if (!view->xdg->base->initialized) { return; }
+    struct wlr_box area;
+    if (maximized && !maximize_area(view, &area)) {
+        wlr_xdg_surface_schedule_configure(view->xdg->base); return;
+    }
+    if (maximized && !view->maximized) {
+        view->restore = (struct wlr_box){view->tree->node.x, view->tree->node.y,
+            view->frame_width > 0 ? view->frame_width : view->xdg->scheduled.width,
+            view->frame_height > 0 ? view->frame_height : view->xdg->scheduled.height};
+    }
+    if (!maximized && view->maximized) {
+        area = view->restore;
+        if (view->owner->has_workarea) {
+            const struct wlr_box *work = &view->owner->workarea;
+            if (area.x < work->x + JLINUX_FRAME_BORDER) { area.x = work->x + JLINUX_FRAME_BORDER; }
+            if (area.y < work->y + JLINUX_FRAME_HEADER) { area.y = work->y + JLINUX_FRAME_HEADER; }
+        }
+    }
+    if (maximized && !view->maximized) {
+        wlr_log(WLR_INFO, "Janela maximizada: %s (%dx%d em %d,%d)",
+            view->xdg->title ? view->xdg->title : "sem título", area.width, area.height, area.x, area.y);
+    }
+    if (maximized || view->maximized) {
+        wlr_scene_node_set_position(&view->tree->node, area.x, area.y);
+        wlr_xdg_toplevel_set_size(view->xdg, area.width, area.height);
+    }
+    if (view->owner->grabbed == view) { view->owner->grabbed = NULL; }
+    view->maximized = maximized;
+    wlr_xdg_toplevel_set_maximized(view->xdg, maximized);
+    update_frame(view);
 }
 static void title_changed(struct wl_listener *listener, void *data) {
     (void)data;
@@ -150,6 +196,7 @@ static void view_unmapped(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, unmap);
     view->mapped = false;
+    view->maximized = false;
     wlr_scene_node_set_enabled(&view->tree->node, false);
     if (view->owner->grabbed == view) { view->owner->grabbed = NULL; }
     if (view->owner->focused == view) {
@@ -172,13 +219,14 @@ static void view_committed(struct wl_listener *listener, void *data) {
         wlr_xdg_toplevel_set_size(view->xdg, width > 100 ? width : 100, height > 100 ? height : 100);
         unsigned int offset = (view->owner->placement++ % 5) * 28;
         wlr_scene_node_set_position(&view->tree->node, area.x + 40 + (int)offset, area.y + 80 + (int)offset);
+        if (view->xdg->requested.maximized) { set_maximized(view, true); }
     }
 }
 
-static void unsupported_state(struct wl_listener *listener, void *data) {
+static void maximize_requested(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, maximize);
-    if (view->xdg->base->initialized) { wlr_xdg_surface_schedule_configure(view->xdg->base); }
+    set_maximized(view, view->xdg->requested.maximized);
 }
 static void unsupported_fullscreen(struct wl_listener *listener, void *data) {
     (void)data;
@@ -228,7 +276,7 @@ static void add_view(struct wl_listener *listener, void *data) {
     listen(&view->unmap, &view->xdg->base->surface->events.unmap, view_unmapped);
     listen(&view->commit, &view->xdg->base->surface->events.commit, view_committed);
     listen(&view->destroy, &view->xdg->events.destroy, view_destroyed);
-    listen(&view->maximize, &view->xdg->events.request_maximize, unsupported_state);
+    listen(&view->maximize, &view->xdg->events.request_maximize, maximize_requested);
     listen(&view->fullscreen, &view->xdg->events.request_fullscreen, unsupported_fullscreen);
 }
 
@@ -318,6 +366,10 @@ static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t mo
     }
     if ((modifiers & WLR_MODIFIER_LOGO) && (symbol == XKB_KEY_q || symbol == XKB_KEY_Q)) {
         if (state->focused) { wlr_xdg_toplevel_send_close(state->focused->xdg); }
+        return true;
+    }
+    if ((modifiers & WLR_MODIFIER_LOGO) && (symbol == XKB_KEY_Up || symbol == XKB_KEY_Down)) {
+        if (state->focused) { set_maximized(state->focused, symbol == XKB_KEY_Up); }
         return true;
     }
     if ((modifiers & WLR_MODIFIER_ALT) && symbol == XKB_KEY_Tab) {
@@ -508,6 +560,10 @@ static void button_event(struct wl_listener *listener, void *data) {
             if (local_y < 0 && local_x >= view->frame_width - 40 && local_x < view->frame_width) {
                 wlr_xdg_toplevel_send_close(view->xdg); return;
             }
+            if (local_y < 0 && local_x >= view->frame_width - 76 && local_x < view->frame_width - 40) {
+                set_maximized(view, !view->maximized); return;
+            }
+            if (view->maximized) { return; }
             state->resize_edges = 0;
             if (local_x < 0) { state->resize_edges |= WLR_EDGE_LEFT; }
             if (local_x >= view->frame_width) { state->resize_edges |= WLR_EDGE_RIGHT; }
@@ -519,7 +575,7 @@ static void button_event(struct wl_listener *listener, void *data) {
             return;
         }
         struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(state->seat);
-        if (view && keyboard && (wlr_keyboard_get_modifiers(keyboard) & WLR_MODIFIER_LOGO) &&
+        if (view && !view->maximized && keyboard && (wlr_keyboard_get_modifiers(keyboard) & WLR_MODIFIER_LOGO) &&
             (event->button == BTN_LEFT || event->button == BTN_RIGHT)) {
             state->grabbed = view;
             state->resizing = event->button == BTN_RIGHT;
@@ -621,6 +677,7 @@ void interaction_set_workarea(struct interaction *state, const struct wlr_box *a
     state->workarea = *area; state->has_workarea = true;
     struct view *view;
     wl_list_for_each(view, &state->views, link) {
+        if (view->maximized) { set_maximized(view, true); continue; }
         int x = view->tree->node.x, y = view->tree->node.y;
         if (x - JLINUX_FRAME_BORDER < area->x) { x = area->x + JLINUX_FRAME_BORDER + 8; }
         if (y - JLINUX_FRAME_HEADER < area->y) { y = area->y + JLINUX_FRAME_HEADER + 8; }

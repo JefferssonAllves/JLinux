@@ -156,3 +156,12 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - Sessão principal ainda executa compositor antigo. Aplicar molduras nela exige reiniciar o compositor, encerrando clientes existentes; não realizado sem autorização específica para encerrar a sessão. Prévia aninhada anterior não equivale à aplicação global na sessão principal.
 
 **Aplicação das molduras na sessão principal:** reinício autorizado pelo usuário e realizado. Logs DRM confirmam AMD Radeon, HDMI-A-1, Codex/painel/dock mapeados na versão nova. A pendência de aplicação na sessão principal foi resolvida; avaliação visual do usuário continua pendente.
+
+## Maximizar/restaurar — feature/window-maximize
+
+- **WM-MAX · implementado na branch:** botão no cabeçalho, Super+↑/Super+↓ e pedidos xdg de maximização, inclusive inicial. Restaura tamanho/posição, preserva moldura e respeita a área útil central. Arraste/resize manual bloqueado enquanto maximizada; foco e fechar continuam ativos. Minimizar/fullscreen seguem pendentes.
+- **WORKAREA · correção:** recalcular área útil em map/unmap dos layers, além de commit/destroy. Reserva anterior permanecia integral na tela após map. Amostragem/prévia do dock acompanham o centro abaixo da barra.
+- **Validação:** oito testes release e ASan/UBSan passaram; Foot real cobre maximizar/restaurar por botão/teclado, inicial maximizada, retorno do tamanho e resize posterior. Teste do shell confere geometria maximizada 1198×628 em 76,86 na saída simulada 1280×720, descontando barra/dock/moldura.
+- **Ativação:** sessão principal preservada; nova versão do compositor ainda precisa ser iniciada. Sem benchmark ou validação física desta mudança.
+
+**Feedback visual do usuário:** base inicial de vidro, cabeçalhos retangulares, bordas iluminadas e cantos discretos aprovada como versão inicial após o reinício anterior. Preservar essa direção; isso não conclui o Glass completo.

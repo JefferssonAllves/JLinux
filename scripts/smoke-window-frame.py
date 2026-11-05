@@ -30,9 +30,10 @@ with tempfile.TemporaryDirectory(prefix="jlinux-frame-") as directory:
             processes.append(server)
             wait_for(lambda: "JLinux compositor pronto:" in log(), [server], "socket")
             env["WAYLAND_DISPLAY"] = next(p.name for p in runtime.glob("wayland-*") if p.is_socket())
-            for number in (1, 2):
+            for number in (1, 2, 3):
                 title = f"Frame-{number}"
-                client = subprocess.Popen([foot, "--config=/dev/null", "--term=xterm-256color", f"--title={title}", "sh"],
+                client = subprocess.Popen([foot, "--config=/dev/null", "--term=xterm-256color", f"--title={title}",
+                                           *(["--maximized"] if number == 3 else []), "sh"],
                                           env=env, stdout=out, stderr=subprocess.STDOUT)
                 processes.append(client)
                 pattern = rf"Janela mapeada: {title} \((\d+)x(\d+) em (\d+),(\d+)\)"
@@ -52,7 +53,28 @@ with tempfile.TemporaryDirectory(prefix="jlinux-frame-") as directory:
                         subprocess.run([wtype, "-s", "200", f"stty size > {marker}", "-k", "Return"], env=env, check=True, timeout=5)
                         wait_for(lambda: marker.exists() and marker.stat().st_size, [server, client], "tamanho do terminal")
                         return tuple(map(int, marker.read_text().split()))
+                    if number == 3:
+                        if (x, y, width, height) != (6, 36, 1268, 678):
+                            raise RuntimeError(f"Maximização inicial não respeitou moldura: {(x, y, width, height)}")
+                        subprocess.run([wtype, "-M", "logo", "-k", "Down", "-m", "logo"], env=env, check=True, timeout=4)
+                        stop(client)
+                        continue
                     before = terminal_size("before")
+                    subprocess.run([wtype, "-M", "logo", "-k", "Up", "-m", "logo"], env=env, check=True, timeout=4)
+                    maximized = terminal_size("maximized")
+                    if not (maximized[0] > before[0] and maximized[1] > before[1]):
+                        raise RuntimeError(f"Maximizar falhou: {before} -> {maximized}")
+                    mouse(1220, 18)
+                    restored = terminal_size("restored")
+                    if restored != before:
+                        raise RuntimeError(f"Restaurar pelo botão falhou: {before} -> {restored}")
+                    # Maximize by its button, then restore with the keyboard.
+                    mouse(x + width - 54, y - 18)
+                    if terminal_size("button-maximized") != maximized:
+                        raise RuntimeError("Botão maximizar não reproduziu a geometria")
+                    subprocess.run([wtype, "-M", "logo", "-k", "Down", "-m", "logo"], env=env, check=True, timeout=4)
+                    if terminal_size("keyboard-restored") != before:
+                        raise RuntimeError("Atalho restaurar não recuperou tamanho")
                     mouse(x + width + 2, y + height + 2, x + width + 66, y + height - 78)
                     time.sleep(.2)
                     after = terminal_size("after")
@@ -62,7 +84,7 @@ with tempfile.TemporaryDirectory(prefix="jlinux-frame-") as directory:
             stop(server)
             if server.returncode != 0:
                 raise RuntimeError(f"Compositor retornou {server.returncode}")
-        print("Molduras: arraste, botão fechar, resize por borda e limpeza passaram.")
+        print("Molduras: arraste, fechar, maximizar/restaurar, resize e limpeza passaram.")
     except Exception:
         print(log(), file=sys.stderr)
         raise

@@ -56,8 +56,12 @@ Altura atual: 36 px, margem de 6 px. A extremidade direita usa azul-violeta meno
 
 ### Molduras nativas
 
-Cabeçalho compacto de 36 px, título, fechar, transparência e bordas azul-violeta do material compartilhado. Janela sem foco recebe moldura mais discreta. Arraste pelo cabeçalho e resize pelas bordas esquerda/direita/inferior; Super+arraste permanece. Maximizar/minimizar, tema interno dos aplicativos e blur sobre janelas seguem pendentes. A barra superior ganhou reflexos estreitos em três pontos do contorno, conforme novo pedido do usuário.
+Cabeçalho compacto de 36 px, título, fechar, transparência e bordas azul-violeta do material compartilhado. Janela sem foco recebe moldura mais discreta. Arraste pelo cabeçalho e resize pelas bordas esquerda/direita/inferior; Super+arraste permanece. Maximizar/restaurar estão implementados pelo botão da moldura e Super+↑/Super+↓; minimizar, tema interno dos aplicativos e blur sobre janelas seguem pendentes. A barra superior ganhou reflexos estreitos em três pontos do contorno, conforme novo pedido do usuário.
 
 ### Forma das janelas definida pelo usuário
 
 O cabeçalho das janelas permanece retangular, com vidro semelhante ao dock. Contorno iluminado azul-violeta e cantos externos com raio discreto de 6 px, sem formato de cápsula. A junção inferior do cabeçalho é reta. Essa regra vale para a moldura comum dos xdg-toplevel; o interior dos aplicativos não recebe tema forçado.
+
+### Maximização e área útil
+
+O cabeçalho aprovado ganha botão maximizar/restaurar junto ao fechar. Maximizar mantém a moldura e ocupa a área útil restante da saída central, respeitando barra e dock; restaurar recupera posição/tamanho e mantém o cabeçalho acessível caso a área útil tenha mudado. O dock fica centralizado na área abaixo da barra. Multimonitor completo continua pendente.

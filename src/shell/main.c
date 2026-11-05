@@ -75,7 +75,7 @@ static void paint(struct surface *surface, cairo_t *cr) {
         ui_wallpaper(cr, width, height);
     } else if (surface == &surface->app->dock) {
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (width - 2) / 2.0,
-            surface->app->backdrop, DOCK_MARGIN, (surface->app->wallpaper.height - height) / 2.0, surface->app->glass);
+            surface->app->backdrop, DOCK_MARGIN, (surface->app->wallpaper.height - height + PANEL_ZONE + PANEL_MARGIN) / 2.0, surface->app->glass);
         const enum ui_icon icons[] = {UI_HOME, UI_TERMINAL, UI_CODE};
         const unsigned int colors[] = {0xf0f2ff, 0xe3e8f6, 0x78b8f3};
         for (int i = 0; i < 3; i++) { ui_button(cr, dock_button(i), icons[i], surface->hover == i, colors[i]); }
@@ -291,7 +291,7 @@ static int preview(const char *path) {
     cairo_t *cr = cairo_create(image); paint(&app.wallpaper, cr);
     cairo_push_group(cr); cairo_translate(cr, PANEL_MARGIN, PANEL_MARGIN); paint(&app.panel, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr); cairo_identity_matrix(cr);
-    cairo_push_group(cr); cairo_translate(cr, DOCK_MARGIN, (941 - DOCK_HEIGHT) / 2.0); paint(&app.dock, cr);
+    cairo_push_group(cr); cairo_translate(cr, DOCK_MARGIN, (941 - DOCK_HEIGHT + PANEL_ZONE + PANEL_MARGIN) / 2.0); paint(&app.dock, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr);
     cairo_status_t status = cairo_surface_write_to_png(image, path);
     cairo_destroy(cr); cairo_surface_destroy(image);

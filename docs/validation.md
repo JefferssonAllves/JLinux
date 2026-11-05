@@ -87,3 +87,9 @@ Sessão aninhada iniciada automaticamente usando jlinux-session, mantendo o comp
 ### Aplicação na sessão DRM principal
 
 Após autorização explícita do usuário para reiniciar, a sessão principal antiga e a prévia aninhada foram encerradas. Nova sessão iniciada com `jlinux-session --drm --codex`, supervisionada pelo iniciador C. Logs confirmam renderizador AMD Radeon/GLES2, saída HDMI-A-1 e mapeamento de Codex, wallpaper, painel e dock. As molduras agora pertencem ao compositor da sessão principal. Essa evidência confirma inicialização/mapeamento; aprovação visual e interação física pelo usuário permanecem pendentes.
+
+## Maximização/restauração — feature/window-maximize
+
+Oito testes locais passaram em release e ASan/UBSan. Foot real valida maximizar por Super+↑ e botão, restaurar pelo botão e Super+↓, preservação do tamanho anterior, pedido inicial `--maximized` e resize posterior. Cabeçalho/fechar/drag continuam cobertos. Teste com shell valida área de conteúdo maximizada 1198×628 em 76,86 dentro de saída headless 1280×720, descontando barra, dock e moldura. Esse teste revelou reserva incorreta antes do map; listeners de map/unmap agora recalculam a área útil.
+
+Prévia de componentes atualizada. Sessão DRM corrente preservada e ainda usa a versão anterior; ativação e avaliação física desta mudança pendentes. Não houve benchmark GPU/energia.

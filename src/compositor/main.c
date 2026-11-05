@@ -50,7 +50,7 @@ struct shell_surface {
     struct wlr_layer_surface_v1 *layer;
     struct wlr_scene_layer_surface_v1 *scene;
     struct wl_list link;
-    struct wl_listener commit, map, destroy;
+    struct wl_listener commit, map, unmap, destroy;
 };
 
 static void arrange_desktop(struct desktop *desktop) {
@@ -96,15 +96,22 @@ static void shell_committed(struct wl_listener *listener, void *data) {
 static void shell_mapped(struct wl_listener *listener, void *data) {
     (void)data;
     struct shell_surface *surface = wl_container_of(listener, surface, map);
+    arrange_desktop(surface->desktop);
     wlr_log(WLR_INFO, "Interface mapeada: %s", surface->layer->namespace);
 }
 
+static void shell_unmapped(struct wl_listener *listener, void *data) {
+    (void)data;
+    struct shell_surface *surface = wl_container_of(listener, surface, unmap);
+    arrange_desktop(surface->desktop);
+}
 static void shell_destroyed(struct wl_listener *listener, void *data) {
     (void)data;
     struct shell_surface *surface = wl_container_of(listener, surface, destroy);
     struct desktop *desktop = surface->desktop;
     wl_list_remove(&surface->commit.link);
     wl_list_remove(&surface->map.link);
+    wl_list_remove(&surface->unmap.link);
     wl_list_remove(&surface->destroy.link);
     wl_list_remove(&surface->link);
     free(surface);
@@ -137,9 +144,11 @@ static void add_shell_surface(struct wl_listener *listener, void *data) {
     wl_list_insert(desktop->layers.prev, &surface->link);
     surface->commit.notify = shell_committed;
     surface->map.notify = shell_mapped;
+    surface->unmap.notify = shell_unmapped;
     surface->destroy.notify = shell_destroyed;
     wl_signal_add(&layer->surface->events.commit, &surface->commit);
     wl_signal_add(&layer->surface->events.map, &surface->map);
+    wl_signal_add(&layer->surface->events.unmap, &surface->unmap);
     wl_signal_add(&layer->events.destroy, &surface->destroy);
 }
 
