@@ -28,3 +28,10 @@
 - Escolher tecnologias pela adequação à função e pelo desempenho demonstrável no hardware do usuário: latência, tempo de quadro, CPU/GPU, memória e energia. Não escolher por moda, familiaridade ou por ter instalado uma ferramenta. Não declarar uma opção a mais rápida sem medição comparável.
 - Priorizar execução nativa, renderização acelerada e orientada a eventos, controle de recursos e dependências justificadas. Reutilizar infraestrutura madura quando isso ajudar o objetivo; desenvolver componentes próprios onde o projeto exige identidade, controle ou funcionalidades próprias.
 - Eficiência deve preservar a personalização solicitada. Efeitos e aparência são escolhas do usuário; adaptações automáticas respeitam seus limites.
+
+## Pipeline visual e inspiração Glass
+
+- Manter animation/, effects/ e renderer/ separados: tempo/curvas, materiais/passes e execução gráfica/apresentação, respectivamente. Efeitos não possuem loop de animação próprio.
+- A direção visual solicitada é inspirada no Glass da Apple, com identidade própria do JLinux. Prototipar com ferramentas web e implementar o visual acordado no pipeline nativo.
+- Blur, sombra, transparência, tonalização, reflexo e refração devem ter ativação e parâmetros independentes. Desativar um efeito não desativa os demais nem o motor de animações. Preservar escolhas persistidas quando o modo adaptativo alterar o estado efetivo.
+- Ler docs/visual-pipeline.md e docs/visual-style.md ao trabalhar nesses módulos. Separar contratos planejados de capacidades implementadas.

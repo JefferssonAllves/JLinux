@@ -69,3 +69,5 @@ Ainda pendentes: gerenciamento completo de monitores, maximização/tela cheia, 
 - `scripts/`: execução isolada, testes e coleta de hardware.
 
 Plano central: [TASKS.md](TASKS.md). [Arquitetura](docs/architecture.md), [hardware](docs/hardware.md), [validação](docs/validation.md), [fluxo de branches](CONTRIBUTING.md) e [agentes/skills](docs/agent-tooling.md).
+
+O pipeline visual separa [animation/](src/animation/), [effects/](src/effects/) e [renderer/](src/renderer/). A inspiração [Glass](docs/visual-style.md) será prototipada antes da implementação nativa; veja os [contratos e limites atuais](docs/visual-pipeline.md).

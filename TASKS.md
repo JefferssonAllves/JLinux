@@ -79,3 +79,13 @@ Branch `feature/terminal-and-input`: Foot abre automaticamente, recebe comandos 
 Teste headless de dois terminais reais cobre digitação, mudança de foco por clique, desconexão da janela focada e saída por atalho. Release e ASan/UBSan passaram. Smoke DRM curto também executou; interação física do usuário e comportamento prolongado continuam sem confirmação. WM-01/INPUT-01/WM-02 permanecem parciais: popups avançados, hotplug físico e movimentação por pedidos das decorações não foram validados/implementados integralmente. Próximo passo: feedback do usuário no desktop e baseline PERF-01.
 
 Sessão interativa iniciada automaticamente no hardware após CI verde do PR #6, com Codex ativo dentro do Foot. Radeon, monitor e periféricos físicos foram detectados nos logs; confirmação manual do usuário continua pendente. Evidência detalhada em docs/validation.md.
+
+## Pipeline visual e Glass
+
+- **VISUAL-STRUCTURE · concluído na branch:** diretórios animation/, effects/ e renderer/ separados; código existente de criação/limpeza/apresentação movido para renderer/. Os outros dois módulos ainda são contratos documentados, não motores implementados.
+- **DESIGN-01 · pendente:** próximo protótipo segue a inspiração Glass, com validação em fundos claro, escuro e detalhado; usuário escolhe a aparência antes da implementação nativa.
+- **EFFECT-02 · pendente; depende de CONFIG-01 e EFFECT-01:** ativação e parâmetros independentes por efeito, invalidação correta ao alternar, recursos liberados com segurança e testes das combinações com/sem animações.
+- **ANIM-01:** implementar o motor em animation/, sem dependência de GPU ou materiais.
+- **EFFECT-01:** implementar efeitos em effects/, começando pelo caminho simples e medindo cada passe; renderer/ executa a apresentação. Refração e reflexão dinâmica exigem medição antes de habilitar como padrão.
+
+Referências: docs/visual-pipeline.md e docs/visual-style.md. O exemplo TOML v2 expressa essa divisão, mas continua sem parser ou aplicação ao vivo.

@@ -51,6 +51,12 @@ No Ryzen 7 5700U com Radeon integrada e 7,1 GiB de RAM utilizável, priorizar me
 
 Desempenho máximo e efeitos máximos podem disputar o mesmo orçamento. O usuário controla esse compromisso. Não prometer FPS, economia ou consumo antes de comparar resultados no hardware real.
 
+## Pipeline visual separado
+
+A estrutura é `src/animation/` para tempo/curvas, `src/effects/` para efeitos independentes e `src/renderer/` para recursos gráficos e apresentação. Contratos e estado real em [visual-pipeline.md](visual-pipeline.md). A direção visual é inspirada no Glass dos dispositivos Apple, conforme [visual-style.md](visual-style.md), preservando identidade e preferências próprias.
+
+O módulo renderer já contém criação/limpeza do renderizador/alocador e apresentação da cena. Os diretórios de animações e efeitos ainda documentam fronteiras; seus motores e shaders não foram implementados. Cada efeito deverá poder ser ativado ou desativado independentemente do motor de animações.
+
 ## Organização progressiva
 
 O primeiro código está em `src/compositor/main.c`. Conforme as responsabilidades forem implementadas, dividir em módulos de backend/saídas, entrada, janelas, cena, animações, efeitos, configuração e telemetria. Evitar módulos vazios ou APIs prematuras.
