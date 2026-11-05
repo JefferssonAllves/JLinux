@@ -65,3 +65,9 @@ O shell GTK/CSS foi substituído por cliente Wayland/C com painel, dock, ponteir
 - PNG de preview: gerado e inspecionado; usa as rotinas nativas de desenho, não uma captura de DRM.
 
 O backend do toolkit ainda rasteriza buffers em CPU, com apresentação pelo compositor. Não houve benchmark ou comparação de eficiência. Não há blur/refração Glass, parser de tema, integração Wi-Fi/Bluetooth/energia ou fidelidade visual completa às referências. Dados e ações ainda indisponíveis são explicitados pelo shell.
+
+## Material inicial do shell — feature/glass-material
+
+Seis testes passaram em build-native (release) e build-native-asan (address,undefined), sem supressões: ciclo de compositor/shell/sessão, terminal/entrada, blur ARGB32 e oito combinações independentes de blur/tint/reflection. Prévia nativa inspecionada em docs/design/native-glass-preview.png. Blur usa wallpaper reduzido, não conteúdo de janelas; não valida fidelidade às referências ou posicionamento em múltiplos monitores.
+
+Medição exploratória única no ambiente local: execução completa de `jlinux-shell --preview /tmp/jlinux-cost.png`, via `time.monotonic` e `resource.getrusage(RUSAGE_CHILDREN)`: 0,335 s e pico RSS 27.836 KiB. Inclui inicialização, fontes, rasterização e escrita PNG; não é tempo de quadro, benchmark comparável ou medição de GPU/energia. Cache de fundo 1600×900 usa imagem 400×225 ARGB32 (360.000 bytes, além de scratch temporário durante blur). Custos sustentados da sessão e adaptação continuam pendentes.

@@ -7,3 +7,5 @@ Responsabilidades a evoluir: execução ordenada de passes, buffers/texturas, si
 Não decide quais preferências do usuário reduzir. Recebe o estado visual resolvido e renderiza; não calcula curvas de animação ou altera configurações de qualidade por conta própria.
 
 Fronteiras: [docs/visual-pipeline.md](../../docs/visual-pipeline.md).
+
+blur.c: passe separável de box blur ARGB32 usado pelo cache reduzido do wallpaper no shell. Teste de impulso, cor constante, bordas e entradas inválidas em tests/blur.c. Não é blur GPU do compositor.

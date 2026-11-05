@@ -46,4 +46,8 @@ Um efeito que amostra o fundo pode exigir composição e impedir direct scanout 
 
 Nesta entrega, renderer.c passou a possuir a criação/limpeza do renderizador e alocador wlroots e a apresentação/frame-done, extraídas de compositor/main.c. O comportamento gráfico existente foi preservado.
 
-animation/ e effects/ contêm fronteiras documentadas, sem motor, shaders ou API de passes implementados. O TOML continua sendo exemplo não carregado. Não há toggles funcionais, recarga ao vivo ou efeito Glass disponível ainda.
+animation/ continua sendo um contrato sem motor. effects/glass.c agora compõe o primeiro material do painel/dock em Cairo: amostragem do wallpaper, tonalização e reflexos estáticos de borda. renderer/blur.c executa um box blur separável em imagem ARGB32 reduzida a 1/4 por dimensão. O shell mantém esse fundo em cache até a resolução mudar; hover e relógio não recalculam o blur.
+
+Limite explícito: o fundo amostrado é apenas o wallpaper procedural do shell, não janelas de outros clientes. Não há refração, sombra difusa, shaders Glass ou adaptação automática. A rasterização permanece em CPU; este caminho inicial não substitui o futuro pipeline GPU do compositor. As referências do usuário continuam sendo a meta, sem fidelidade completa.
+
+Controles iniciais de processo, independentes, aceitam somente `0`/`1`: `JLINUX_GLASS_BLUR`, `JLINUX_GLASS_TINT`, `JLINUX_GLASS_REFLECTION`. Ausência significa ativado. Exemplo: `JLINUX_GLASS_BLUR=0 build-native/jlinux-session --headless --no-terminal --duration 2`. Desativar blur mantém o cache reduzido do wallpaper para os demais efeitos; não há passe de blur. Desativar tint/reflection preserva a amostragem do fundo. Ainda não há persistência ou recarga ao vivo; TOML continua exemplo não carregado.

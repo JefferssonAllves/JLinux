@@ -107,3 +107,9 @@ Próxima entrega visual: protótipo que reproduza fielmente composição, materi
 - **TEST-01 · parcial:** iniciador de sessão C, runtime privado e limpeza por eventos. Testes cobrem timeout/SIGTERM e ausência de runtime restante. Python ficou restrito a testes/ferramentas.
 - **SHELL-01 · parcial:** Terminal/Codex funcionam; menus, dados de rede/Bluetooth e energia continuam sem integração e mostram aviso.
 - **Próximo:** baseline PERF-01 e implementação progressiva do material em effects/ e renderer/, comparando com as referências. Não declarar Glass/fidelidade prontos por haver componentes nativos.
+
+## Correção do material inicial
+
+- **EFFECT-01 · parcial:** painel e dock amostram wallpaper com box blur em cache reduzido, tonalização e reflexos estáticos. Três controles independentes por ambiente; sem recarga ao vivo. Não desfoca janelas, não implementa refração/sombra difusa nem GPU Glass.
+- **DESIGN-01 · em implementação:** prévia nativa em docs/design/native-glass-preview.png; wallpaper procedural provisório para tornar a amostragem visível. Continua diferente das fotos escolhidas; não representa aprovação do usuário.
+- **Validação local:** seis testes release e ASan/UBSan passaram, incluindo impulso/constância do blur e oito combinações dos controles. Prévia inspecionada; não é captura DRM nem benchmark de GPU/energia.
