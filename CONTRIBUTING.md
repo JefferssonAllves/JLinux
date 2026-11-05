@@ -43,3 +43,7 @@ Se `build` já existir, reconfigurar com `meson setup build --reconfigure`. Ativ
 ## Regras e proteção no GitHub
 
 Este documento estabelece o fluxo da equipe. Proteção técnica de branches deve exigir PR e o check `build` em `main` e `develop`, bloquear exclusão e force push e, quando houver revisores disponíveis, exigir aprovação. A existência deste arquivo não ativa essas opções no GitHub. As regras efetivamente configuradas devem ser verificadas separadamente.
+
+## PRs dependentes
+
+Quando uma mudança depender de um PR ainda aberto, criar uma branch derivada da branch desse PR e usar essa branch como base temporária. Identificar a dependência na descrição. Após a integração da base, atualizar a branch e redirecionar o PR para `develop`, resolvendo conflitos e repetindo os checks necessários. Essa exceção evita misturar entregas ou duplicar commits em PRs independentes.
