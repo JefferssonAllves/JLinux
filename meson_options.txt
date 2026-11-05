@@ -1,0 +1,2 @@
+option('panel', type: 'boolean', value: false,
+  description: 'Compilar protótipo de painel; compositor ainda não implementa layer-shell')

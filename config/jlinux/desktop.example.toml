@@ -1,0 +1,44 @@
+# Proposta de contrato v1. Ainda NÃO é lido pelo compositor.
+schema_version = 1
+
+[appearance]
+background = "#101820"
+foreground = "#edf2f7"
+accent = "#64d8cb"
+font = "Sans 10"
+border_width = 2
+corner_radius = 10
+
+[windows]
+layout = "floating" # floating | tiling (implementação futura)
+focus = "click"
+workspaces = 4
+
+[animations]
+enabled = true
+open_ms = 180
+close_ms = 140
+workspace_ms = 220
+curve = "ease-out-cubic"
+reduced_motion = false
+
+[effects]
+shadows = true
+blur = true
+blur_radius = 12
+opacity = 0.96
+
+[performance]
+mode = "adaptive" # adaptive | fixed
+# Desligue este controle para preservar efeitos mesmo sob carga.
+allow_effect_reduction = true
+allow_animation_reduction = false
+# Respeitar sempre resolução, escala e frequência escolhidas pelo usuário.
+allow_output_changes = false
+frame_budget_fraction = 0.80
+recovery_seconds = 10
+
+[bindings]
+terminal = "Super+Return"
+launcher = "Super+D"
+close_window = "Super+Shift+Q"
