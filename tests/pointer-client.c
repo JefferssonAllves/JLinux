@@ -19,7 +19,7 @@ static void global(void *data, struct wl_registry *registry, uint32_t name, cons
 }
 static void removed(void *data, struct wl_registry *registry, uint32_t name) { (void)data; (void)registry; (void)name; }
 int main(int argc, char **argv) {
-    if (argc != 3) { return 2; }
+    if (argc != 3 && argc != 5) { return 2; }
     struct wl_display *display = wl_display_connect(NULL);
     if (!display) { return 1; }
     struct globals globals = {0};
@@ -36,6 +36,11 @@ int main(int argc, char **argv) {
     if (wl_display_roundtrip(display) < 0) { return 1; }
     zwlr_virtual_pointer_v1_button(pointer, 2, BTN_LEFT, WL_POINTER_BUTTON_STATE_PRESSED);
     zwlr_virtual_pointer_v1_frame(pointer);
+    if (argc == 5) {
+        zwlr_virtual_pointer_v1_motion_absolute(pointer, 3, (uint32_t)atoi(argv[3]), (uint32_t)atoi(argv[4]), 1280, 720);
+        zwlr_virtual_pointer_v1_frame(pointer);
+        if (wl_display_roundtrip(display) < 0) { return 1; }
+    }
     zwlr_virtual_pointer_v1_button(pointer, 3, BTN_LEFT, WL_POINTER_BUTTON_STATE_RELEASED);
     zwlr_virtual_pointer_v1_frame(pointer);
     if (wl_display_roundtrip(display) < 0) { return 1; }

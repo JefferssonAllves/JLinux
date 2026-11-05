@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "interaction.h"
+#include "../renderer/window-frame.h"
 #include <errno.h>
 #include <linux/input-event-codes.h>
 #include <signal.h>
@@ -21,6 +22,8 @@
 #include <wlr/types/wlr_virtual_pointer_v1.h>
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_xdg_decoration_v1.h>
+#include <wlr/util/edges.h>
 #include <wlr/util/box.h>
 #include <wlr/util/log.h>
 #include <xkbcommon/xkbcommon.h>
@@ -31,8 +34,14 @@ struct view {
     struct wlr_xdg_toplevel *xdg;
     struct wlr_scene_tree *tree;
     bool mapped;
+    struct jlinux_window_frame frame;
+    int frame_width, frame_height;
     struct wl_list link;
-    struct wl_listener map, unmap, commit, destroy, maximize, fullscreen;
+    struct wl_listener map, unmap, commit, destroy, maximize, fullscreen, title;
+};
+struct decoration {
+    struct wlr_xdg_toplevel_decoration_v1 *xdg;
+    struct wl_listener mode, destroy, commit;
 };
 struct keyboard {
     struct interaction *owner;
@@ -65,9 +74,11 @@ struct interaction {
     unsigned int placement;
     uint32_t grab_button;
     bool resizing;
+    uint32_t resize_edges;
+    struct jlinux_glass glass;
     double start_x, start_y;
     int window_x, window_y, width, height;
-    struct wl_listener new_input, new_view, new_popup, virtual_keyboard, virtual_pointer;
+    struct wl_listener new_input, new_view, new_popup, virtual_keyboard, virtual_pointer, new_decoration;
     struct wl_listener motion, absolute, button, axis, frame, set_cursor, selection;
     struct wl_event_source *child_exit;
 };
@@ -82,8 +93,10 @@ static void focus(struct interaction *state, struct view *view) {
     if (view && !view->mapped) { return; }
     if (state->focused && state->focused != view) {
         wlr_xdg_toplevel_set_activated(state->focused->xdg, false);
+        jlinux_window_frame_focus(&state->focused->frame, false);
     }
     state->focused = view;
+    if (view) { jlinux_window_frame_focus(&view->frame, true); }
     if (!view) {
         wlr_seat_keyboard_clear_focus(state->seat);
         return;
@@ -107,13 +120,30 @@ static void focus_available(struct interaction *state) {
     focus(state, NULL);
 }
 
+static void update_frame(struct view *view) {
+    int width = view->xdg->base->geometry.width, height = view->xdg->base->geometry.height;
+    if (width <= 0 || height <= 0) { return; }
+    if (!jlinux_window_frame_update(&view->frame, width, height, view->xdg->title, view->owner->glass)) {
+        wlr_log(WLR_ERROR, "%s", "Falha ao desenhar moldura da janela");
+        wl_resource_post_no_memory(view->xdg->resource); return;
+    }
+    view->frame_width = width; view->frame_height = height;
+}
+static void title_changed(struct wl_listener *listener, void *data) {
+    (void)data;
+    struct view *view = wl_container_of(listener, view, title);
+    update_frame(view);
+}
 static void view_mapped(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, map);
+    update_frame(view);
     view->mapped = true;
     wlr_scene_node_set_enabled(&view->tree->node, true);
     focus(view->owner, view);
-    wlr_log(WLR_INFO, "Janela mapeada: %s", view->xdg->title ? view->xdg->title : "sem título");
+    wlr_log(WLR_INFO, "Janela mapeada: %s (%dx%d em %d,%d)",
+        view->xdg->title ? view->xdg->title : "sem título", view->frame_width, view->frame_height,
+        view->tree->node.x, view->tree->node.y);
 }
 
 static void view_unmapped(struct wl_listener *listener, void *data) {
@@ -130,6 +160,8 @@ static void view_unmapped(struct wl_listener *listener, void *data) {
 static void view_committed(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, commit);
+    if (view->xdg->base->geometry.width != view->frame_width ||
+        view->xdg->base->geometry.height != view->frame_height) { update_frame(view); }
     if (view->xdg->base->initial_commit) {
         struct wlr_output *output = wlr_output_layout_get_center_output(view->owner->layout);
         struct wlr_box area;
@@ -166,6 +198,7 @@ static void view_destroyed(struct wl_listener *listener, void *data) {
     wl_list_remove(&view->destroy.link);
     wl_list_remove(&view->maximize.link);
     wl_list_remove(&view->fullscreen.link);
+    wl_list_remove(&view->title.link);
     wlr_scene_node_destroy(&view->tree->node);
     free(view);
 }
@@ -177,7 +210,8 @@ static void add_view(struct wl_listener *listener, void *data) {
     view->owner = state;
     view->xdg = data;
     view->tree = wlr_scene_tree_create(state->windows);
-    struct wlr_scene_tree *content = view->tree ? wlr_scene_xdg_surface_create(view->tree, view->xdg->base) : NULL;
+    bool framed = view->tree && jlinux_window_frame_create(&view->frame, view->tree);
+    struct wlr_scene_tree *content = framed ? wlr_scene_xdg_surface_create(view->tree, view->xdg->base) : NULL;
     if (!content) {
         if (view->tree) { wlr_scene_node_destroy(&view->tree->node); }
         free(view);
@@ -188,6 +222,8 @@ static void add_view(struct wl_listener *listener, void *data) {
     view->xdg->base->data = content;
     wlr_scene_node_set_enabled(&view->tree->node, false);
     wl_list_insert(state->views.prev, &view->link);
+    jlinux_window_frame_focus(&view->frame, false);
+    listen(&view->title, &view->xdg->events.set_title, title_changed);
     listen(&view->map, &view->xdg->base->surface->events.map, view_mapped);
     listen(&view->unmap, &view->xdg->base->surface->events.unmap, view_unmapped);
     listen(&view->commit, &view->xdg->base->surface->events.commit, view_committed);
@@ -196,6 +232,33 @@ static void add_view(struct wl_listener *listener, void *data) {
     listen(&view->fullscreen, &view->xdg->events.request_fullscreen, unsupported_fullscreen);
 }
 
+static void decoration_mode(struct wl_listener *listener, void *data) {
+    (void)data;
+    struct decoration *decoration = wl_container_of(listener, decoration, mode);
+    if (!decoration->xdg->toplevel->base->initialized) { return; }
+    wlr_xdg_toplevel_decoration_v1_set_mode(decoration->xdg, WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+}
+static void decoration_committed(struct wl_listener *listener, void *data) {
+    (void)data;
+    struct decoration *decoration = wl_container_of(listener, decoration, commit);
+    if (decoration->xdg->toplevel->base->initial_commit) { decoration_mode(&decoration->mode, NULL); }
+}
+static void decoration_destroyed(struct wl_listener *listener, void *data) {
+    (void)data;
+    struct decoration *decoration = wl_container_of(listener, decoration, destroy);
+    wl_list_remove(&decoration->mode.link); wl_list_remove(&decoration->destroy.link);
+    wl_list_remove(&decoration->commit.link); free(decoration);
+}
+static void decoration_added(struct wl_listener *listener, void *data) {
+    (void)listener;
+    struct decoration *decoration = calloc(1, sizeof(*decoration));
+    if (!decoration) { return; }
+    decoration->xdg = data;
+    listen(&decoration->commit, &decoration->xdg->toplevel->base->surface->events.commit, decoration_committed);
+    listen(&decoration->mode, &decoration->xdg->events.request_mode, decoration_mode);
+    listen(&decoration->destroy, &decoration->xdg->events.destroy, decoration_destroyed);
+    decoration_mode(&decoration->mode, NULL);
+}
 static void popup_committed(struct wl_listener *listener, void *data) {
     (void)data;
     struct popup *popup = wl_container_of(listener, popup, commit);
@@ -372,8 +435,7 @@ static struct view *surface_at(struct interaction *state, struct wlr_surface **s
     *surface = NULL;
     if (!node || node->type != WLR_SCENE_NODE_BUFFER) { return NULL; }
     struct wlr_scene_surface *scene_surface = wlr_scene_surface_try_from_buffer(wlr_scene_buffer_from_node(node));
-    if (!scene_surface) { return NULL; }
-    *surface = scene_surface->surface;
+    if (scene_surface) { *surface = scene_surface->surface; }
     while (node && !node->data) { node = node->parent ? &node->parent->node : NULL; }
     return node ? node->data : NULL;
 }
@@ -382,8 +444,16 @@ static void pointer_moved(struct interaction *state, uint32_t time) {
         int dx = (int)(state->cursor->x - state->start_x);
         int dy = (int)(state->cursor->y - state->start_y);
         if (state->resizing) {
-            int width = state->width + dx, height = state->height + dy;
-            wlr_xdg_toplevel_set_size(state->grabbed->xdg, width > 100 ? width : 100, height > 80 ? height : 80);
+            int width = state->width, height = state->height;
+            if (state->resize_edges & WLR_EDGE_RIGHT) { width += dx; }
+            if (state->resize_edges & WLR_EDGE_LEFT) { width -= dx; }
+            if (state->resize_edges & WLR_EDGE_BOTTOM) { height += dy; }
+            if (width < 100) { width = 100; } if (height < 80) { height = 80; }
+            if (state->resize_edges & WLR_EDGE_LEFT) {
+                wlr_scene_node_set_position(&state->grabbed->tree->node,
+                    state->window_x + state->width - width, state->window_y);
+            }
+            wlr_xdg_toplevel_set_size(state->grabbed->xdg, width, height);
         } else {
             wlr_scene_node_set_position(&state->grabbed->tree->node, state->window_x + dx, state->window_y + dy);
         }
@@ -431,11 +501,29 @@ static void button_event(struct wl_listener *listener, void *data) {
             focus(state, view);
             wlr_log(WLR_INFO, "Foco por clique: %s", view->xdg->title ? view->xdg->title : "sem título");
         }
+        if (view && !surface && event->button == BTN_LEFT) {
+            double local_x = state->cursor->x - view->tree->node.x;
+            double local_y = state->cursor->y - view->tree->node.y;
+            state->grab_button = event->button;
+            if (local_y < 0 && local_x >= view->frame_width - 40 && local_x < view->frame_width) {
+                wlr_xdg_toplevel_send_close(view->xdg); return;
+            }
+            state->resize_edges = 0;
+            if (local_x < 0) { state->resize_edges |= WLR_EDGE_LEFT; }
+            if (local_x >= view->frame_width) { state->resize_edges |= WLR_EDGE_RIGHT; }
+            if (local_y >= view->frame_height) { state->resize_edges |= WLR_EDGE_BOTTOM; }
+            state->grabbed = view; state->resizing = state->resize_edges != 0;
+            state->start_x = state->cursor->x; state->start_y = state->cursor->y;
+            state->window_x = view->tree->node.x; state->window_y = view->tree->node.y;
+            state->width = view->frame_width; state->height = view->frame_height;
+            return;
+        }
         struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(state->seat);
         if (view && keyboard && (wlr_keyboard_get_modifiers(keyboard) & WLR_MODIFIER_LOGO) &&
             (event->button == BTN_LEFT || event->button == BTN_RIGHT)) {
             state->grabbed = view;
             state->resizing = event->button == BTN_RIGHT;
+            state->resize_edges = WLR_EDGE_RIGHT | WLR_EDGE_BOTTOM;
             state->grab_button = event->button;
             state->start_x = state->cursor->x; state->start_y = state->cursor->y;
             state->window_x = view->tree->node.x; state->window_y = view->tree->node.y;
@@ -476,7 +564,7 @@ static int children_exited(int number, void *data) {
 
 static size_t listeners(struct interaction *state, struct wl_listener **items) {
     struct wl_listener *all[] = {&state->new_input, &state->new_view, &state->new_popup,
-        &state->virtual_keyboard, &state->virtual_pointer, &state->motion, &state->absolute,
+        &state->virtual_keyboard, &state->virtual_pointer, &state->new_decoration, &state->motion, &state->absolute,
         &state->button, &state->axis, &state->frame, &state->set_cursor, &state->selection};
     size_t count = sizeof(all) / sizeof(all[0]);
     memcpy(items, all, sizeof(all));
@@ -487,22 +575,25 @@ struct interaction *interaction_create(struct wl_display *display,
     struct wlr_scene *scene, struct wlr_scene_tree *windows) {
     struct interaction *state = calloc(1, sizeof(*state));
     if (!state) { return NULL; }
+    if (!jlinux_glass_settings(&state->glass)) { free(state); return NULL; }
     state->display = display; state->scene = scene; state->windows = windows; state->layout = layout;
     wl_list_init(&state->views); wl_list_init(&state->keyboards); wl_list_init(&state->pointers);
-    struct wl_listener *items[12];
+    struct wl_listener *items[13];
     size_t count = listeners(state, items);
     for (size_t i = 0; i < count; i++) { wl_list_init(&items[i]->link); }
     state->seat = wlr_seat_create(display, "seat0");
     state->cursor = wlr_cursor_create();
     state->theme = wlr_xcursor_manager_create(NULL, 24);
+    struct wlr_xdg_decoration_manager_v1 *decorations = wlr_xdg_decoration_manager_v1_create(display);
     struct wlr_xdg_shell *shell = wlr_xdg_shell_create(display, 3);
-    if (!state->seat || !state->cursor || !state->theme || !shell ||
+    if (!state->seat || !state->cursor || !state->theme || !shell || !decorations ||
         !wlr_xcursor_manager_load(state->theme, 1) || !wlr_data_device_manager_create(display)) {
         interaction_destroy(state); return NULL;
     }
     wlr_cursor_attach_output_layout(state->cursor, layout);
     wlr_cursor_set_xcursor(state->cursor, state->theme, "default");
     listen(&state->new_input, &backend->events.new_input, input_added);
+    listen(&state->new_decoration, &decorations->events.new_toplevel_decoration, decoration_added);
     listen(&state->new_view, &shell->events.new_toplevel, add_view);
     listen(&state->new_popup, &shell->events.new_popup, add_popup);
     listen(&state->motion, &state->cursor->events.motion, motion_event);
@@ -531,14 +622,14 @@ void interaction_set_workarea(struct interaction *state, const struct wlr_box *a
     struct view *view;
     wl_list_for_each(view, &state->views, link) {
         int x = view->tree->node.x, y = view->tree->node.y;
-        if (x < area->x) { x = area->x + 8; }
-        if (y < area->y) { y = area->y + 8; }
+        if (x - JLINUX_FRAME_BORDER < area->x) { x = area->x + JLINUX_FRAME_BORDER + 8; }
+        if (y - JLINUX_FRAME_HEADER < area->y) { y = area->y + JLINUX_FRAME_HEADER + 8; }
         wlr_scene_node_set_position(&view->tree->node, x, y);
     }
 }
 void interaction_destroy(struct interaction *state) {
     if (!state) { return; }
-    struct wl_listener *items[12];
+    struct wl_listener *items[13];
     size_t count = listeners(state, items);
     for (size_t i = 0; i < count; i++) { wl_list_remove(&items[i]->link); }
     if (state->child_exit) { wl_event_source_remove(state->child_exit); }

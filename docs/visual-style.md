@@ -53,3 +53,7 @@ Dock com 56 px de largura, 6 px de margem esquerda e botões de 40×40. Detalhes
 ### Refinamento da barra superior
 
 Altura atual: 36 px, margem de 6 px. A extremidade direita usa azul-violeta menos rosado e menos intenso, com reflexo localizado suavizado. O dock mantém seu material e geometria anteriores. A ponta esquerda da barra mantém o brilho reduzido solicitado.
+
+### Molduras nativas
+
+Cabeçalho compacto de 36 px, título, fechar, transparência e bordas azul-violeta do material compartilhado. Janela sem foco recebe moldura mais discreta. Arraste pelo cabeçalho e resize pelas bordas esquerda/direita/inferior; Super+arraste permanece. Maximizar/minimizar, tema interno dos aplicativos e blur sobre janelas seguem pendentes. A barra superior ganhou reflexos estreitos em três pontos do contorno, conforme novo pedido do usuário.
