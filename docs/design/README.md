@@ -1,19 +1,28 @@
-# JLinux Glass — proposta visual V1
+# JLinux Glass — propostas visuais
 
-**Imagem conceitual para avaliação.** Gerada como referência visual; não é captura da sessão atual e não comprova implementação dos componentes ou efeitos.
+**Imagens conceituais para avaliação.** Geradas como referências visuais; não são capturas da sessão atual nem comprovam implementação dos componentes ou efeitos.
 
-![Proposta JLinux Glass em roxo e rosa, dock à esquerda e menu de energia no topo](jlinux-glass-v1.png)
+## V2 — escuro e discreto (proposta atual)
 
-[Abrir a imagem](jlinux-glass-v1.png?raw=true) para ampliar no navegador do celular. Não precisa de visualizador instalado no computador.
+![JLinux Glass V2: grafite e vidro escuro, detalhes sutis roxos e rosas, dock à esquerda](jlinux-glass-v2.png)
 
-## Direção solicitada
+[Abrir V2 para ampliar no celular](jlinux-glass-v2.png?raw=true).
+
+Ajuste solicitado: roxo/rosa não são as cores principais. Predominam grafite, carvão, vidro fumê e reflexos prateados, com cor apenas em detalhes de algumas bordas e indicadores. A proposta mantém o aspecto futurista detalhado, o dock à esquerda e a barra superior com Wi-Fi, Bluetooth e menu de energia.
+
+## V1 — referência anterior
+
+![JLinux Glass V1 com roxo e rosa predominantes](jlinux-glass-v1.png)
+
+[Abrir V1 para comparar](jlinux-glass-v1.png?raw=true).
+
+O feedback do usuário sobre a V1 foi reduzir a predominância de roxo/rosa e tornar a paleta mais escura e discreta. A V1 foi preservada como histórico, não como direção atual.
+
+## Elementos mantidos
 
 - Dock vertical de aplicativos **à esquerda**.
 - Barra superior com Wi-Fi, Bluetooth, informações de estado e botão de energia.
-- Menu de energia com Suspender, Reiniciar e Desligar.
-- Visual inspirado em Glass, com bastante detalhe em roxo/rosa.
-- Terminal ilustrativo para mostrar o material aplicado a uma janela.
+- Menu com Suspender, Reiniciar e Desligar.
+- Material inspirado em Glass, com terminal ilustrativo.
 
-O usuário ainda avaliará a composição. Cores, intensidade de brilho, transparência, dock, ícones e proporções podem ser ajustados na próxima versão antes da implementação nativa. Não assumir aprovação desta imagem.
-
-As ações de energia e conectividade são ilustradas apenas. Sua implementação dependerá de integração real com os serviços do sistema. Os efeitos nativos continuam separados entre animation/, effects/ e renderer/, com controles individuais e medição de desempenho.
+A V2 ainda aguarda avaliação. Não assumir aprovação nem aplicar o visual ao desktop antes da iteração com o usuário. As ações de energia e conectividade são ilustradas apenas. A implementação nativa continuará separando animation/, effects/ e renderer/, com controles individuais e medição de desempenho.

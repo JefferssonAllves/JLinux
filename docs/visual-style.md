@@ -31,3 +31,9 @@ No hardware com Radeon integrada, medir largura de banda, memória, tempo de qua
 O usuário definiu dock vertical à esquerda, barra superior com Wi-Fi/Bluetooth e menu Suspender/Reiniciar/Desligar, visual Glass e detalhes predominantes em roxo/rosa. A correção mais recente de posição é **à esquerda**.
 
 A [imagem V1](design/README.md) é um estudo visual gerado para avaliação pelo celular via GitHub. Não é screenshot do desktop atual nem visual aprovado. Próxima implementação deve considerar o feedback do usuário antes de reproduzir a composição nativamente.
+
+## Correção de paleta e proposta V2
+
+A preferência mais recente é base escura e pouco chamativa, predominantemente grafite, carvão e vidro fumê. Roxo/rosa são acentos sutis em algumas bordas e indicadores, não cores principais do fundo, painéis ou janelas. Preservar o aspecto futurista detalhado com reflexos, profundidade e materiais, sem brilho colorido excessivo.
+
+A [proposta V2](design/README.md) mantém dock à esquerda e a barra superior. Substitui a direção de paleta da V1, preservada apenas para comparação. V2 ainda não foi aprovada; não há mudança na interface em execução.
