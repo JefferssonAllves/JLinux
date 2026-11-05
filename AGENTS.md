@@ -54,3 +54,6 @@
 
 - Há pacote `jlinux-desktop-git` instalado pelo pacman, com binários em `/usr/bin`, e greetd habilitado para o próximo boot. Não confundir alteração em build-native/ com atualização da instalação. Registrar commit/versão efetivamente instalados e distinguir runtime atual, prévia e primeiro login PAM.
 - Receita em packaging/arch/PKGBUILD, instruções/recuperação em docs/arch-installation.md. Preservar backups e TTY2; não solicitar senha pelo chat nem alterar regras PAM para contornar autenticação.
+
+- Primeiro boot/login PAM do JLinux já foi confirmado em 05/11/2026. A sessão ativa é gerenciada pelo greetd; detectar PIDs/runtime pelo boot atual e não confiar em PID antigo salvo antes de reiniciar. Não criar compositor paralelo no TTY ocupado.
+- Houve relato de congelamento após testes de VT, com reinício não limpo. Causa ainda não comprovada; não repetir esses testes na sessão de trabalho enquanto se investiga. Ver TASKS.md, STABILITY-BOOT.

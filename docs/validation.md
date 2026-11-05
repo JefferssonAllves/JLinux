@@ -141,3 +141,11 @@ Script manual reproduzível em scripts/check-vt-recovery.py, fora da CI. Onze te
 ### Recuperação com janelas abertas
 
 Repetir a troca de VT com um terminal aberto revelou uma segunda falha: assert de listener pendente em `wlr_output_finish`. A scene_output não era destruída explicitamente no callback de remoção da saída. Adicionada destruição antes de liberar monitor, removendo referências/listeners da cena em tempo. Após essa correção, três ciclos reais VT1 -> VT2 -> VT1 preservaram quatro processos (supervisor, compositor, shell e Foot) e onze testes release passaram. ASan/UBSan também repetidos nesta etapa. Não tratar o primeiro teste sem terminal como validação suficiente de lifecycle com janelas.
+
+## Boot após relato de congelamento — 05/11/2026
+
+Usuário relatou PC travado e o sistema reapareceu em novo boot. Journal atual registra greetd iniciado às 16:40:12, sessão greeter e autenticação PAM do usuário jlinux com abertura de sessão às 16:40:27. Supervisor PID 667, compositor 668 e shell 690 são binários instalados em `/usr/bin`, pacote `0.5.0.r37.g77ecbc1-1`, sob sessão logind autenticada pelo greetd. Foot/Codex em uso. Isso valida primeiro boot e login real; não é resultado simulado.
+
+O teste final de VT da instalação anterior perdeu seu processo/sessão de execução durante o reinício; resultado não recuperado, portanto não declarar aprovação desse teste de pacote. Três ciclos na build local com terminal e onze testes do pacote estão registrados separadamente.
+
+Journal anterior encerra após comandos chvt às 16:38:36, sem registro conclusivo de GPU hang/OOM/kernel panic. Journal novo indica desligamento não limpo e aviso FAT para a partição EFI. Não foi identificado evento suficiente para atribuir causa ao congelamento nem executado reparo de partição. Sessão atual apresenta memória disponível e compositor em espera epoll entre eventos; investigação do incidente permanece aberta. Não repetir testes físicos de VT nesta sessão de trabalho.

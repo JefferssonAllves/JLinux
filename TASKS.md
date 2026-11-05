@@ -204,3 +204,10 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - **LOGIN-TEST · onze testes locais release/ASan/UBSan aprovados:** inclui fluxo completo de digitação no greeter com greetd simulado, além de prompts/recusa/cancelamento/limites. O login PAM real não foi simulado como resultado físico; aguarda usuário no próximo boot. PR permanece draft até essa confirmação.
 
 **RECOVERY-VT · correção validada no hardware:** troca real por chvt revelou remoção temporária do HDMI ao pausar DRM. Compositor passa a aguardar/reassociar saída e mantém layers em vez de encerrar. Teste de ida/volta preservou processos e confirmou modeset de retorno; combinação física de teclas e login PAM ainda dependem do usuário. Script manual incluído e onze testes release/ASan/UBSan aprovados.
+
+## Primeiro boot real e relato de travamento
+
+- **BOOT-LOGIN · confirmado no boot de 05/11/2026 16:40:** greetd ativo, PAM abriu sessão do usuário jlinux às 16:40:27; supervisor/compositor/shell executam `/usr/bin`, pacote `0.5.0.r37.g77ecbc1-1`, com terminal/Codex em uso. Não marcar mais primeiro login como pendente.
+- **STABILITY-BOOT · P0 · investigando:** usuário relatou congelamento seguido de reinício/desligamento não limpo. Journal anterior termina após testes de VT; não há evidência suficiente para atribuir a causa a GPU/kernel/compositor. Sessão atual viva, memória disponível, nenhum novo reset GPU/OOM identificado. Evitar novos testes de troca de VT na sessão de trabalho enquanto se investiga.
+- **RECOVERY-VT · evidência corrigida:** três ciclos passaram na build local com terminal; a execução final do mesmo teste no pacote foi interrompida pelo reboot e seu resultado não foi recuperado. Não afirmar que esse teste final de pacote foi concluído.
+- **EFI-DIRTY · pendente de verificação:** kernel registrou EFI FAT não desmontada corretamente após reinício abrupto. Nenhum reparo ou alteração de partição executado.

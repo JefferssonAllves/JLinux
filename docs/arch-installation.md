@@ -55,10 +55,12 @@ Protocolo: documentação primária de [greetd_ipc](https://docs.rs/greetd_ipc/0
 
 ## Estado aplicado nesta máquina
 
-Instalado pelo pacman: `jlinux-desktop-git 0.5.0.r33.g45c6752-1`, compilado da branch de trabalho, sem release/tag. Binários pertencem ao pacote e são root:root 0755. Sessão principal foi reiniciada a partir de `/usr/bin/jlinux-session --drm --codex` e mapeou Codex/painel/dock. O login de boot inicia um terminal comum; Codex continua disponível pelo dock.
+Instalado pelo pacman: `jlinux-desktop-git 0.5.0.r37.g77ecbc1-1`, compilado da branch de trabalho, sem release/tag. Binários pertencem ao pacote e são root:root 0755. `greetd.service` é o display manager e `graphical.target` é o alvo padrão. TTY2 habilitado/ativo; backup inicial em `/var/lib/jlinux-login-backup.qsemGPVh`.
 
-`greetd.service` está habilitado e é o alias display-manager; `graphical.target` é o alvo padrão. Não foi iniciado sobre o TTY1 corrente nem houve reboot do computador. No próximo boot ele deve abrir a tela de login. `getty@tty2.service` está habilitado e ativo. Backup inicial: `/var/lib/jlinux-login-backup.qsemGPVh`. O primeiro login PAM real e o boot completo ainda precisam da confirmação física do usuário.
+Após o reinício do computador relatado pelo usuário em 05/11/2026, o journal confirma a sequência real: greetd iniciou Cage/greeter, PAM abriu a sessão do usuário jlinux e `/usr/bin/jlinux-session --drm` iniciou compositor, shell e Foot instalados. O usuário executou Codex no terminal. Portanto o primeiro boot/login PAM está confirmado por registros reais, não apenas simulação.
 
-Além dos testes de protocolo, `login-flow-headless` digita usuário e senha fictícios no greeter real, confirma o pedido de sessão com um serviço simulado e verifica que a senha não aparece nos logs. Não é autenticação PAM real. Onze testes locais passaram em release e ASan/UBSan; o pacote passou dez testes no build Arch anterior à adição desse teste. Nenhum algoritmo de execução mudou entre o commit instalado e essa ampliação de testes/documentação.
+O usuário também relatou travamento antes desse reinício. O journal registra desligamento não limpo e não contém evidência suficiente para atribuir a causa do congelamento. A investigação permanece aberta; não repetir ciclos de VT na sessão de trabalho para tentar provocá-lo. O aviso FAT de volume EFI não desmontado corretamente também foi registrado, sem alterações de partição ou reparo automático.
+
+Onze testes locais passaram em release/ASan/UBSan e no build do pacote final. Login UI e protocolo também foram testados com credenciais fictícias, sem invocar PAM nesses testes. Os registros de boot acima constituem a confirmação PAM real, separada dos testes automatizados.
 
 A pausa DRM por troca de VT remove temporariamente a saída neste hardware. O compositor agora preserva layers/sessão e os reassocia quando a saída volta. Foi validada a ida e volta com `chvt`, preservando processos; o teste manual reproduzível é `python scripts/check-vt-recovery.py --session-pid PID --target-vt 2`. Isso não substitui validação do primeiro login PAM.
