@@ -1,4 +1,7 @@
 #include "glass.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 static void rounded(cairo_t *cr, struct ui_rect r, double radius) {
     const double pi = 3.14159265358979323846;
     cairo_new_sub_path(cr);
@@ -53,6 +56,21 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
         cairo_pattern_add_color_stop_rgba(bevel, 1, .79, .73, 1, .26);
         rounded(cr, rect, radius); cairo_set_source(cr, bevel);
         cairo_set_line_width(cr, 6); cairo_stroke(cr); cairo_pattern_destroy(bevel);
+        if (horizontal && rect.height < 60) {
+            for (int i = 0; i < 3; i++) {
+                cairo_save(cr);
+                cairo_translate(cr, rect.x + rect.width * positions[i],
+                    i == 1 ? rect.y + 1 : rect.y + rect.height - 1);
+                cairo_scale(cr, 1, .10);
+                cairo_pattern_t *glint = cairo_pattern_create_radial(0, 0, 0, 0, 0, 52);
+                cairo_pattern_add_color_stop_rgba(glint, 0, .93, .97, 1, .92);
+                cairo_pattern_add_color_stop_rgba(glint, .09, .68, .80, 1, .55);
+                cairo_pattern_add_color_stop_rgba(glint, .4, .46, .52, .94, .19);
+                cairo_pattern_add_color_stop_rgba(glint, 1, .4, .4, .8, 0);
+                cairo_set_source(cr, glint); cairo_paint(cr); cairo_pattern_destroy(glint);
+                cairo_restore(cr);
+            }
+        }
     }
     cairo_restore(cr);
     if (effects.reflection) {
@@ -70,4 +88,17 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
         rounded(cr, inner, radius - 2); cairo_set_source_rgba(cr, .75, .83, 1, .12);
         cairo_set_line_width(cr, 1); cairo_stroke(cr); cairo_pattern_destroy(edge);
     }
+}
+
+bool jlinux_glass_settings(struct jlinux_glass *effects) {
+    const char *names[] = {"JLINUX_GLASS_BLUR", "JLINUX_GLASS_TINT", "JLINUX_GLASS_REFLECTION"};
+    bool *values[] = {&effects->blur, &effects->tint, &effects->reflection};
+    for (int i = 0; i < 3; i++) {
+        const char *value = getenv(names[i]);
+        if (value && strcmp(value, "0") && strcmp(value, "1")) {
+            fprintf(stderr, "%s deve ser 0 ou 1.\n", names[i]); return false;
+        }
+        *values[i] = !value || !strcmp(value, "1");
+    }
+    return true;
 }

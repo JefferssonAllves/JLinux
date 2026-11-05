@@ -41,3 +41,9 @@ A imagem gerada jlinux-glass-v1.png foi preservada como histórico. As propostas
 ![Prévia renderizada pelo shell C com material inicial](native-glass-preview.png)
 
 Produzida por `jlinux-shell --preview`, usando as rotinas do shell, sem janelas de aplicativos. Painel/dock amostram o wallpaper procedural provisório com blur em cache e reflexos estáticos. Não é captura da sessão, não reproduz o fundo das fotos nem demonstra blur sobre janelas. As referências escolhidas acima continuam sendo o alvo.
+
+## Moldura nativa de janela
+
+![Prévia do componente de moldura](native-window-frame-preview.png)
+
+Gerada por `jlinux-test-window-frame --preview`: usa os quatro buffers reais de decoração sobre um fundo e conteúdo ilustrativo. Não é captura de aplicativo. Cabeçalho de 36 px, bordas, transparência e fechar são código do compositor. Não demonstra blur de outras janelas nem personalização do interior dos aplicativos.

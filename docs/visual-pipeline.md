@@ -51,3 +51,11 @@ animation/ continua sendo um contrato sem motor. effects/glass.c agora compõe o
 Limite explícito: o fundo amostrado é apenas o wallpaper procedural do shell, não janelas de outros clientes. Não há refração, sombra difusa, shaders Glass ou adaptação automática. A rasterização permanece em CPU; este caminho inicial não substitui o futuro pipeline GPU do compositor. As referências do usuário continuam sendo a meta, sem fidelidade completa.
 
 Controles iniciais de processo, independentes, aceitam somente `0`/`1`: `JLINUX_GLASS_BLUR`, `JLINUX_GLASS_TINT`, `JLINUX_GLASS_REFLECTION`. Ausência significa ativado. Exemplo: `JLINUX_GLASS_BLUR=0 build-native/jlinux-session --headless --no-terminal --duration 2`. Desativar blur mantém o cache reduzido do wallpaper para os demais efeitos; não há passe de blur. Desativar tint/reflection preserva a amostragem do fundo. Ainda não há persistência ou recarga ao vivo; TOML continua exemplo não carregado.
+
+## Molduras de janelas e pontos de brilho
+
+O compositor agora compartilha effects/glass.c e toolkit/painter.c com o shell. renderer/window-frame.c desenha cabeçalho de 36 px e bordas de 6 px em quatro buffers ARGB32 estreitos, liberados por referências wlroots. O interior da janela não recebe buffer de decoração. Mudança de tamanho/título atualiza as faixas; conteúdo novo do cliente com mesma geometria não as redesenha. Foco altera opacidade da moldura sem rasterizar de novo.
+
+As molduras usam transparência real sobre a cena, tonalização e reflexos estáticos; **não têm blur de fundo**. A opção BLUR continua limitada ao wallpaper do shell, sem efeito nas molduras. TINT/REFLECTION são compartilhadas e independentes. Conteúdo e decorações próprias de aplicativos que não negociam xdg-decoration não são retematizados; pode haver cabeçalho adicional. Cantos externos da moldura são arredondados; o conteúdo do cliente não recebe máscara arredondada.
+
+A barra superior recebe três reflexos estreitos localizados junto ao contorno, visíveis com REFLECTION ativado. Não há animação, timer adicional ou movimento automático dos brilhos.

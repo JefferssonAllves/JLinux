@@ -141,3 +141,10 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - Barra de 44 para 36 px, preservando margem de 6 px. Reserva superior reduzida junto com a altura; conteúdo continua centralizado e prévia usa as constantes do shell.
 - Borda e reflexo direitos da barra com azul-violeta menos rosado e intensidade mais uniforme. Dock e redução de brilho da ponta esquerda preservados.
 - Seis testes release passaram; prévia inspecionada. Sem nova execução de sanitizers ou benchmark nesta alteração visual.
+
+## Molduras próprias — feature/window-glass-frames
+
+- **WM-GLASS · parcial implementado:** material compartilhado do shell nas molduras xdg-toplevel, cabeçalho de 36 px, título/fechar, negociação xdg-decoration server-side, foco por opacidade, arraste e resize pelas bordas esquerda/direita/inferior. Quatro faixas de buffer evitam imagem transparente do tamanho da janela; redesenho por geometria/título.
+- **BAR-GLINT · implementado:** três pontos de reflexão estática junto às bordas da barra, controlados por REFLECTION, sem animação/poll adicional.
+- **Validação local:** oito testes release e ASan/UBSan passaram, incluindo lifecycle das faixas e terminais reais com drag, fechar e resize confirmado por stty. Prévias dos componentes inspecionadas; não são screenshots de aplicativos nem aprovação visual do usuário.
+- **Limites:** interior dos apps não retematizado, sem blur nas molduras, máscara arredondada do conteúdo, maximização/minimização ou benchmark GPU/energia. Aplicativos sem negociação de decoração podem manter seu cabeçalho interno.

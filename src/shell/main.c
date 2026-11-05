@@ -103,18 +103,6 @@ static void paint(struct surface *surface, cairo_t *cr) {
         cairo_restore(cr);
     }
 }
-static bool glass_settings(struct app *app) {
-    const char *names[] = {"JLINUX_GLASS_BLUR", "JLINUX_GLASS_TINT", "JLINUX_GLASS_REFLECTION"};
-    bool *values[] = {&app->glass.blur, &app->glass.tint, &app->glass.reflection};
-    for (int i = 0; i < 3; i++) {
-        const char *value = getenv(names[i]);
-        if (value && strcmp(value, "0") && strcmp(value, "1")) {
-            fprintf(stderr, "%s deve ser 0 ou 1.\n", names[i]); return false;
-        }
-        *values[i] = !value || !strcmp(value, "1");
-    }
-    return true;
-}
 /* shortcut: wallpaper-only backdrop; live window blur belongs in the compositor GPU pipeline. */
 static bool prepare_backdrop(struct app *app) {
     int width = app->wallpaper.width, height = app->wallpaper.height;
@@ -294,7 +282,7 @@ static void global_remove(void *data, struct wl_registry *registry, uint32_t nam
 static const struct wl_registry_listener registry_listener = {.global = global, .global_remove = global_remove};
 static int preview(const char *path) {
     struct app app = {0};
-    if (!glass_settings(&app)) { return 1; }
+    if (!jlinux_glass_settings(&app.glass)) { return 1; }
     app.wallpaper = (struct surface){.app = &app, .width = 1672, .height = 941};
     app.panel = (struct surface){.app = &app, .width = 1672 - 2 * PANEL_MARGIN, .height = PANEL_HEIGHT};
     app.dock = (struct surface){.app = &app, .width = DOCK_WIDTH, .height = DOCK_HEIGHT, .hover = -1};
@@ -316,7 +304,7 @@ int main(int argc, char **argv) {
     if (argc != 1) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png]\n"); return 1; }
     struct app app = {.running = true, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
     if (getenv("JLINUX_THEME")) { fprintf(stderr, "JLINUX_THEME/CSS não é suportado pelo shell nativo.\n"); return 1; }
-    if (!glass_settings(&app)) { return 1; }
+    if (!jlinux_glass_settings(&app.glass)) { return 1; }
     sigset_t signals; sigemptyset(&signals); sigaddset(&signals, SIGINT); sigaddset(&signals, SIGTERM); sigaddset(&signals, SIGCHLD);
     if (sigprocmask(SIG_BLOCK, &signals, NULL)) { return 1; }
     app.signals = signalfd(-1, &signals, SFD_CLOEXEC | SFD_NONBLOCK);

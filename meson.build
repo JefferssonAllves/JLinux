@@ -12,14 +12,19 @@ layer_header = custom_target('layer-shell-header',
 xdg_header = custom_target('xdg-shell-header',
   input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-protocol.h',
   command: [scanner, 'server-header', '@INPUT@', '@OUTPUT@'])
-compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/renderer/renderer.c', layer_header, xdg_header,
-  dependencies: [wlroots, wayland, xkb], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
+math = meson.get_compiler('c').find_library('m')
+cairo = dependency('cairo')
+pango = dependency('pangocairo')
+fontconfig = dependency('fontconfig')
+compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
+  dependencies: [wlroots, wayland, xkb, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
+frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
+  'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
+  dependencies: [wlroots, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
+test('window-frame-lifecycle', frame_test)
 if get_option('shell')
   client = dependency('wayland-client')
   cursor = dependency('wayland-cursor')
-  cairo = dependency('cairo')
-  pango = dependency('pangocairo')
-  fontconfig = dependency('fontconfig')
   client_layer_header = custom_target('layer-client-header',
     input: 'protocols/wlr-layer-shell-unstable-v1.xml', output: 'layer-shell-client.h',
     command: [scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
@@ -30,7 +35,7 @@ if get_option('shell')
     input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-client.c',
     command: [scanner, 'private-code', '@INPUT@', '@OUTPUT@'])
   shell = executable('jlinux-shell', 'src/shell/main.c', 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
-    dependencies: [client, cursor, cairo, pango, fontconfig], install: true)
+    dependencies: [client, cursor, cairo, pango, fontconfig, math], install: true)
   blur_test = executable('jlinux-test-blur', 'tests/blur.c', 'src/renderer/blur.c', dependencies: cairo)
   test('blur-image', blur_test)
   test('glass-preview', find_program('scripts/smoke-glass.py'), args: [shell], timeout: 20)
@@ -56,6 +61,7 @@ if foot.found() and wtype.found()
   if get_option('shell')
     test('shell-headless', shell_smoke, args: [compositor, shell, pointer_test], timeout: 20)
   endif
+  test('window-frame-input', find_program('scripts/smoke-window-frame.py'), args: [compositor, pointer_test, foot, wtype], timeout: 35)
   terminal_test = find_program('scripts/smoke-terminal.py')
   test('terminal-input-headless', terminal_test, args: [compositor, pointer_test, foot, wtype], timeout: 40)
 else

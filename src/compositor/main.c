@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "interaction.h"
+#include "../toolkit/painter.h"
 #include "../renderer/renderer.h"
 #include <signal.h>
 #include <errno.h>
@@ -324,5 +325,6 @@ cleanup:
     if (desktop.scene) { wlr_scene_node_destroy(&desktop.scene->tree.node); }
     jlinux_renderer_finish(&desktop.render);
     wl_display_destroy(desktop.display);
+    ui_finish();
     return result;
 }

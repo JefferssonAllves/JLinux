@@ -55,7 +55,7 @@ Desempenho máximo e efeitos máximos podem disputar o mesmo orçamento. O usuá
 
 A estrutura é `src/animation/` para tempo/curvas, `src/effects/` para efeitos independentes e `src/renderer/` para recursos gráficos e apresentação. Contratos e estado real em [visual-pipeline.md](visual-pipeline.md). A direção visual é inspirada no Glass dos dispositivos Apple, conforme [visual-style.md](visual-style.md), preservando identidade e preferências próprias.
 
-O módulo renderer já contém criação/limpeza do renderizador/alocador e apresentação da cena. Os diretórios de animações e efeitos ainda documentam fronteiras; seus motores e shaders não foram implementados. Cada efeito deverá poder ser ativado ou desativado independentemente do motor de animações.
+O módulo renderer já contém criação/limpeza do renderizador/alocador e apresentação da cena. animation/ ainda documenta o motor planejado. effects/glass.c já compõe o material do shell e das molduras; shaders e passes de blur sobre janelas não foram implementados. Cada efeito deverá poder ser ativado ou desativado independentemente do motor de animações.
 
 ## Organização progressiva
 
@@ -71,7 +71,7 @@ O iniciador jlinux-session também é C: runtime privado, prontidão por pipe, s
 
 O shell redesenha por alterações e relógio de 30 segundos. O compositor calcula a área útil dos layers; novas janelas evitam barra/dock e posições encobertas são ajustadas quando essa área muda. Essa política inicial usa a saída central; não constitui gerenciamento multimonitor completo.
 
-Dock abre Foot/Codex. Wi-Fi, Bluetooth, menus e ações de energia não estão integrados: o shell mostra aviso em vez de inventar estados ou executar ações. Não há leitura TOML, recarga de tema, blur/refração, animações, IME ou bloqueio. Popups xdg têm suporte inicial; acessibilidade do toolkit, escala fracionária e navegação completa continuam pendentes.
+Dock abre Foot/Codex. Wi-Fi, Bluetooth, menus e ações de energia não estão integrados: o shell mostra aviso em vez de inventar estados ou executar ações. Há molduras nativas com material compartilhado, transparência, título/fechar e arraste/resize; o blur permanece restrito ao wallpaper do shell. Não há leitura TOML, recarga de tema, blur de janelas/refração, animações, IME ou bloqueio. Popups xdg têm suporte inicial; acessibilidade do toolkit, escala fracionária e navegação completa continuam pendentes.
 
 O código nativo é a primeira fundação de execução, não uma reprodução completa das referências. Desenho SHM atual é feito em CPU e composição pode ser acelerada pela GPU; eficiência precisa de baseline e comparação real.
 

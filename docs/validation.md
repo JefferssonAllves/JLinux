@@ -75,3 +75,11 @@ Medição exploratória única no ambiente local: execução completa de `jlinux
 ### Ajuste de contraste do Glass — fix/glass-contrast
 
 Seis testes locais passaram novamente em release e ASan/UBSan após alterar tonalização, reflexos estáticos e opacidade dos botões. As oito combinações dos controles continuam distintas e válidas. Prévia nativa atualizada e inspecionada; wallpaper preservado. Não houve benchmark de GPU/energia nem confirmação de aprovação pelo usuário.
+
+## Molduras nativas e reflexos localizados — feature/window-glass-frames
+
+Oito testes locais release e ASan/UBSan passaram, sem supressões. Novos testes validam recriação/liberação dos quatro buffers, limites de tamanho, opacidade por foco e quantidade de pixels alocados; teste de entrada com Foot real arrasta pelo cabeçalho, fecha pelo botão e redimensiona pela borda inferior/direita, conferindo mudança de linhas/colunas via stty. Testes anteriores de foco, desconexão, terminal, shell e sessão continuam passando. Negociação de decoração foi ajustada para aguardar inicialização do xdg_surface antes do configure.
+
+Prévias de moldura e barra inspecionadas. Não há blur nas molduras ou máscara arredondada do conteúdo dos aplicativos. Sem benchmark GPU/energia nesta entrega. Testes headless não comprovam comportamento físico completo.
+
+Sessão aninhada iniciada automaticamente usando jlinux-session, mantendo o compositor DRM e terminais anteriores. Logs locais registram backend Wayland, GLES2/Mesa na AMD Radeon e terminal/painel/dock mapeados. Isso confirma inicialização aninhada com GPU, não inspeção visual da sessão ou benchmark. O shell da sessão externa também foi atualizado para os pontos de brilho. Molduras do compositor antigo não podem ser atualizadas ao vivo; a avaliação das molduras novas ocorre na sessão aninhada.
