@@ -101,3 +101,7 @@ Usuário autorizou novo reinício da sessão. Supervisor anterior encerrado norm
 ## Reflexos adicionais das janelas — fix/window-glass-depth
 
 Oito testes release e ASan/UBSan passaram. Teste de moldura adicional confirma que desativar REFLECTION remove o brilho extra (comparação de alpha em ponto iluminado), mantendo a tonalização. Prévia nativa inspecionada. Nova versão aplicada por reinício autorizado da sessão DRM; Codex/painel/dock mapeados. Sem benchmark ou validação visual física pelo assistente. Blur/refração nas molduras permanecem pendentes.
+
+## Acabamento contínuo das bordas — fix/window-dock-material
+
+Oito testes release e ASan/UBSan passaram. Gradiente de cores compartilhado com o dock; decoração usa faixa contínua no lugar dos pontos extras de luz. Prévia de componente inspecionada. Sessão DRM reiniciada com autorização vigente e Codex/painel/dock mapeados. Sem benchmark, blur nas molduras ou aprovação visual final do usuário.

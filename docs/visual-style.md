@@ -69,3 +69,7 @@ O cabeçalho aprovado ganha botão maximizar/restaurar junto ao fechar. Maximiza
 ### Profundidade adicional nas molduras
 
 Cabeçalho retangular e cantos de 6 px preservados. Reflexo vertical em camadas, dois pontos de luz no topo e dois nas bordas laterais reforçam o aspecto de vidro. Contorno interno fino realça espessura. O acabamento adicional pertence a REFLECTION e não altera o material do dock/barra ou o conteúdo do aplicativo. São reflexos estáticos estilizados, não simulação óptica ou blur.
+
+### Acabamento contínuo das bordas
+
+Após pedido para aproximar as bordas ao dock, a moldura passa a reutilizar o mesmo gradiente de contorno do dock, com faixa suave contínua e linha interna. Os clarões extras isolados nas laterais foram removidos. Cabeçalho retangular e cantos de 6 px preservados. A equivalência de paleta não significa blur idêntico: as molduras ainda usam transparência sem desfoque de fundo.
