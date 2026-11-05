@@ -89,3 +89,7 @@ Sessão interativa iniciada automaticamente no hardware após CI verde do PR #6,
 - **EFFECT-01:** implementar efeitos em effects/, começando pelo caminho simples e medindo cada passe; renderer/ executa a apresentação. Refração e reflexão dinâmica exigem medição antes de habilitar como padrão.
 
 Referências: docs/visual-pipeline.md e docs/visual-style.md. O exemplo TOML v2 expressa essa divisão, mas continua sem parser ou aplicação ao vivo.
+
+## Avaliação visual Glass V1
+
+**DESIGN-01 · aguardando avaliação do usuário:** imagem conceitual em docs/design/jlinux-glass-v1.png, com página de prévia docs/design/README.md. Dock à esquerda, barra superior com Wi-Fi/Bluetooth/energia, menu de suspensão/reinício/desligamento e paleta roxo/rosa. Não é captura real ou funcionalidade implementada. Próxima ação: receber feedback e iterar a composição antes da interface nativa definitiva.

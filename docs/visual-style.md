@@ -25,3 +25,9 @@ Ferramentas web são usadas para discutir aparência e interação com o usuári
 Mesmo sem blur ou refração, o tema deve oferecer um fallback legível. Movimento reduzido não remove automaticamente o material; redução de transparência não deve desativar transições geométricas. O usuário poderá escolher desde superfícies sólidas até a combinação de efeitos desejada, dentro das capacidades implementadas.
 
 No hardware com Radeon integrada, medir largura de banda, memória, tempo de quadro e energia por efeito. Refração e materiais dependentes do fundo entram depois da linha de base e da validação do caminho simples. Nenhuma redução automática deve alterar silenciosamente o gosto do usuário.
+
+## Proposta V1 para avaliação
+
+O usuário definiu dock vertical à esquerda, barra superior com Wi-Fi/Bluetooth e menu Suspender/Reiniciar/Desligar, visual Glass e detalhes predominantes em roxo/rosa. A correção mais recente de posição é **à esquerda**.
+
+A [imagem V1](design/README.md) é um estudo visual gerado para avaliação pelo celular via GitHub. Não é screenshot do desktop atual nem visual aprovado. Próxima implementação deve considerar o feedback do usuário antes de reproduzir a composição nativamente.
