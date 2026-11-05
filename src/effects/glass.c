@@ -117,16 +117,24 @@ void jlinux_glass_window_reflections(cairo_t *cr, struct ui_rect rect, double ra
     cairo_pattern_add_color_stop_rgba(sheen, 1, .65, .72, .94, .12);
     cairo_save(cr); cairo_rectangle(cr, rect.x, rect.y, rect.width, header); cairo_clip(cr);
     cairo_set_source(cr, sheen); cairo_paint(cr); cairo_restore(cr); cairo_pattern_destroy(sheen);
-    /* Reuse the dock's palette across a soft, continuous glass bevel. */
-    cairo_pattern_t *rim = rim_colors(rect, radius, false);
-    cairo_push_group(cr);
-    rounded(cr, rect, radius); cairo_set_source(cr, rim);
-    cairo_set_line_width(cr, 12); cairo_stroke(cr);
-    cairo_pop_group_to_source(cr); cairo_paint_with_alpha(cr, .30);
-    struct ui_rect inner = {rect.x + 4.5, rect.y + 4.5, rect.width - 9, rect.height - 9};
-    rounded(cr, inner, radius - 4.5); cairo_set_source_rgba(cr, .69, .78, .94, .22);
+    rounded(cr, rect, radius); cairo_set_source_rgba(cr, .57, .64, .91, .36);
     cairo_set_line_width(cr, .8); cairo_stroke(cr);
-    rounded(cr, rect, radius); cairo_set_source(cr, rim);
-    cairo_set_line_width(cr, 1); cairo_stroke(cr); cairo_pattern_destroy(rim);
+    const double lights[4][7] = {
+        {rect.x + rect.width * .27, rect.y + .7, 1, .065, .46, .69, 1},
+        {rect.x + .7, rect.y + rect.height * .35, .065, 1, .48, .68, 1},
+        {rect.x + rect.width - .7, rect.y + rect.height * .76, .065, 1, .76, .49, 1},
+        {rect.x + rect.width * .64, rect.y + rect.height - .7, 1, .065, .65, .48, 1},
+    };
+    for (int i = 0; i < 4; i++) {
+        cairo_save(cr); cairo_translate(cr, lights[i][0], lights[i][1]);
+        cairo_scale(cr, lights[i][2], lights[i][3]);
+        cairo_pattern_t *light = cairo_pattern_create_radial(0, 0, 0, 0, 0, 60);
+        cairo_pattern_add_color_stop_rgba(light, 0, 1, 1, 1, 1);
+        cairo_pattern_add_color_stop_rgba(light, .035, .93, .96, 1, .98);
+        cairo_pattern_add_color_stop_rgba(light, .14, lights[i][4], lights[i][5], lights[i][6], .80);
+        cairo_pattern_add_color_stop_rgba(light, .48, lights[i][4], lights[i][5], lights[i][6], .20);
+        cairo_pattern_add_color_stop_rgba(light, 1, lights[i][4], lights[i][5], lights[i][6], 0);
+        cairo_set_source(cr, light); cairo_paint(cr); cairo_pattern_destroy(light); cairo_restore(cr);
+    }
     cairo_restore(cr);
 }
