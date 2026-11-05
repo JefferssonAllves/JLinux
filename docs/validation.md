@@ -113,3 +113,13 @@ Oito testes release e ASan/UBSan passaram após reduzir bordas para 3 px e remov
 ## Sombra interna e contorno superior fino — fix/window-rim-shading
 
 Oito testes locais release e ASan/UBSan passaram. Novos asserts verificam sombreamento independente com REFLECTION desligado; preferência SHADOW inválida é rejeitada. Prévias de janela/barra inspecionadas. Nenhum benchmark ou novo reinício DRM nesta etapa: usuário solicitou preparar instalação/inicialização real no Arch.
+
+## Login próprio e instalação Arch — feature/arch-session-install
+
+Onze testes locais release e ASan/UBSan passaram. Novos testes: autenticação IPC com servidor simulado (prompts secretos/visíveis, info, recusa/cancelamento, resposta inválida/oversize/desconexão); greeter headless e recusa sem GREETD_SOCK; fluxo real de digitação de usuário/senha fictícios na UI, pedido de sessão e ausência da senha nos logs. Isso não valida PAM físico. CI do commit 45c6752 passou com dez testes, antes da ampliação do teste de digitação.
+
+Pacote Arch `jlinux-desktop-git 0.5.0.r33.g45c6752-1` compilado a partir do GitHub com arch-meson/makepkg, dez testes aprovados no build de pacote, instalado pelo pacman. Não houve release/tag. `pacman -Qo` confirmou propriedade de compositor/greeter/entrada Wayland; binários root:root 0755. Staging, validação desktop-file/TOML, shell syntax e systemd-analyze verify passaram. O binário instalado também iniciou sessão headless com limpeza e gerou a prévia do login.
+
+Configurador executado: greetd habilitado (alias display-manager), graphical.target padrão, TTY2 habilitado/ativo. Backup em `/var/lib/jlinux-login-backup.qsemGPVh`. Serviço greetd permanece inativo nesta sessão para não encerrar o TTY1 que sustenta o trabalho; será iniciado no próximo boot. Nenhuma regra PAM foi alterada, nenhum autologin configurado. Primeiro boot/login com senha e troca física de VT permanecem pendentes.
+
+Sessão principal anterior encerrada conforme autorização vigente e iniciada com `/usr/bin/jlinux-session --drm --codex`; processos compositor/shell também são os instalados em `/usr/bin`. Logs confirmam Codex/painel/dock mapeados. É execução instalada real, sem dependência de binários em /srv/JLinux, mas ainda não é uma sessão autenticada através do novo greeter.

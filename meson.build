@@ -72,6 +72,7 @@ if foot.found() and wtype.found()
   pointer_test = executable('jlinux-test-pointer', 'tests/pointer-client.c', pointer_header, pointer_code,
     dependencies: client_dep)
   if get_option('shell')
+    test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
     test('shell-headless', shell_smoke, args: [compositor, shell, pointer_test], timeout: 20)
   endif
   test('window-frame-input', find_program('scripts/smoke-window-frame.py'), args: [compositor, pointer_test, foot, wtype], timeout: 35)
@@ -80,6 +81,7 @@ if foot.found() and wtype.found()
 else
   warning('Teste de terminal/entrada indisponível: instale foot e wtype')
   if get_option('shell')
+    test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
     test('shell-headless', shell_smoke, args: [compositor, shell], timeout: 15)
   endif
 endif

@@ -9,7 +9,8 @@ A receita de desenvolvimento está em `packaging/arch/PKGBUILD`. Ela acompanha a
 Em uma pasta de build, com as dependências do PKGBUILD instaladas:
 
 ```sh
-makepkg -p /srv/JLinux/packaging/arch/PKGBUILD --cleanbuild --noconfirm
+cp /srv/JLinux/packaging/arch/PKGBUILD ./PKGBUILD
+makepkg --cleanbuild --noconfirm
 sudo pacman -U ./jlinux-desktop-git-*.pkg.tar.zst
 sudo pacman -S --needed greetd cage
 sudo /usr/lib/jlinux/enable-login.sh
@@ -51,3 +52,11 @@ Isso encerra sessões gerenciadas pelo greetd. Para recuperar o arquivo anterior
 Testes headless cobrem desenho, ciclo de vida e recusa de iniciar sem greetd. Um servidor simulado cobre prompts secretos/visíveis, mensagens informativas, recusa, cancelamento, início da sessão e mensagens inválidas. Release e ASan/UBSan são verificados separadamente. Esses testes **não comprovam o login PAM real com a senha do usuário**; essa confirmação requer uso da tela real. Boot completo e retomada também precisam de validação física.
 
 Protocolo: documentação primária de [greetd_ipc](https://docs.rs/greetd_ipc/0.10.3/greetd_ipc/). Configuração: manual `greetd(5)` instalado pelo Arch. Não foram alteradas as regras PAM existentes.
+
+## Estado aplicado nesta máquina
+
+Instalado pelo pacman: `jlinux-desktop-git 0.5.0.r33.g45c6752-1`, compilado da branch de trabalho, sem release/tag. Binários pertencem ao pacote e são root:root 0755. Sessão principal foi reiniciada a partir de `/usr/bin/jlinux-session --drm --codex` e mapeou Codex/painel/dock. O login de boot inicia um terminal comum; Codex continua disponível pelo dock.
+
+`greetd.service` está habilitado e é o alias display-manager; `graphical.target` é o alvo padrão. Não foi iniciado sobre o TTY1 corrente nem houve reboot do computador. No próximo boot ele deve abrir a tela de login. `getty@tty2.service` está habilitado e ativo. Backup inicial: `/var/lib/jlinux-login-backup.qsemGPVh`. O primeiro login PAM real e o boot completo ainda precisam da confirmação física do usuário.
+
+Além dos testes de protocolo, `login-flow-headless` digita usuário e senha fictícios no greeter real, confirma o pedido de sessão com um serviço simulado e verifica que a senha não aparece nos logs. Não é autenticação PAM real. Onze testes locais passaram em release e ASan/UBSan; o pacote passou dez testes no build Arch anterior à adição desse teste. Nenhum algoritmo de execução mudou entre o commit instalado e essa ampliação de testes/documentação.

@@ -196,3 +196,9 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - **LOGIN-01 · implementado em validação:** greeter C/Wayland com material nativo, usuário/PAM, campos secretos mascarados, compose XKB e IPC JSON limitado/não bloqueante. greetd autentica; Cage isola a tela de login. Desktop mantém compositor próprio. Prévia explicitamente não autentica.
 - **RECOVERY-VT · implementado:** compositor DRM recebe sessão wlroots emprestada e encaminha Ctrl+Alt+F1…F12; não cria/destrói a sessão do backend. Teste físico pendente.
 - **TESTES:** dez testes release e ASan/UBSan passaram antes do empacotamento; IPC usa servidor simulado, sem senha real. Instalação/boot e PAM físico ainda pendentes nesta etapa. Instruções em docs/arch-installation.md.
+
+### Instalação concluída e boot habilitado
+
+- **ARCH-SESSION · instalado/configurado:** pacote pacman `0.5.0.r33.g45c6752-1` compilado com flags Arch e dez testes aprovados. Binários/root ownership, entrada de sessão e instalador conferidos. Sessão DRM principal agora executa `/usr/bin/jlinux-session`, compositor e shell do pacote. Últimos ajustes de sombra interna/contornos superiores finos estão ativos.
+- **BOOT-LOGIN · configurado, validação física pendente:** greetd habilitado como display-manager para o próximo boot, alvo graphical, sem autologin. TTY2 habilitado/ativo e backup anterior salvo. Nenhum reboot do computador ou substituição do login TTY1 ativo foi feito.
+- **LOGIN-TEST · onze testes locais release/ASan/UBSan aprovados:** inclui fluxo completo de digitação no greeter com greetd simulado, além de prompts/recusa/cancelamento/limites. O login PAM real não foi simulado como resultado físico; aguarda usuário no próximo boot. PR permanece draft até essa confirmação.

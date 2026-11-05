@@ -49,3 +49,8 @@
 
 - Por pedido explícito do usuário, toda atualização concluída deve receber commit coeso e push para a branch de trabalho no GitHub, após os checks pertinentes. Não deixar a entrega apenas local. Informar se o envio falhar.
 - Essa autorização não inclui push direto em main/develop nem merge de PR, tags ou releases.
+
+## Instalação ativa do Arch
+
+- Há pacote `jlinux-desktop-git` instalado pelo pacman, com binários em `/usr/bin`, e greetd habilitado para o próximo boot. Não confundir alteração em build-native/ com atualização da instalação. Registrar commit/versão efetivamente instalados e distinguir runtime atual, prévia e primeiro login PAM.
+- Receita em packaging/arch/PKGBUILD, instruções/recuperação em docs/arch-installation.md. Preservar backups e TTY2; não solicitar senha pelo chat nem alterar regras PAM para contornar autenticação.

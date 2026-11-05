@@ -67,3 +67,9 @@ O antigo `scripts/run-desktop.py` e o tema CSS foram removidos. TOML continua se
 - `scripts/smoke-*.py`: testes de integração em runtime privado.
 
 Plano: [TASKS.md](TASKS.md). [Arquitetura](docs/architecture.md), [referências do usuário](docs/design/README.md), [validação](docs/validation.md) e [fluxo de branches](CONTRIBUTING.md).
+
+## Instalação no Arch e tela de login
+
+Pacote `jlinux-desktop-git`, login próprio em C/Wayland e inicialização via greetd. O desktop instalado executa de `/usr/bin`; a pasta de desenvolvimento não é necessária para entrar na sessão. O login mantém autenticação PAM do Arch e não usa o modo de demonstração. Consulte [instalação, primeiro login e recuperação por TTY2](docs/arch-installation.md).
+
+[Prévia do login nativo](docs/design/native-login-preview.png). A imagem é uma prévia de desenho; não valida PAM real.
