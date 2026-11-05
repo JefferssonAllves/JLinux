@@ -24,6 +24,14 @@ int main(int argc, char **argv) {
         &pixels, &format, &stride));
     uint32_t lit = *(uint32_t *)((unsigned char *)pixels + stride + 195 * 4);
     wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
+    CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[3]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,
+        &pixels, &format, &stride));
+    int peak_x = (int)((frame.parts[3]->buffer->width - 1) * .64 + .5);
+    uint32_t peak = *(uint32_t *)((unsigned char *)pixels + stride + peak_x * 4);
+    uint32_t quiet = *(uint32_t *)((unsigned char *)pixels + stride + 280 * 4);
+    wlr_buffer_end_data_ptr_access(frame.parts[3]->buffer);
+    CHECK((peak >> 24) > (quiet >> 24) + 60);
+
     effects.reflection = false;
     CHECK(jlinux_window_frame_update(&frame, 711, 411, "JLinux Terminal", effects, false));
     CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[0]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,

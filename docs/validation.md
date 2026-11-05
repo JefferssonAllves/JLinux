@@ -105,3 +105,7 @@ Oito testes release e ASan/UBSan passaram. Teste de moldura adicional confirma q
 ## Acabamento contínuo das bordas — fix/window-dock-material
 
 Oito testes release e ASan/UBSan passaram. Gradiente de cores compartilhado com o dock; decoração usa faixa contínua no lugar dos pontos extras de luz. Prévia de componente inspecionada. Sessão DRM reiniciada com autorização vigente e Codex/painel/dock mapeados. Sem benchmark, blur nas molduras ou aprovação visual final do usuário.
+
+## Bordas finas e pontos intensos — fix/thin-window-highlights
+
+Oito testes release e ASan/UBSan passaram após reduzir bordas para 3 px e remover a faixa larga. Teste do componente verifica contraste de alpha entre o centro de um brilho e trecho discreto, além da desativação de REFLECTION. Testes de maximização adaptados à nova moldura: conteúdo 1274×681 em 3,36 sem shell; 1204×631 em 73,86 com barra/dock, na saída simulada 1280×720. Prévia nativa inspecionada e atualizada. Sessão DRM reiniciada usando autorização vigente; Codex/painel/dock mapeados. Sem benchmark ou aprovação visual final; blur nas molduras segue pendente.

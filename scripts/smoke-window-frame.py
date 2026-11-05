@@ -54,7 +54,7 @@ with tempfile.TemporaryDirectory(prefix="jlinux-frame-") as directory:
                         wait_for(lambda: marker.exists() and marker.stat().st_size, [server, client], "tamanho do terminal")
                         return tuple(map(int, marker.read_text().split()))
                     if number == 3:
-                        if (x, y, width, height) != (6, 36, 1268, 678):
+                        if (x, y, width, height) != (3, 36, 1274, 681):
                             raise RuntimeError(f"Maximização inicial não respeitou moldura: {(x, y, width, height)}")
                         subprocess.run([wtype, "-M", "logo", "-k", "Down", "-m", "logo"], env=env, check=True, timeout=4)
                         stop(client)

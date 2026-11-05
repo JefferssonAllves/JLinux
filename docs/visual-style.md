@@ -73,3 +73,7 @@ Cabeçalho retangular e cantos de 6 px preservados. Reflexo vertical em camadas,
 ### Acabamento contínuo das bordas
 
 Após pedido para aproximar as bordas ao dock, a moldura passa a reutilizar o mesmo gradiente de contorno do dock, com faixa suave contínua e linha interna. Os clarões extras isolados nas laterais foram removidos. Cabeçalho retangular e cantos de 6 px preservados. A equivalência de paleta não significa blur idêntico: as molduras ainda usam transparência sem desfoque de fundo.
+
+### Correção após rejeição da faixa grossa
+
+O usuário rejeitou o contorno largo contínuo. Direção atual: bordas laterais/inferior de 3 px, linha discreta de 0,8 px entre quatro pontos intensos, núcleo quase branco e reflexão azul/violeta localizada. Cabeçalho retangular e raio discreto de 6 px preservados. A faixa larga da iteração anterior foi removida; dock/barra permanecem como estavam. Não declarar fidelidade exata à foto sem aprovação.

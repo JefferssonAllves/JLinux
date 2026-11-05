@@ -178,3 +178,8 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 
 - Gradiente de contorno extraído em helper compartilhado: molduras reutilizam a paleta do dock. Clarões pontuais extras nas laterais removidos; faixa suave contínua e linha interna reforçam espessura. Geometria, controles e material do dock preservados.
 - Oito testes release e ASan/UBSan passaram; prévia do componente atualizada/inspecionada. Sessão DRM reiniciada conforme autorização vigente; Codex/painel/dock mapeados. Aprovação visual pendente; sem benchmark ou blur nas molduras.
+
+## Bordas finas com pontos intensos — fix/thin-window-highlights
+
+- Iteração anterior rejeitada pelo usuário por espessura excessiva. Moldura lateral/inferior reduzida de 6 para 3 px; faixa larga de brilho removida. Contorno discreto de 0,8 px e quatro reflexos localizados com núcleo branco intenso. Cabeçalho retangular de 36 px e raio de 6 px preservados; dock/barra intactos.
+- Oito testes release e ASan/UBSan passaram. Geometria maximizada atualizada nos testes; contraste entre ponto brilhante e trecho discreto verificado no buffer. Prévia inspecionada. Sessão DRM reiniciada conforme autorização vigente, com Codex/painel/dock mapeados. Aprovação visual e benchmark pendentes.
