@@ -44,3 +44,17 @@ CodeBurn: lê dados locais de sessões quando executado para análise. A instala
 - Ponytail: https://github.com/DietrichGebert/ponytail
 
 Os comandos acima reproduzem os métodos de instalação, mas sem fixação de versão baixarão as versões disponíveis naquele momento. Para reinstalar exatamente as CLIs registradas, usar `headroom-ai[mcp]==0.42.0`, `graphifyy==0.9.102` e `codeburn@0.9.27`. As dependências transitivas não foram congeladas neste documento.
+
+## Ferramentas de design adicionadas
+
+- **shadcn 4.23.0:** CLI instalada em ~/.local e MCP registrado no Codex com `shadcn mcp`. Não foi inicializado um projeto React no JLinux.
+- **Magic MCP 0.2.3 / plugin 21st 1.0.1:** pacote de compatibilidade instalado e plugin oficial habilitado. O Magic foi sucedido por 21st MCP. Requer uma chave `API_KEY_21ST`, ausente no ambiente verificado; autenticação e acesso aos componentes continuam pendentes. Não foram gravadas chaves em arquivos do projeto.
+- **frontend-design:** skill oficial de anthropics/skills, ref `ca45fc496a3436251f191354091d557da31c15b5`.
+- **find-skills:** descoberta e instalação sob demanda, de vercel-labs/skills, ref `e80e8255bb89ce3288edc34d6cead20cbb7cc521`. Complementa o Skill Installer já disponível; não é um processo permanente.
+- **liquid-glass-design:** referência ao efeito de vidro do iPhone, de affaan-m/ECC, ref `b38be6a7f6350964d59328b52f0624e1d1d552d1`. A skill descreve APIs SwiftUI/UIKit/WidgetKit: serve como referência de Apple Liquid Glass, não implementa esse efeito no compositor Linux.
+
+As skills foram instaladas em ~/.codex/skills, com links de descoberta em ~/.agents/skills. Carregar no próximo turno ou recarregar o cliente. shadcn e 21st atendem componentes web; o desktop permanece nativo em C. A instalação dessas ferramentas não entrega temas, componentes de vidro ou efeitos no JLinux.
+
+Fontes: https://ui.shadcn.com/docs/mcp, https://github.com/21st-dev/magic-mcp, https://github.com/anthropics/skills, https://github.com/vercel-labs/skills, https://github.com/affaan-m/ECC.
+
+Verificado: versão e ajuda de shadcn, CLI registrada em `codex mcp list`, pacote npm Magic e plugin 21st instalados, três diretórios de skills presentes. O handshake MCP será verificado separadamente; 21st depende de autenticação.
