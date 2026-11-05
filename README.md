@@ -53,3 +53,5 @@ meson install -C build
 ## Desenvolvimento
 
 `main` reúne versões estáveis; `develop` integra o próximo ciclo. Funcionalidades, correções e manutenção passam por branches próprias e pull requests. Consulte [CONTRIBUTING.md](CONTRIBUTING.md) antes de alterar o projeto.
+
+O plano inicial está em [TASKS.md](TASKS.md). Perfis de agentes, skills e estado das integrações estão documentados em [docs/agent-tooling.md](docs/agent-tooling.md).
