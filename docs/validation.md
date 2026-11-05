@@ -97,3 +97,7 @@ Prévia de componentes atualizada. Sessão DRM corrente preservada e ainda usa a
 ### Ativação da maximização na sessão principal
 
 Usuário autorizou novo reinício da sessão. Supervisor anterior encerrado normalmente e sessão iniciada com a versão feature/window-maximize via `jlinux-session --drm --codex`. Logs confirmam AMD Radeon/GLES2, saída HDMI-A-1 e Codex/wallpaper/painel/dock mapeados. Maximizar/restaurar e a correção da área útil agora estão no compositor da sessão principal; teste físico e avaliação do usuário continuam pendentes.
+
+## Reflexos adicionais das janelas — fix/window-glass-depth
+
+Oito testes release e ASan/UBSan passaram. Teste de moldura adicional confirma que desativar REFLECTION remove o brilho extra (comparação de alpha em ponto iluminado), mantendo a tonalização. Prévia nativa inspecionada. Nova versão aplicada por reinício autorizado da sessão DRM; Codex/painel/dock mapeados. Sem benchmark ou validação visual física pelo assistente. Blur/refração nas molduras permanecem pendentes.

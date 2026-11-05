@@ -19,6 +19,20 @@ int main(int argc, char **argv) {
         jlinux_window_frame_focus(&frame, false); CHECK(frame.parts[0]->opacity < 1);
         jlinux_window_frame_focus(&frame, true); CHECK(frame.parts[0]->opacity == 1);
     }
+    void *pixels; uint32_t format; size_t stride;
+    CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[0]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,
+        &pixels, &format, &stride));
+    uint32_t lit = *(uint32_t *)((unsigned char *)pixels + stride + 195 * 4);
+    wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
+    effects.reflection = false;
+    CHECK(jlinux_window_frame_update(&frame, 711, 411, "JLinux Terminal", effects, false));
+    CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[0]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,
+        &pixels, &format, &stride));
+    uint32_t plain = *(uint32_t *)((unsigned char *)pixels + stride + 195 * 4);
+    wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
+    CHECK((lit >> 24) > (plain >> 24));
+    effects.reflection = true;
+    CHECK(jlinux_window_frame_update(&frame, 711, 411, "JLinux Terminal", effects, false));
     if (argc == 3 && !strcmp(argv[1], "--preview")) {
         cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 800, 520);
         cairo_t *cr = cairo_create(image); ui_wallpaper(cr, 800, 520);

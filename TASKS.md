@@ -167,3 +167,9 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 **Feedback visual do usuário:** base inicial de vidro, cabeçalhos retangulares, bordas iluminadas e cantos discretos aprovada como versão inicial após o reinício anterior. Preservar essa direção; isso não conclui o Glass completo.
 
 **WM-MAX · ativação realizada:** usuário autorizou reinício e a versão nova foi iniciada na sessão DRM principal, com Codex, painel e dock mapeados. Pendente avaliação física pelo usuário; testes automatizados já registrados acima.
+
+## Vidro mais evidente nas janelas — fix/window-glass-depth
+
+- Cabeçalho com reflexão em camadas e pontos de luz no topo/laterais, contorno interno fino para destacar espessura. Efeito exclusivo das molduras em effects/, sem alterar dock/barra, geometria ou hit testing. REFLECTION desativado remove o acabamento adicional; sem animação ou timer novo.
+- Oito testes release e ASan/UBSan passaram; teste do componente compara transparência do brilho com/sem reflexão. Prévia inspecionada e atualizada. Sem blur/refração nas molduras ou benchmark GPU/energia.
+- Sessão DRM reiniciada usando autorização do usuário, com Codex/painel/dock mapeados. Pendente avaliação visual do usuário.

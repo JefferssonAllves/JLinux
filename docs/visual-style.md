@@ -65,3 +65,7 @@ O cabeçalho das janelas permanece retangular, com vidro semelhante ao dock. Con
 ### Maximização e área útil
 
 O cabeçalho aprovado ganha botão maximizar/restaurar junto ao fechar. Maximizar mantém a moldura e ocupa a área útil restante da saída central, respeitando barra e dock; restaurar recupera posição/tamanho e mantém o cabeçalho acessível caso a área útil tenha mudado. O dock fica centralizado na área abaixo da barra. Multimonitor completo continua pendente.
+
+### Profundidade adicional nas molduras
+
+Cabeçalho retangular e cantos de 6 px preservados. Reflexo vertical em camadas, dois pontos de luz no topo e dois nas bordas laterais reforçam o aspecto de vidro. Contorno interno fino realça espessura. O acabamento adicional pertence a REFLECTION e não altera o material do dock/barra ou o conteúdo do aplicativo. São reflexos estáticos estilizados, não simulação óptica ou blur.
