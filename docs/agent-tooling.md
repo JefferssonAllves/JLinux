@@ -47,3 +47,7 @@ Não há plugin obrigatório para compilar. As conexões dependem da conta e nã
 
 - https://learn.chatgpt.com/docs/agent-configuration/subagents
 - https://learn.chatgpt.com/docs/build-skills
+
+## Ferramentas adicionais solicitadas
+
+Headroom, Graphify, CodeBurn e Ponytail foram instalados localmente. Versões, fontes, comandos e limites da ativação estão em [development-tools.md](development-tools.md). Instalação não implica compressão automática, grafo atualizado ou hooks executados nesta conversa.
