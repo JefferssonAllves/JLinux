@@ -49,3 +49,7 @@ meson install -C build
 - `docs/`: hardware, arquitetura, evolução e validação.
 - `scripts/`: coleta de hardware e teste headless.
 - `.github/workflows/`: compilação e teste automatizado em Arch Linux.
+
+## Desenvolvimento
+
+`main` reúne versões estáveis; `develop` integra o próximo ciclo. Funcionalidades, correções e manutenção passam por branches próprias e pull requests. Consulte [CONTRIBUTING.md](CONTRIBUTING.md) antes de alterar o projeto.
