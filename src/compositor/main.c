@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#include "interaction.h"
 #include <signal.h>
 #include <stdlib.h>
 #include <time.h>
@@ -27,7 +28,8 @@ struct desktop {
     struct wlr_scene_output_layout *scene_layout;
     struct wl_listener new_output, new_layer, layout_change;
     struct wl_list monitors, layers;
-    struct wlr_scene_tree *wallpapers, *layer_trees[4];
+    struct wlr_scene_tree *wallpapers, *layer_trees[4], *windows;
+    struct interaction *interaction;
     unsigned int output_count;
 };
 
@@ -267,14 +269,19 @@ int main(void) {
     desktop.wallpapers = wlr_scene_tree_create(&desktop.scene->tree);
     if (!desktop.wallpapers) { goto cleanup; }
     for (int level = 0; level < 4; level++) {
+        if (level == 2) {
+            desktop.windows = wlr_scene_tree_create(&desktop.scene->tree);
+            if (!desktop.windows) { goto cleanup; }
+        }
         desktop.layer_trees[level] = wlr_scene_tree_create(&desktop.scene->tree);
         if (!desktop.layer_trees[level]) { goto cleanup; }
     }
     desktop.layout_change.notify = layout_changed;
     wl_signal_add(&desktop.layout->events.change, &desktop.layout_change);
     struct wlr_layer_shell_v1 *shell = wlr_layer_shell_v1_create(desktop.display, 4);
-    if (!shell || !wlr_seat_create(desktop.display, "seat0") ||
-        !wlr_xdg_shell_create(desktop.display, 3)) { goto cleanup; }
+    desktop.interaction = interaction_create(desktop.display, desktop.backend, desktop.layout,
+        desktop.scene, desktop.windows);
+    if (!shell || !desktop.interaction) { goto cleanup; }
     desktop.new_layer.notify = add_shell_surface;
     wl_signal_add(&shell->events.new_surface, &desktop.new_layer);
     desktop.scene_layout = wlr_scene_attach_output_layout(desktop.scene, desktop.layout);
@@ -292,6 +299,7 @@ int main(void) {
         wlr_log(WLR_ERROR, "%s", "Nenhuma saída ativa; encerrando o protótipo");
         goto cleanup;
     }
+    if (setenv("WAYLAND_DISPLAY", socket, 1) != 0) { goto cleanup; }
     wlr_log(WLR_INFO, "JLinux compositor pronto: WAYLAND_DISPLAY=%s", socket);
     wl_display_run(desktop.display);
     result = EXIT_SUCCESS;
@@ -299,6 +307,7 @@ cleanup:
     if (interrupt) { wl_event_source_remove(interrupt); }
     if (terminate) { wl_event_source_remove(terminate); }
     wl_display_destroy_clients(desktop.display);
+    interaction_destroy(desktop.interaction);
     wl_list_remove(&desktop.new_output.link);
     wl_list_remove(&desktop.new_layer.link);
     wl_list_remove(&desktop.layout_change.link);

@@ -55,7 +55,11 @@ Manter política de janelas e interpretação de preferências fora dos detalhes
 
 O teste headless/Pixman mapeia wallpaper e painel e reinicia o shell duas vezes sem derrubar o compositor. Há build ASan/UBSan separado. Não houve validação visual em monitor físico ou medição de desempenho.
 
-O global xdg-shell é publicado para inicializar o toolkit, mas ainda não há política de gerenciamento de janelas xdg ou entrada. O seat não anuncia teclado/ponteiro. Não há popups layer-shell, interação de painel, animações, efeitos ou adaptação automática. Exclusões de área são calculadas para posicionar layers; aplicação a janelas depende de WM-01. O primeiro shell usa GTK como etapa de prototipação; toolkit próprio permanece planejado.
+A versão 0.4 adiciona janelas xdg, popups básicos, teclado XKB, ponteiro com cursor, foco por clique, alternância, movimento e redimensionamento via Super+mouse. O terminal inicial é Foot, com shell normal ou Codex CLI. O módulo interaction.c contém essas responsabilidades, separado do shell GTK.
+
+Há atalhos para terminal, fechar janela e encerrar sessão. O runner suporta DRM explícito a partir do TTY, supervisiona processos com pidfd e usa grupos de processos para limpeza. Não substitui a sessão de login.
+
+Entrada virtual é habilitada apenas por variável de teste em runtime privado. Popups layer-shell, política completa de área exclusiva para janelas, múltiplas saídas/hotplug avançado, IME, maximização e tela cheia ainda precisam de trabalho. Não há animações, efeitos ou adaptação automática. O primeiro shell usa GTK como etapa de prototipação; toolkit próprio permanece planejado.
 
 ## Etapas e critérios de entrega
 

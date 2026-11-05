@@ -32,3 +32,11 @@ A configuração TOML é somente proposta. Nenhuma animação, efeito ou adapta�
 - Instalação em staging: passou. Build exclusivo de compositor com `-Dshell=false` e smoke test: passaram.
 
 O suporte layer-shell inicial configura tamanho/posição e camadas, fecha layers quando sua saída é destruída e permite reiniciar o shell. Não implementa entrada, popups, política para janelas xdg, bloqueio ou portais. Não houve inspeção visual em monitor físico, teste aninhado com GPU ou benchmark; somente mapeamento headless. O relógio atualiza a cada 30 segundos; não há efeitos ou animações contínuas.
+
+## Terminal e entrada (0.4.0)
+
+Release e ASan/UBSan: os três testes passaram. Novo teste abre dois Foot reais, digita comandos que escrevem uma identificação em arquivo temporário, troca foco com cliente de ponteiro virtual, fecha a janela focada e confirma entrada na outra; encerra o compositor por Super+Esc. Introduz espera de sincronização para criação dos recursos de entrada dos clientes antes de injetar eventos.
+
+Runner headless com terminal e duração limitada: passou. Execução curta DRM/libinput por quatro segundos: passou sem queda dos processos. Não equivale a teste manual de teclado/mouse ou inspeção visual. A execução persistente solicitada pelo usuário será verificada pelos logs de dispositivos e mapeamento antes da entrega. Não há benchmark nesta etapa.
+
+Foot e wtype são binários do sistema, não instrumentados no build ASan. O teste injeta entrada somente quando JLINUX_TEST_INPUT=1; a sessão normal não publica os protocolos de entrada virtual. Bibliotecas do sistema continuam fora da instrumentação.

@@ -20,9 +20,9 @@ Estados: **concluído** = implementação e evidências indicadas; **em andament
 
 | ID | Prioridade / estado | Tarefa | Dependências | Perfil | Critério de conclusão |
 | --- | --- | --- | --- | --- | --- |
-| WM-01 | P0 · pendente | xdg-shell e janelas | BASE-02 | compositor-engineer | Configure/map/unmap/destroy e popups; múltiplos clientes reais; desconexão sem crash |
-| INPUT-01 | P0 · pendente | Teclado e ponteiro | WM-01 | compositor-engineer | Seat, keymap, movimento, cliques, foco e hotplug; não perder entrada após fechar janela |
-| WM-02 | P1 · pendente | Mover, redimensionar e atalhos | WM-01, INPUT-01 | compositor-engineer | Interações com validação de serial; fechar janela, alternar foco e encerrar sessão |
+| WM-01 | P0 · parcial na branch | xdg-shell e janelas | BASE-02 | compositor-engineer | Configure/map/unmap/destroy e popups; múltiplos clientes reais; desconexão sem crash |
+| INPUT-01 | P0 · parcial na branch | Teclado e ponteiro | WM-01 | compositor-engineer | Seat, keymap, movimento, cliques, foco e hotplug; não perder entrada após fechar janela |
+| WM-02 | P1 · parcial na branch | Mover, redimensionar e atalhos | WM-01, INPUT-01 | compositor-engineer | Interações com validação de serial; fechar janela, alternar foco e encerrar sessão |
 | SHELL-01 | P1 · pendente | Lançador e painel interativos | UI-01, INPUT-01, WM-01 | visual-engineer | Abrir aplicativos .desktop sem shell interpolation; estados vazios e falhas visíveis |
 | WM-03 | P1 · pendente | Espaços de trabalho e regras | WM-02 | compositor-engineer | Regras por app, troca e movimentação de janelas; foco consistente e configuração testada |
 
@@ -62,3 +62,9 @@ Estados: **concluído** = implementação e evidências indicadas; **em andament
 **UI-01 entregue na branch `feature/basic-desktop`:** fundo e barra superior, identidade JLinux e relógio, tema CSS adicional e execução com runtime isolado. `Desktop 01` é um rótulo estático, não espaços de trabalho implementados. Shell GTK temporário; toolkit próprio continua em TOOLKIT-01. Validação em docs/validation.md.
 
 Próximas tarefas: validar o visual aninhado no hardware real, iniciar PERF-01 para estabelecer linha de base e implementar WM-01/INPUT-01 para tornar o desktop interativo. Não antecipar efeitos caros ou adaptação automática antes das medições.
+
+## Entrega interativa inicial
+
+Branch `feature/terminal-and-input`: Foot abre automaticamente, recebe comandos e pode executar Codex. Mouse/teclado físicos usam libinput/XKB; foco por clique, Alt+Tab, Super+Enter, Super+Q, Super+Esc e Super+arraste estão implementados. Botões Terminal/Codex no shell. Runner com DRM explícito, runtime isolado, grupos de processos e espera por pidfd.
+
+Teste headless de dois terminais reais cobre digitação, mudança de foco por clique, desconexão da janela focada e saída por atalho. Release e ASan/UBSan passaram. Smoke DRM curto também executou; interação física do usuário e comportamento prolongado continuam sem confirmação. WM-01/INPUT-01/WM-02 permanecem parciais: popups avançados, hotplug físico e movimentação por pedidos das decorações não foram validados/implementados integralmente. Próximo passo: feedback do usuário no desktop e baseline PERF-01.
