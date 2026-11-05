@@ -23,6 +23,7 @@
 #include <wayland-cursor.h>
 #include "layer-shell-client.h"
 extern char **environ;
+enum { PANEL_HEIGHT = 44, PANEL_MARGIN = 6, PANEL_ZONE = 52 };
 struct app;
 struct surface {
     struct app *app;
@@ -78,8 +79,9 @@ static void paint(struct surface *surface, cairo_t *cr) {
         const unsigned int colors[] = {0xf0f2ff, 0xe3e8f6, 0x78b8f3};
         for (int i = 0; i < 3; i++) { ui_button(cr, dock_button(i), icons[i], surface->hover == i, colors[i]); }
     } else {
-        jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, 25,
-            surface->app->backdrop, 12, 12, surface->app->glass);
+        jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (height - 2) / 2.0,
+            surface->app->backdrop, PANEL_MARGIN, PANEL_MARGIN, surface->app->glass);
+        cairo_save(cr); cairo_translate(cr, 0, (height - 54) / 2.0);
         ui_text(cr, "J", 20, 8, 28, true, 0xa680ff);
         ui_text(cr, "JLinux", 47, 16, 19, true, 0xf1f2fc);
         if (width > 1000) { ui_text(cr, "Aplicativos     Arquivos     Configurações", 166, 18, 15, false, 0xd2d7eb); }
@@ -94,9 +96,10 @@ static void paint(struct surface *surface, cairo_t *cr) {
         ui_icon(cr, UI_POWER, width - 44, 15, 23, 0xe9eafa);
         if (surface->app->info) {
             /* shortcut: show help in the existing panel; real popovers arrive with shell navigation. */
-            cairo_set_source_rgb(cr, .035, .045, .09); cairo_rectangle(cr, 8, 5, width - 16, 44); cairo_fill(cr);
+            cairo_set_source_rgb(cr, .035, .045, .09); cairo_rectangle(cr, 8, 10, width - 16, 34); cairo_fill(cr);
             ui_text(cr, surface->app->notice, 24, 17, 14, false, 0xe6defe);
         }
+        cairo_restore(cr);
     }
 }
 static bool glass_settings(struct app *app) {
@@ -292,12 +295,12 @@ static int preview(const char *path) {
     struct app app = {0};
     if (!glass_settings(&app)) { return 1; }
     app.wallpaper = (struct surface){.app = &app, .width = 1672, .height = 941};
-    app.panel = (struct surface){.app = &app, .width = 1648, .height = 54};
+    app.panel = (struct surface){.app = &app, .width = 1672 - 2 * PANEL_MARGIN, .height = PANEL_HEIGHT};
     app.dock = (struct surface){.app = &app, .width = 68, .height = 226, .hover = -1};
     cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1672, 941);
     if (!prepare_backdrop(&app)) { cairo_surface_destroy(image); return 1; }
     cairo_t *cr = cairo_create(image); paint(&app.wallpaper, cr);
-    cairo_push_group(cr); cairo_translate(cr, 12, 12); paint(&app.panel, cr);
+    cairo_push_group(cr); cairo_translate(cr, PANEL_MARGIN, PANEL_MARGIN); paint(&app.panel, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr); cairo_identity_matrix(cr);
     cairo_push_group(cr); cairo_translate(cr, 24, (941 - 226) / 2.0); paint(&app.dock, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr);
@@ -328,7 +331,7 @@ int main(int argc, char **argv) {
         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
     if (!create_surface(&app, &app.wallpaper, "jlinux-wallpaper", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, all, 0, 0, -1, 0)) { goto cleanup; }
     if (!create_surface(&app, &app.panel, "jlinux-panel", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
-        ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 0, 54, 70, 12)) { goto cleanup; }
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 0, PANEL_HEIGHT, PANEL_ZONE, PANEL_MARGIN)) { goto cleanup; }
     if (!create_surface(&app, &app.dock, "jlinux-dock", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT, 68, 226, 92, 24)) { goto cleanup; }
     struct itimerspec timer = {.it_value = {.tv_sec = 30}, .it_interval = {.tv_sec = 30}};

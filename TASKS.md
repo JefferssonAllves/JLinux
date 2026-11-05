@@ -119,3 +119,9 @@ Próxima entrega visual: protótipo que reproduza fielmente composição, materi
 - Tonalização azul-acinzentada mais clara, reflexos localizados azuis/violetas, borda interna iluminada e botões menos opacos para tornar o material perceptível sobre fundo escuro.
 - Wallpaper preservado. Escopo desta iteração: material do dock/barra; composição completa e ícones das referências continuam pendentes. Não declarar reprodução exata ou aprovação visual.
 - Seis testes locais passaram em release e ASan/UBSan; prévia nativa atualizada. Sem medição de GPU/energia nesta alteração.
+
+## Refinamento aprovado como direção — fix/glass-panel-spacing
+
+- Barra reduzida de 54 para 44 px, margem de 12 para 6 px e reserva superior de 82 para 58 px (zona + margem). Texto, ícones, aviso e amostragem do fundo acompanham o novo layout; prévia usa as mesmas constantes.
+- Bordas do dock/barra recebem bevel com iluminação direcional e contorno interno mais discreto, preservando o material mais claro da iteração anterior. Wallpaper preservado.
+- Seis testes locais release e ASan/UBSan passaram; prévia inspecionada. Sem benchmark GPU/energia ou confirmação visual final do usuário.

@@ -41,3 +41,7 @@ A [imagem V1](design/README.md) é um estudo visual gerado para avaliação pelo
 ## Ajuste solicitado de material do dock e barra
 
 O usuário pediu concentrar a iteração no dock e na barra superior, deixando o wallpaper em segundo plano. O material inicial agora usa tonalização azul-acinzentada mais clara, reflexos estáticos azuis/violetas localizados e iluminação interna do contorno. Botões deixam mais material visível. A referência continua sendo a foto do usuário; este ajuste não significa fidelidade exata ou aprovação. Blur segue limitado ao wallpaper, conforme visual-pipeline.md.
+
+### Barra compacta e acabamento de bordas
+
+Após feedback positivo sobre o material mais claro, a barra passa a 44 px de altura e 6 px de margem superior/lateral. O contorno usa iluminação direcional para destacar o volume do vidro, com linha interna menos marcada. Dock mantém tamanho e ações; wallpaper permanece igual. Prévia nativa atualizada; fidelidade completa segue pendente.
