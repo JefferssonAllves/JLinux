@@ -18,6 +18,14 @@ Aplicativos Wayland                 Shell e configurações JLinux
                 Mesa · DRM/KMS · amdgpu
 ```
 
+## Protótipos e implementação definitiva
+
+Ferramentas web foram solicitadas para criar protótipos de tela e validar a direção visual com o usuário antes de construir a interface definitiva. shadcn, Magic/21st e skills de frontend/Liquid Glass são recursos dessa fase de exploração. Não estabelecem dependências de execução do desktop.
+
+O fluxo é prototipar a tela, iterar o visual com o usuário e implementar o resultado no ambiente nativo. O shell atual em GTK/CSS é uma etapa provisória para experimentar o compositor e o terminal; não representa a implementação final do toolkit próprio. A migração ainda precisa ser feita.
+
+A escolha técnica deve priorizar as tecnologias mais adequadas e eficientes para cada função, com comparação no hardware real. Avaliar latência, tempo de quadro, CPU/GPU, memória, energia, robustez e custo de manutenção. A linguagem ou biblioteca isolada não prova desempenho. A base atual é C/wlroots/Wayland/Mesa; mudanças dessa base precisam de justificativa técnica, sem adoção automática de uma stack por disponibilidade de ferramentas de prototipação.
+
 ## Personalização como parte da arquitetura
 
 - Configuração declarativa versionada, com temas de cores, fontes, bordas, formas, transparência, sombras e desfoque.
