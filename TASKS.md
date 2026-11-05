@@ -183,3 +183,9 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 
 - Iteração anterior rejeitada pelo usuário por espessura excessiva. Moldura lateral/inferior reduzida de 6 para 3 px; faixa larga de brilho removida. Contorno discreto de 0,8 px e quatro reflexos localizados com núcleo branco intenso. Cabeçalho retangular de 36 px e raio de 6 px preservados; dock/barra intactos.
 - Oito testes release e ASan/UBSan passaram. Geometria maximizada atualizada nos testes; contraste entre ponto brilhante e trecho discreto verificado no buffer. Prévia inspecionada. Sessão DRM reiniciada conforme autorização vigente, com Codex/painel/dock mapeados. Aprovação visual e benchmark pendentes.
+
+## Sombra interna e contorno superior fino — fix/window-rim-shading
+
+- Sombra interna leve, independente de REFLECTION, destaca bordas de janela sem alterar os 3 px aprovados. `JLINUX_GLASS_SHADOW=0/1` controla apenas esse sombreado, sem drop shadow externo ou blur.
+- Barra superior e cabeçalhos compactos com contorno de 0,75 px, bevel reduzido e sem segunda linha interna. Altura de 36 px e brilhos preservados; dock vertical inalterado.
+- Oito testes locais release e ASan/UBSan passaram; teste verifica sombreamento com reflexão desligada e rejeição de parâmetro inválido. Prévias inspecionadas. Aplicação à sessão corrente ainda pendente nesta etapa; próxima entrega instala sessão do Arch solicitada pelo usuário.

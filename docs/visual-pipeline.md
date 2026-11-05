@@ -59,3 +59,5 @@ O compositor agora compartilha effects/glass.c e toolkit/painter.c com o shell. 
 As molduras usam transparência real sobre a cena, tonalização e reflexos estáticos; **não têm blur de fundo**. A opção BLUR continua limitada ao wallpaper do shell, sem efeito nas molduras. TINT/REFLECTION são compartilhadas e independentes. Conteúdo e decorações próprias de aplicativos que não negociam xdg-decoration não são retematizados; pode haver cabeçalho adicional. Cantos externos da moldura são arredondados; o conteúdo do cliente não recebe máscara arredondada.
 
 A barra superior recebe três reflexos estreitos localizados junto ao contorno, visíveis com REFLECTION ativado. Não há animação, timer adicional ou movimento automático dos brilhos.
+
+Sombreamento interno das molduras: `JLINUX_GLASS_SHADOW=0/1` (padrão ligado) controla um traço escuro interno em passe próprio, independente de REFLECTION. Não cria sombra externa nem blur. O shell valida essa preferência compartilhada, mas não aplica esse sombreado ao dock/painel.
