@@ -2,6 +2,7 @@
 """Check native launcher cleanup after timeout and external termination."""
 from pathlib import Path
 import select
+import os
 import shutil
 import time
 import signal
@@ -15,8 +16,9 @@ assert completed.returncode == 0, completed.stdout + completed.stderr
 runtime = next(line[6:] for line in completed.stdout.splitlines() if line.startswith("Logs: "))
 assert not Path(runtime).exists(), "Runtime não foi removido após duração limitada"
 arguments = [binary, "--headless"] + ([] if shutil.which("foot") else ["--no-terminal"])
+clean_env = {name: value for name, value in os.environ.items() if name != "LANG" and not name.startswith("LC_")}
 process = subprocess.Popen(arguments, stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE, text=True)
+                           stderr=subprocess.PIPE, text=True, env=clean_env)
 try:
     assert select.select([process.stdout], [], [], 10)[0], "Iniciador não ficou pronto"
     assert process.stdout.readline().startswith("JLinux nativo iniciado."), "Falha ao iniciar"
@@ -27,6 +29,14 @@ try:
         while "Janela mapeada: JLinux Terminal" not in log.read_text(errors="replace"):
             assert process.poll() is None and time.monotonic() < deadline, "Iniciador não abriu terminal"
             time.sleep(0.05)
+        assert "not a UTF-8 locale" not in (Path(runtime) / "shell.log").read_text(errors="replace")
+        children = Path(f"/proc/{process.pid}/task/{process.pid}/children").read_text().split()
+        for child in children:
+            try:
+                entries = Path(f"/proc/{child}/environ").read_bytes().split(b"\0")
+                assert any(entry.startswith(b"LANG=") for entry in entries), "LANG ausente no filho da sessão"
+            except FileNotFoundError:
+                continue
     process.send_signal(signal.SIGTERM)
     output, error = process.communicate(timeout=6)
     assert process.returncode == 0, output + error

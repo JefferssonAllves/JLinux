@@ -153,3 +153,11 @@ Journal anterior encerra após comandos chvt às 16:38:36, sem registro conclusi
 ## Remoção da marca da barra — fix/remove-panel-brand
 
 Build e teste local shell-headless passaram. Pacote Arch `0.5.0.r39.g766bcaf-1` compilado da branch correta com onze testes aprovados e instalado pelo pacman. Prévia atualizada. Nenhum teste novo ou repetição de ASan para essa remoção de texto/layout. Sessão autenticada pelo greetd preservada; ativação visual ocorre no próximo login. Não confundir versão instalada com processo antigo em execução.
+
+## Aviso de locale ao iniciar o terminal — fix/terminal-locale
+
+Ambiente do Foot na sessão real não continha LANG/LC_*, e shell.log registrava "C is not a UTF-8 locale". /etc/locale.conf contém LANG=pt_BR.UTF-8, disponível em locale -a. Correção no iniciador C carrega LANG somente quando não fornecido pelo ambiente, com leitura sem execução do arquivo e fallback C.UTF-8. Categorias LC_* explícitas não são alteradas.
+
+Doze testes release e ASan/UBSan passaram. Teste unitário cobre locale entre aspas/comentário, preferência herdada, entrada inválida e fallback. Teste de sessão remove variáveis de locale antes de iniciar, verifica LANG nos filhos e ausência do aviso UTF-8 no log do terminal real. Avisos de capacidades Wayland permanecem e não foram suprimidos. Não houve teste de VT ou reinício de sessão.
+
+Pacote `0.5.0.r41.g94ddb52-1` compilado da branch correta com doze testes aprovados e instalado pelo pacman. Novo Foot aberto na sessão existente com LANG=pt_BR.UTF-8; permaneceu ativo e seu log não contém aviso de locale. Os avisos de protocolos permanecem. Não houve reinício/logout/VT. Processos antigos continuam com ambiente anterior até novo login; o iniciador instalado corrige a herança nas sessões futuras.
