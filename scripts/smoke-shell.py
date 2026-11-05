@@ -32,13 +32,14 @@ def stop(process):
 
 def main():
     compositor, shell = map(lambda p: str(Path(p).resolve()), sys.argv[1:3])
+    pointer_client = str(Path(sys.argv[3]).resolve()) if len(sys.argv) > 3 else None
     processes = []
     with tempfile.TemporaryDirectory(prefix="jlinux-shell-") as directory:
         runtime = Path(directory)
         os.chmod(runtime, 0o700)
         env = dict(os.environ, XDG_RUNTIME_DIR=directory, WLR_BACKENDS="headless",
                    WLR_RENDERER="pixman", WLR_HEADLESS_OUTPUTS="1",
-                   GDK_BACKEND="wayland", GTK_USE_PORTAL="0", NO_AT_BRIDGE="1")
+                   JLINUX_TEST_INPUT="1")
         server_log = runtime / "compositor.log"
         shell_log = runtime / "shell.log"
         def log():
@@ -56,11 +57,17 @@ def main():
                     client = subprocess.Popen([shell], env=env, stdout=shell_out, stderr=subprocess.STDOUT)
                     processes.append(client)
                     wait_for(lambda: log().count("Interface mapeada: jlinux-panel") > iteration and
-                             log().count("Interface mapeada: jlinux-wallpaper") > iteration,
+                             log().count("Interface mapeada: jlinux-wallpaper") > iteration and
+                             log().count("Interface mapeada: jlinux-dock") > iteration,
                              [server, client], "mapeamento do painel e wallpaper")
                     time.sleep(0.15)
                     assert client.poll() is None, "Shell encerrou após mapear"
+                    if pointer_client:
+                        subprocess.run([pointer_client, "58", "351"], env=env, check=True, timeout=3)
+                        wait_for(lambda: log().count("Janela mapeada: JLinux Terminal") > iteration,
+                                 [server, client], "dock abriu terminal")
                     stop(client)
+                    assert client.returncode == 0, f"Shell encerrou com erro: {client.returncode}"
                     assert server.poll() is None, "Compositor encerrou com o shell"
                 invalid_theme = runtime / "invalid.css"
                 invalid_theme.write_text("* { color: not-a-color; }")
@@ -72,7 +79,7 @@ def main():
                 stop(server)
                 assert server.returncode == 0, f"Status do compositor: {server.returncode}"
                 assert not socket.exists(), "Socket não foi removido"
-            print("Shell mapeou wallpaper/painel duas vezes; compositor sobreviveu ao reinício e à rejeição de tema inválido.")
+            print("Shell nativo mapeou painel/dock/wallpaper, abriu terminais por clique e reiniciou sem derrubar o compositor.")
         except Exception:
             for path in (server_log, shell_log):
                 if path.exists():

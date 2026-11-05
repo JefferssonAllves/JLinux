@@ -6,7 +6,7 @@ Estados: **concluído** = implementação e evidências indicadas; **em andament
 
 ## Diretriz para as próximas telas
 
-As ferramentas web servem para criar e iterar protótipos visuais antes da interface definitiva nativa. O shell GTK/CSS atual é provisório. Tecnologias de produção serão escolhidas por adequação e desempenho medido, preservando personalização.
+As ferramentas web servem para criar e iterar protótipos visuais antes da interface definitiva nativa. O shell GTK/CSS foi substituído pela primeira base Wayland/C; o toolkit ainda é inicial. Tecnologias de produção serão escolhidas por adequação e desempenho medido, preservando personalização.
 
 | ID | Prioridade / estado | Tarefa | Dependências | Critério de conclusão |
 | --- | --- | --- | --- | --- |
@@ -99,3 +99,11 @@ Referências: docs/visual-pipeline.md e docs/visual-style.md. O exemplo TOML v2 
 **DESIGN-01 · alvo visual definido pelo usuário:** as duas fotos do commit “Estilo que eu quero” foram localizadas e inspecionadas. Usar docs/design/README.md como índice. As propostas geradas V1/V2 foram rejeitadas e não orientam a próxima reprodução.
 
 Próxima entrega visual: protótipo que reproduza fielmente composição, materiais, bordas, ícones, espaçamentos e fundo das referências. Comparar renderização e fotos na mesma resolução e registrar diferenças. Nenhum aplicativo, material ou integração foi implementado nesta atualização documental.
+
+## Primeira entrega nativa — 0.5
+
+- **NATIVE-01 · parcial implementado:** shell Wayland direto em C, sem GTK/CSS, com painel e dock à esquerda. Toolkit inicial (texto, superfícies, ícones, botões e hit testing) em src/toolkit/. Dock abre Foot e Codex por clique. Visual completo das referências e arquitetura final de materiais continuam pendentes.
+- **TOOLKIT-01 · parcial:** Cairo/Pango/Fontconfig usados como bibliotecas de desenho/tipografia; cliente controla layout, entrada e buffers. Backend atual rasteriza SHM em CPU. GPU do toolkit, acessibilidade e escala precisam de trabalho/medição.
+- **TEST-01 · parcial:** iniciador de sessão C, runtime privado e limpeza por eventos. Testes cobrem timeout/SIGTERM e ausência de runtime restante. Python ficou restrito a testes/ferramentas.
+- **SHELL-01 · parcial:** Terminal/Codex funcionam; menus, dados de rede/Bluetooth e energia continuam sem integração e mostram aviso.
+- **Próximo:** baseline PERF-01 e implementação progressiva do material em effects/ e renderer/, comparando com as referências. Não declarar Glass/fidelidade prontos por haver componentes nativos.

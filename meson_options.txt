@@ -1,1 +1,1 @@
-option('shell', type: 'boolean', value: true, description: 'Compilar a interface visual inicial GTK/layer-shell')
+option('shell', type: 'boolean', value: true, description: 'Compilar o shell Wayland nativo e iniciador de sessão em C')

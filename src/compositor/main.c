@@ -2,6 +2,11 @@
 #include "interaction.h"
 #include "../renderer/renderer.h"
 #include <signal.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <wayland-server-core.h>
 #include <wlr/backend.h>
@@ -63,6 +68,9 @@ static void arrange_desktop(struct desktop *desktop) {
                     wlr_scene_layer_surface_v1_configure(surface->scene, &bounds, &usable);
                 }
             }
+        }
+        if (monitor->output == wlr_output_layout_get_center_output(desktop->layout)) {
+            interaction_set_workarea(desktop->interaction, &usable);
         }
     }
 }
@@ -289,6 +297,17 @@ int main(void) {
         goto cleanup;
     }
     if (setenv("WAYLAND_DISPLAY", socket, 1) != 0) { goto cleanup; }
+    const char *ready_value = getenv("JLINUX_READY_FD");
+    if (ready_value) {
+        char *end;
+        errno = 0;
+        long fd = strtol(ready_value, &end, 10);
+        if (errno || *end || fd < 3 || fd > INT_MAX) { goto cleanup; }
+        ssize_t written;
+        do { written = write((int)fd, socket, strlen(socket)); } while (written < 0 && errno == EINTR);
+        close((int)fd); unsetenv("JLINUX_READY_FD");
+        if (written != (ssize_t)strlen(socket)) { goto cleanup; }
+    }
     wlr_log(WLR_INFO, "JLinux compositor pronto: WAYLAND_DISPLAY=%s", socket);
     wl_display_run(desktop.display);
     result = EXIT_SUCCESS;
@@ -297,6 +316,7 @@ cleanup:
     if (terminate) { wl_event_source_remove(terminate); }
     wl_display_destroy_clients(desktop.display);
     interaction_destroy(desktop.interaction);
+    desktop.interaction = NULL;
     wl_list_remove(&desktop.new_output.link);
     wl_list_remove(&desktop.new_layer.link);
     wl_list_remove(&desktop.layout_change.link);

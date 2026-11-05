@@ -1,73 +1,68 @@
 # JLinux Desktop
 
-Compositor Wayland próprio em C, com shell separado, foco por clique, mouse, teclado e terminal Foot. O objetivo é personalização ampla com eficiência medida no hardware real.
+Compositor Wayland próprio, shell e iniciador de sessão em C. A primeira base do toolkit JLinux desenha barra superior, dock à esquerda, texto, ícones e botões, sem GTK, CSS ou navegador.
 
-A interface inicial oferece fundo, barra superior com botões Terminal/Codex e relógio. GTK3 é a implementação inicial do shell; toolkit próprio, animações e adaptação dinâmica continuam no plano.
+O dock abre Terminal e Codex. O compositor mantém mouse, teclado, foco por clique e atalhos. O terminal inicial é Foot. Esta é a fundação nativa: o visual Glass completo e a reprodução final das fotos ainda não estão implementados.
 
 ## Compilar no Arch Linux
 
 ```sh
-sudo pacman -S --needed base-devel meson ninja pkgconf wlroots0.20 wayland wayland-protocols mesa gtk3 gtk-layer-shell python foot wtype
-meson setup build-interactive --buildtype=release --prefix="$HOME/.local"
-meson compile -C build-interactive
-meson test -C build-interactive --print-errorlogs
+sudo pacman -S --needed base-devel meson ninja pkgconf wlroots0.20 wayland wayland-protocols mesa cairo pango fontconfig ttf-dejavu foot wtype python
+meson setup build-native --buildtype=release --prefix="$HOME/.local"
+meson compile -C build-native
+meson test -C build-native --print-errorlogs
 ```
 
-Para reconfigurar o mesmo diretório, usar `meson setup build-interactive --reconfigure`. Requer Meson >=1.6 e wlroots 0.20.x. `wtype` participa dos testes; Foot fornece o terminal inicial.
+Requer Meson >=1.6 e wlroots 0.20.x. Python e wtype são usados nos testes, não para executar a sessão. Para reconfigurar o diretório existente: `meson setup build-native --reconfigure`.
 
-## Executar
+## Executar sem Python
 
-Dentro de uma sessão Wayland, abrir aninhado com terminal:
+No TTY:
 
 ```sh
-scripts/run-desktop.py
+./build-native/jlinux-session --drm --codex
 ```
 
-A partir do TTY, abrir no monitor com Codex dentro do primeiro terminal:
+Dentro de uma sessão Wayland, para execução aninhada:
 
 ```sh
-scripts/run-desktop.py --drm --codex
+./build-native/jlinux-session --codex
 ```
 
-`codex` precisa estar instalado e autenticado para uso. Sem `--codex`, o terminal abre um shell normal: digite `codex` nele. O script inclui `~/.local/bin` no PATH e abre o terminal na pasta do projeto.
+O iniciador localiza os binários na própria pasta, cria runtime privado, aguarda prontidão do compositor por pipe e supervisiona processos por eventos. Não instala entrada de login ou serviço. Codex precisa estar instalado/autenticado; sem `--codex`, abre um terminal comum. Usa o diretório atual e inclui `~/.local/bin` no PATH.
 
 | Ação | Controle |
 | --- | --- |
-| Abrir terminal | Super+Enter ou botão Terminal |
-| Abrir Codex em outro terminal | Botão Codex |
+| Abrir terminal | Super+Enter ou ícone Terminal no dock |
+| Abrir Codex | Ícone de código no dock |
+| Mostrar ajuda | Ícone inicial do dock |
 | Alternar janela | Alt+Tab |
 | Focar janela | Clique |
-| Mover janela | Super+arrastar com botão esquerdo |
-| Redimensionar pelo canto inferior direito | Super+arrastar com botão direito |
-| Fechar janela focada | Super+Q |
-| Encerrar e retornar ao terminal anterior | Super+Esc |
+| Mover / redimensionar | Super+arraste esquerdo / direito |
+| Fechar janela | Super+Q |
+| Encerrar sessão | Super+Esc |
 
-Super é normalmente a tecla Windows. Layout de teclado padrão: brasileiro (`br`); use `--keyboard-layout us` para americano. O layout é aplicado a dispositivos físicos; ferramentas de entrada virtual fornecem o próprio keymap.
+Layout físico padrão: `br`; alterar com `--keyboard-layout us`. O botão de energia informa como sair; suspensão/reinício/desligamento e os indicadores Wi-Fi/Bluetooth ainda não estão integrados aos serviços. Menus de aplicativos/arquivos/configurações são posições visuais iniciais, com aviso de indisponibilidade ao clicar. Não há bloqueio/suspensão integrados.
 
-O launcher não altera a sessão de login, usa runtime privado e encerra os grupos de processos que criou. Depois da inicialização, aguarda saída dos processos por pidfd, sem polling periódico. A sessão ainda não tem bloqueio ou suspensão integrados.
-
-## Testes e tema
+## Verificação e preview do desenho nativo
 
 ```sh
-scripts/run-desktop.py --headless --duration 3
-scripts/run-desktop.py --theme config/jlinux/theme.css
+./build-native/jlinux-session --headless --no-terminal --duration 2
+./build-native/jlinux-shell --preview /tmp/jlinux-native.png
 ```
 
-`--headless` não exibe uma janela. `--duration` é opcional. O CSS adicional é carregado na inicialização; TOML ainda é proposta, sem parser.
+O preview PNG usa as mesmas rotinas de desenho, sem conectar ao compositor; não é captura de uma sessão real. Cairo desenha os buffers SHM e Pango faz tipografia; o compositor apresenta a cena pela GPU quando disponível. Não afirmamos que o backend atual é o mais rápido: aceleração do toolkit e custos de memória/energia exigem medições.
 
-O teste de entrada abre dois terminais reais, digita comandos, clica para mudar foco, fecha a janela focada e verifica recuperação de foco. Também verifica saída por Super+Esc. Entrada virtual só é publicada com `JLINUX_TEST_INPUT=1`, usada no runtime privado do teste e desativada na execução normal.
+O cliente mantém no máximo dois buffers em voo por superfície. Redesenha por eventos/alterações e atualiza o relógio a cada 30 segundos. Não há loop de animação contínuo.
 
-Ainda pendentes: gerenciamento completo de monitores, maximização/tela cheia, arraste solicitado pelas decorações dos clientes, IME, portais, gestos, efeitos e bloqueio. Popups xdg têm suporte inicial, sem posicionamento avançado. Headless não comprova experiência visual ou desempenho da Radeon.
+O antigo `scripts/run-desktop.py` e o tema CSS foram removidos. TOML continua sendo contrato proposto, sem parser. Animações e efeitos nativos serão implementados separadamente em animation/, effects/ e renderer/.
 
 ## Organização
 
-- `src/compositor/main.c`: servidor, saídas e layers.
-- `src/compositor/interaction.c`: janelas, seat, dispositivos, foco e atalhos.
-- `src/shell/`: interface em processo separado.
-- `config/jlinux/`: tema CSS e contrato TOML proposto.
-- `protocols/` e `tests/`: protocolos com licença preservada e cliente de entrada para teste.
-- `scripts/`: execução isolada, testes e coleta de hardware.
+- `src/compositor/`: servidor, saídas, janelas e entrada.
+- `src/shell/`: cliente Wayland direto com painel/dock.
+- `src/toolkit/`: componentes e desenho nativos iniciais.
+- `src/session/`: iniciador/supervisor em C.
+- `scripts/smoke-*.py`: testes de integração em runtime privado.
 
-Plano central: [TASKS.md](TASKS.md). [Arquitetura](docs/architecture.md), [hardware](docs/hardware.md), [validação](docs/validation.md), [fluxo de branches](CONTRIBUTING.md) e [agentes/skills](docs/agent-tooling.md).
-
-O pipeline visual separa [animation/](src/animation/), [effects/](src/effects/) e [renderer/](src/renderer/). A inspiração [Glass](docs/visual-style.md) será prototipada antes da implementação nativa; veja os [contratos e limites atuais](docs/visual-pipeline.md).
+Plano: [TASKS.md](TASKS.md). [Arquitetura](docs/architecture.md), [referências do usuário](docs/design/README.md), [validação](docs/validation.md) e [fluxo de branches](CONTRIBUTING.md).

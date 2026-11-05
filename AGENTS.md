@@ -24,7 +24,7 @@
 
 - As ferramentas web solicitadas pelo usuário (shadcn, Magic/21st, frontend-design e referências Liquid Glass) destinam-se a protótipos de tela para experimentar e validar o visual antes da implementação definitiva. Sua instalação não autoriza adotar uma stack web no desktop.
 - Fluxo visual: protótipo de tela → iteração com o usuário → implementação nativa do visual acordado. Distinguir protótipo visual, shell provisório e interface definitiva em tarefas, PRs e entregas.
-- A interface definitiva segue o objetivo de compositor, toolkit visual e motor de animações próprios. O shell GTK/CSS existente é provisório e não define a tecnologia final.
+- A interface definitiva segue o objetivo de compositor, toolkit visual e motor de animações próprios. O shell GTK/CSS foi substituído pela primeira base Wayland/C; o toolkit próprio ainda é inicial e não implementa o visual Glass completo.
 - Escolher tecnologias pela adequação à função e pelo desempenho demonstrável no hardware do usuário: latência, tempo de quadro, CPU/GPU, memória e energia. Não escolher por moda, familiaridade ou por ter instalado uma ferramenta. Não declarar uma opção a mais rápida sem medição comparável.
 - Priorizar execução nativa, renderização acelerada e orientada a eventos, controle de recursos e dependências justificadas. Reutilizar infraestrutura madura quando isso ajudar o objetivo; desenvolver componentes próprios onde o projeto exige identidade, controle ou funcionalidades próprias.
 - Eficiência deve preservar a personalização solicitada. Efeitos e aparência são escolhas do usuário; adaptações automáticas respeitam seus limites.
@@ -42,3 +42,5 @@
 - As duas imagens adicionadas no commit cf4238a (“Estilo que eu quero”) são a fonte principal para reproduzir fielmente o visual: docs/design/1E9E8B07-9F84-40EA-B5AA-73308C2A7A66.png e docs/design/D415668D-8698-411F-A41D-0DE333BCE255.png. Consultar as próprias imagens e docs/design/README.md antes de criar telas.
 - Essas referências substituem as propostas geradas V1/V2 e as interpretações anteriores de paleta. Preservar composição, proporções, material azul-preto translúcido, bordas finas iluminadas, reflexos azuis/violetas e ícones coloridos das fotos. Dock à esquerda e barra superior conforme a primeira referência.
 - Comparar o resultado renderizado com as fotos na mesma resolução. Não prometer correspondência exata sem comparação visual nem tratar aplicativos e funções ilustrados como implementados.
+
+- Compositor, shell e iniciador de sessão executam em C. Python permanece apenas em testes/ferramentas de desenvolvimento; não reintroduzir dependência Python na inicialização ou no caminho gráfico.
