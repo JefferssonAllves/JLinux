@@ -93,3 +93,5 @@ Referências: docs/visual-pipeline.md e docs/visual-style.md. O exemplo TOML v2 
 ## Avaliação visual Glass V1
 
 **DESIGN-01 · aguardando avaliação do usuário:** imagem conceitual em docs/design/jlinux-glass-v1.png, com página de prévia docs/design/README.md. Dock à esquerda, barra superior com Wi-Fi/Bluetooth/energia, menu de suspensão/reinício/desligamento e paleta roxo/rosa. Não é captura real ou funcionalidade implementada. Próxima ação: receber feedback e iterar a composição antes da interface nativa definitiva.
+
+**DESIGN-01 · atualização V2, aguardando avaliação:** docs/design/jlinux-glass-v2.png usa base neutra escura e Glass discreto, com roxo/rosa limitados a detalhes de bordas e indicadores. V1 preservada para comparação. Esta preferência substitui a interpretação anterior de roxo/rosa como cores predominantes. Layout e controles ilustrativos mantidos; nenhuma implementação nativa ou ativação de efeitos nesta entrega.

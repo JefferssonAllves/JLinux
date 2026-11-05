@@ -36,4 +36,4 @@
 - Blur, sombra, transparência, tonalização, reflexo e refração devem ter ativação e parâmetros independentes. Desativar um efeito não desativa os demais nem o motor de animações. Preservar escolhas persistidas quando o modo adaptativo alterar o estado efetivo.
 - Ler docs/visual-pipeline.md e docs/visual-style.md ao trabalhar nesses módulos. Separar contratos planejados de capacidades implementadas.
 
-- Preferência visual mais recente: dock de aplicativos à esquerda; barra superior com Wi-Fi, Bluetooth e menu Suspender/Reiniciar/Desligar; Glass com detalhes roxos e rosas. A imagem docs/design/jlinux-glass-v1.png é proposta ainda não aprovada pelo usuário.
+- Preferência visual mais recente: dock de aplicativos à esquerda; barra superior com Wi-Fi, Bluetooth e menu Suspender/Reiniciar/Desligar; Glass com base escura neutra (grafite/vidro fumê), roxo e rosa apenas como detalhes sutis de algumas bordas e indicadores. A proposta atual docs/design/jlinux-glass-v2.png aguarda avaliação; V1 é histórico e sua predominância roxa/rosa foi corrigida pelo usuário.
