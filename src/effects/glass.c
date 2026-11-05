@@ -53,7 +53,10 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
     if (effects.reflection) {
         rounded(cr, rect, radius);
         cairo_pattern_t *edge = cairo_pattern_create_linear(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
-        cairo_pattern_add_color_stop_rgba(edge, 0, .65, .86, 1, .95);
+        cairo_pattern_add_color_stop_rgba(edge, 0, .65, .86, 1, rect.width > rect.height ? .40 : .95);
+        if (rect.width > rect.height) {
+            cairo_pattern_add_color_stop_rgba(edge, 2 * radius / rect.width, .65, .86, 1, .95);
+        }
         cairo_pattern_add_color_stop_rgba(edge, .3, .38, .64, 1, .68);
         cairo_pattern_add_color_stop_rgba(edge, .7, .66, .40, .95, .58);
         cairo_pattern_add_color_stop_rgba(edge, 1, .88, .61, 1, .98);

@@ -131,3 +131,7 @@ Próxima entrega visual: protótipo que reproduza fielmente composição, materi
 - Dock de 68 para 56 px de largura e margem esquerda de 24 para 6 px; botões de 40×40 com ícones preservados. Raio, amostragem do fundo, área reservada e prévia acompanham as novas constantes.
 - Reflexos localizados e contornos azuis/violetas mais brilhantes no dock e na barra. Wallpaper preservado.
 - Seis testes release e ASan/UBSan passaram; clique no terminal atualizado para o centro do novo dock. Prévia inspecionada. Sem benchmark GPU/energia nesta alteração.
+
+## Correção localizada — fix/panel-left-edge
+
+Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40 de alpha, retornando gradualmente ao brilho anterior após a curva. Dock, tonalização e restante do material preservados. Seis testes release passaram; prévia atualizada. Ajuste visual sem benchmark nesta alteração.
