@@ -102,3 +102,34 @@ bool jlinux_glass_settings(struct jlinux_glass *effects) {
     }
     return true;
 }
+
+void jlinux_glass_window_reflections(cairo_t *cr, struct ui_rect rect, double radius, double header) {
+    cairo_save(cr); rounded(cr, rect, radius); cairo_clip(cr);
+    cairo_pattern_t *sheen = cairo_pattern_create_linear(0, rect.y, 0, rect.y + header);
+    cairo_pattern_add_color_stop_rgba(sheen, 0, .83, .91, 1, .20);
+    cairo_pattern_add_color_stop_rgba(sheen, .18, .59, .73, .95, .10);
+    cairo_pattern_add_color_stop_rgba(sheen, .52, .02, .04, .09, .08);
+    cairo_pattern_add_color_stop_rgba(sheen, .86, .18, .24, .42, .04);
+    cairo_pattern_add_color_stop_rgba(sheen, 1, .65, .72, .94, .12);
+    cairo_save(cr); cairo_rectangle(cr, rect.x, rect.y, rect.width, header); cairo_clip(cr);
+    cairo_set_source(cr, sheen); cairo_paint(cr); cairo_restore(cr); cairo_pattern_destroy(sheen);
+    const double lights[4][7] = {
+        {rect.x + rect.width * .27, rect.y + 1, 1, .09, .60, .80, 1},
+        {rect.x + rect.width * .79, rect.y + 1, 1, .09, .73, .65, 1},
+        {rect.x + 1, rect.y + rect.height * .34, .09, 1, .39, .72, 1},
+        {rect.x + rect.width - 1, rect.y + rect.height * .76, .09, 1, .73, .49, 1},
+    };
+    for (int i = 0; i < 4; i++) {
+        cairo_save(cr); cairo_translate(cr, lights[i][0], lights[i][1]);
+        cairo_scale(cr, lights[i][2], lights[i][3]);
+        cairo_pattern_t *light = cairo_pattern_create_radial(0, 0, 0, 0, 0, 76);
+        cairo_pattern_add_color_stop_rgba(light, 0, .93, .97, 1, .88);
+        cairo_pattern_add_color_stop_rgba(light, .09, lights[i][4], lights[i][5], lights[i][6], .60);
+        cairo_pattern_add_color_stop_rgba(light, .42, lights[i][4], lights[i][5], lights[i][6], .22);
+        cairo_pattern_add_color_stop_rgba(light, 1, lights[i][4], lights[i][5], lights[i][6], 0);
+        cairo_set_source(cr, light); cairo_paint(cr); cairo_pattern_destroy(light); cairo_restore(cr);
+    }
+    struct ui_rect inner = {rect.x + 1.5, rect.y + 1.5, rect.width - 3, rect.height - 3};
+    rounded(cr, inner, radius - 1.5); cairo_set_source_rgba(cr, .74, .85, 1, .17);
+    cairo_set_line_width(cr, .7); cairo_stroke(cr); cairo_restore(cr);
+}

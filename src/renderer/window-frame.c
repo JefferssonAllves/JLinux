@@ -50,6 +50,10 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
         int material_height = i == 0 ? header + JLINUX_FRAME_RADIUS : full_height;
         jlinux_glass_paint(cr, (struct ui_rect){.5, .5, full_width - 1, material_height - 1},
             JLINUX_FRAME_RADIUS, NULL, 0, 0, effects);
+        if (effects.reflection) {
+            jlinux_glass_window_reflections(cr,
+                (struct ui_rect){.5, .5, full_width - 1, full_height - 1}, JLINUX_FRAME_RADIUS, header);
+        }
         if (i == 0) {
             cairo_save(cr); cairo_rectangle(cr, 16, 3, full_width - 108, header - 6); cairo_clip(cr);
             ui_text(cr, title ? title : "JLinux", 16, 8, 14, true, 0xedf0ff); cairo_restore(cr);
