@@ -154,3 +154,5 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - Moldura comum a todos os xdg-toplevel: cabeçalho retangular de 36 px, vidro compartilhado com shell, reflexos e contorno iluminado. Raio externo reduzido de 14 para 6 px; parte inferior do cabeçalho mantém junção reta com o conteúdo.
 - Oito testes locais release e ASan/UBSan passaram; prévia do componente inspecionada e atualizada.
 - Sessão principal ainda executa compositor antigo. Aplicar molduras nela exige reiniciar o compositor, encerrando clientes existentes; não realizado sem autorização específica para encerrar a sessão. Prévia aninhada anterior não equivale à aplicação global na sessão principal.
+
+**Aplicação das molduras na sessão principal:** reinício autorizado pelo usuário e realizado. Logs DRM confirmam AMD Radeon, HDMI-A-1, Codex/painel/dock mapeados na versão nova. A pendência de aplicação na sessão principal foi resolvida; avaliação visual do usuário continua pendente.
