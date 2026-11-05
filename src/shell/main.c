@@ -23,7 +23,7 @@
 #include <wayland-cursor.h>
 #include "layer-shell-client.h"
 extern char **environ;
-enum { PANEL_HEIGHT = 44, PANEL_MARGIN = 6, PANEL_ZONE = 52,
+enum { PANEL_HEIGHT = 36, PANEL_MARGIN = 6, PANEL_ZONE = 44,
     DOCK_WIDTH = 56, DOCK_HEIGHT = 226, DOCK_MARGIN = 6, DOCK_ZONE = 64 };
 struct app;
 struct surface {
