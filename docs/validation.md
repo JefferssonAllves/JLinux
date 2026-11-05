@@ -149,3 +149,7 @@ Usuário relatou PC travado e o sistema reapareceu em novo boot. Journal atual r
 O teste final de VT da instalação anterior perdeu seu processo/sessão de execução durante o reinício; resultado não recuperado, portanto não declarar aprovação desse teste de pacote. Três ciclos na build local com terminal e onze testes do pacote estão registrados separadamente.
 
 Journal anterior encerra após comandos chvt às 16:38:36, sem registro conclusivo de GPU hang/OOM/kernel panic. Journal novo indica desligamento não limpo e aviso FAT para a partição EFI. Não foi identificado evento suficiente para atribuir causa ao congelamento nem executado reparo de partição. Sessão atual apresenta memória disponível e compositor em espera epoll entre eventos; investigação do incidente permanece aberta. Não repetir testes físicos de VT nesta sessão de trabalho.
+
+## Remoção da marca da barra — fix/remove-panel-brand
+
+Build e teste local shell-headless passaram. Pacote Arch `0.5.0.r39.g766bcaf-1` compilado da branch correta com onze testes aprovados e instalado pelo pacman. Prévia atualizada. Nenhum teste novo ou repetição de ASan para essa remoção de texto/layout. Sessão autenticada pelo greetd preservada; ativação visual ocorre no próximo login. Não confundir versão instalada com processo antigo em execução.

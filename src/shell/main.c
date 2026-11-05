@@ -83,9 +83,7 @@ static void paint(struct surface *surface, cairo_t *cr) {
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (height - 2) / 2.0,
             surface->app->backdrop, PANEL_MARGIN, PANEL_MARGIN, surface->app->glass);
         cairo_save(cr); cairo_translate(cr, 0, (height - 54) / 2.0);
-        ui_text(cr, "J", 20, 8, 28, true, 0xa680ff);
-        ui_text(cr, "JLinux", 47, 16, 19, true, 0xf1f2fc);
-        if (width > 1000) { ui_text(cr, "Aplicativos     Arquivos     Configurações", 166, 18, 15, false, 0xd2d7eb); }
+        if (width > 1000) { ui_text(cr, "Aplicativos     Arquivos     Configurações", 24, 18, 15, false, 0xd2d7eb); }
         time_t now = time(NULL); struct tm local;
         localtime_r(&now, &local);
         char clock[64]; strftime(clock, sizeof(clock), "%d/%m  •  %H:%M", &local);
