@@ -45,3 +45,7 @@ O usuário pediu concentrar a iteração no dock e na barra superior, deixando o
 ### Barra compacta e acabamento de bordas
 
 Após feedback positivo sobre o material mais claro, a barra passa a 44 px de altura e 6 px de margem superior/lateral. O contorno usa iluminação direcional para destacar o volume do vidro, com linha interna menos marcada. Dock mantém tamanho e ações; wallpaper permanece igual. Prévia nativa atualizada; fidelidade completa segue pendente.
+
+### Dock compacto
+
+Dock com 56 px de largura, 6 px de margem esquerda e botões de 40×40. Detalhes azuis/violetas das bordas e reflexos localizados recebem mais brilho, preservando a tonalização clara e a barra de 44 px. Prévia e geometria de execução compartilham constantes; wallpaper preservado.

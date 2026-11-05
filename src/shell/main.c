@@ -23,7 +23,8 @@
 #include <wayland-cursor.h>
 #include "layer-shell-client.h"
 extern char **environ;
-enum { PANEL_HEIGHT = 44, PANEL_MARGIN = 6, PANEL_ZONE = 52 };
+enum { PANEL_HEIGHT = 44, PANEL_MARGIN = 6, PANEL_ZONE = 52,
+    DOCK_WIDTH = 56, DOCK_HEIGHT = 226, DOCK_MARGIN = 6, DOCK_ZONE = 64 };
 struct app;
 struct surface {
     struct app *app;
@@ -61,7 +62,7 @@ struct app {
     int backdrop_width, backdrop_height;
     struct jlinux_glass glass;
 };
-static struct ui_rect dock_button(int index) { return (struct ui_rect){10, 14 + index * 66, 48, 48}; }
+static struct ui_rect dock_button(int index) { return (struct ui_rect){8, 18 + index * 66, 40, 40}; }
 static int dock_hit(double x, double y) {
     for (int i = 0; i < 3; i++) { if (ui_contains(dock_button(i), x, y)) { return i; } }
     return -1;
@@ -73,8 +74,8 @@ static void paint(struct surface *surface, cairo_t *cr) {
     if (surface == &surface->app->wallpaper) {
         ui_wallpaper(cr, width, height);
     } else if (surface == &surface->app->dock) {
-        jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, 30,
-            surface->app->backdrop, 24, (surface->app->wallpaper.height - height) / 2.0, surface->app->glass);
+        jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (width - 2) / 2.0,
+            surface->app->backdrop, DOCK_MARGIN, (surface->app->wallpaper.height - height) / 2.0, surface->app->glass);
         const enum ui_icon icons[] = {UI_HOME, UI_TERMINAL, UI_CODE};
         const unsigned int colors[] = {0xf0f2ff, 0xe3e8f6, 0x78b8f3};
         for (int i = 0; i < 3; i++) { ui_button(cr, dock_button(i), icons[i], surface->hover == i, colors[i]); }
@@ -296,13 +297,13 @@ static int preview(const char *path) {
     if (!glass_settings(&app)) { return 1; }
     app.wallpaper = (struct surface){.app = &app, .width = 1672, .height = 941};
     app.panel = (struct surface){.app = &app, .width = 1672 - 2 * PANEL_MARGIN, .height = PANEL_HEIGHT};
-    app.dock = (struct surface){.app = &app, .width = 68, .height = 226, .hover = -1};
+    app.dock = (struct surface){.app = &app, .width = DOCK_WIDTH, .height = DOCK_HEIGHT, .hover = -1};
     cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1672, 941);
     if (!prepare_backdrop(&app)) { cairo_surface_destroy(image); return 1; }
     cairo_t *cr = cairo_create(image); paint(&app.wallpaper, cr);
     cairo_push_group(cr); cairo_translate(cr, PANEL_MARGIN, PANEL_MARGIN); paint(&app.panel, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr); cairo_identity_matrix(cr);
-    cairo_push_group(cr); cairo_translate(cr, 24, (941 - 226) / 2.0); paint(&app.dock, cr);
+    cairo_push_group(cr); cairo_translate(cr, DOCK_MARGIN, (941 - DOCK_HEIGHT) / 2.0); paint(&app.dock, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr);
     cairo_status_t status = cairo_surface_write_to_png(image, path);
     cairo_destroy(cr); cairo_surface_destroy(image);
@@ -333,7 +334,7 @@ int main(int argc, char **argv) {
     if (!create_surface(&app, &app.panel, "jlinux-panel", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 0, PANEL_HEIGHT, PANEL_ZONE, PANEL_MARGIN)) { goto cleanup; }
     if (!create_surface(&app, &app.dock, "jlinux-dock", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
-        ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT, 68, 226, 92, 24)) { goto cleanup; }
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT, DOCK_WIDTH, DOCK_HEIGHT, DOCK_ZONE, DOCK_MARGIN)) { goto cleanup; }
     struct itimerspec timer = {.it_value = {.tv_sec = 30}, .it_interval = {.tv_sec = 30}};
     if (timerfd_settime(app.timer, 0, &timer, NULL)) { goto cleanup; }
     while (app.running) {

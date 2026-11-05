@@ -125,3 +125,9 @@ Próxima entrega visual: protótipo que reproduza fielmente composição, materi
 - Barra reduzida de 54 para 44 px, margem de 12 para 6 px e reserva superior de 82 para 58 px (zona + margem). Texto, ícones, aviso e amostragem do fundo acompanham o novo layout; prévia usa as mesmas constantes.
 - Bordas do dock/barra recebem bevel com iluminação direcional e contorno interno mais discreto, preservando o material mais claro da iteração anterior. Wallpaper preservado.
 - Seis testes locais release e ASan/UBSan passaram; prévia inspecionada. Sem benchmark GPU/energia ou confirmação visual final do usuário.
+
+## Dock compacto e contornos coloridos — fix/slim-dock-glow
+
+- Dock de 68 para 56 px de largura e margem esquerda de 24 para 6 px; botões de 40×40 com ícones preservados. Raio, amostragem do fundo, área reservada e prévia acompanham as novas constantes.
+- Reflexos localizados e contornos azuis/violetas mais brilhantes no dock e na barra. Wallpaper preservado.
+- Seis testes release e ASan/UBSan passaram; clique no terminal atualizado para o centro do novo dock. Prévia inspecionada. Sem benchmark GPU/energia nesta alteração.
