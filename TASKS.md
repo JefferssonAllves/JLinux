@@ -165,3 +165,5 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - **Ativação:** sessão principal preservada; nova versão do compositor ainda precisa ser iniciada. Sem benchmark ou validação física desta mudança.
 
 **Feedback visual do usuário:** base inicial de vidro, cabeçalhos retangulares, bordas iluminadas e cantos discretos aprovada como versão inicial após o reinício anterior. Preservar essa direção; isso não conclui o Glass completo.
+
+**WM-MAX · ativação realizada:** usuário autorizou reinício e a versão nova foi iniciada na sessão DRM principal, com Codex, painel e dock mapeados. Pendente avaliação física pelo usuário; testes automatizados já registrados acima.

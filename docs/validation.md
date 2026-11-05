@@ -93,3 +93,7 @@ Após autorização explícita do usuário para reiniciar, a sessão principal a
 Oito testes locais passaram em release e ASan/UBSan. Foot real valida maximizar por Super+↑ e botão, restaurar pelo botão e Super+↓, preservação do tamanho anterior, pedido inicial `--maximized` e resize posterior. Cabeçalho/fechar/drag continuam cobertos. Teste com shell valida área de conteúdo maximizada 1198×628 em 76,86 dentro de saída headless 1280×720, descontando barra, dock e moldura. Esse teste revelou reserva incorreta antes do map; listeners de map/unmap agora recalculam a área útil.
 
 Prévia de componentes atualizada. Sessão DRM corrente preservada e ainda usa a versão anterior; ativação e avaliação física desta mudança pendentes. Não houve benchmark GPU/energia.
+
+### Ativação da maximização na sessão principal
+
+Usuário autorizou novo reinício da sessão. Supervisor anterior encerrado normalmente e sessão iniciada com a versão feature/window-maximize via `jlinux-session --drm --codex`. Logs confirmam AMD Radeon/GLES2, saída HDMI-A-1 e Codex/wallpaper/painel/dock mapeados. Maximizar/restaurar e a correção da área útil agora estão no compositor da sessão principal; teste físico e avaliação do usuário continuam pendentes.
