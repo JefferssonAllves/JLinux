@@ -2,7 +2,7 @@
 #define JLINUX_WINDOW_FRAME_H
 #include <wlr/types/wlr_scene.h>
 #include "../effects/glass.h"
-enum { JLINUX_FRAME_BORDER = 6, JLINUX_FRAME_HEADER = 36 };
+enum { JLINUX_FRAME_BORDER = 6, JLINUX_FRAME_HEADER = 36, JLINUX_FRAME_RADIUS = 6 };
 struct jlinux_window_frame {
     struct wlr_scene_buffer *parts[4];
 };

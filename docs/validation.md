@@ -83,3 +83,7 @@ Oito testes locais release e ASan/UBSan passaram, sem supressões. Novos testes 
 Prévias de moldura e barra inspecionadas. Não há blur nas molduras ou máscara arredondada do conteúdo dos aplicativos. Sem benchmark GPU/energia nesta entrega. Testes headless não comprovam comportamento físico completo.
 
 Sessão aninhada iniciada automaticamente usando jlinux-session, mantendo o compositor DRM e terminais anteriores. Logs locais registram backend Wayland, GLES2/Mesa na AMD Radeon e terminal/painel/dock mapeados. Isso confirma inicialização aninhada com GPU, não inspeção visual da sessão ou benchmark. O shell da sessão externa também foi atualizado para os pontos de brilho. Molduras do compositor antigo não podem ser atualizadas ao vivo; a avaliação das molduras novas ocorre na sessão aninhada.
+
+### Aplicação na sessão DRM principal
+
+Após autorização explícita do usuário para reiniciar, a sessão principal antiga e a prévia aninhada foram encerradas. Nova sessão iniciada com `jlinux-session --drm --codex`, supervisionada pelo iniciador C. Logs confirmam renderizador AMD Radeon/GLES2, saída HDMI-A-1 e mapeamento de Codex, wallpaper, painel e dock. As molduras agora pertencem ao compositor da sessão principal. Essa evidência confirma inicialização/mapeamento; aprovação visual e interação física pelo usuário permanecem pendentes.

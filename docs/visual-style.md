@@ -57,3 +57,7 @@ Altura atual: 36 px, margem de 6 px. A extremidade direita usa azul-violeta meno
 ### Molduras nativas
 
 Cabeçalho compacto de 36 px, título, fechar, transparência e bordas azul-violeta do material compartilhado. Janela sem foco recebe moldura mais discreta. Arraste pelo cabeçalho e resize pelas bordas esquerda/direita/inferior; Super+arraste permanece. Maximizar/minimizar, tema interno dos aplicativos e blur sobre janelas seguem pendentes. A barra superior ganhou reflexos estreitos em três pontos do contorno, conforme novo pedido do usuário.
+
+### Forma das janelas definida pelo usuário
+
+O cabeçalho das janelas permanece retangular, com vidro semelhante ao dock. Contorno iluminado azul-violeta e cantos externos com raio discreto de 6 px, sem formato de cápsula. A junção inferior do cabeçalho é reta. Essa regra vale para a moldura comum dos xdg-toplevel; o interior dos aplicativos não recebe tema forçado.

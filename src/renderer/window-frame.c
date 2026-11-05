@@ -46,8 +46,10 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
         buffers[i]->image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, boxes[i][2], boxes[i][3]);
         cairo_t *cr = cairo_create(buffers[i]->image);
         cairo_translate(cr, -boxes[i][0], -boxes[i][1]);
-        jlinux_glass_paint(cr, (struct ui_rect){.5, .5, full_width - 1, full_height - 1}, 14,
-            NULL, 0, 0, effects);
+        /* Extend the header below its strip so its lower edge stays square. */
+        int material_height = i == 0 ? header + JLINUX_FRAME_RADIUS : full_height;
+        jlinux_glass_paint(cr, (struct ui_rect){.5, .5, full_width - 1, material_height - 1},
+            JLINUX_FRAME_RADIUS, NULL, 0, 0, effects);
         if (i == 0) {
             cairo_save(cr); cairo_rectangle(cr, 16, 3, full_width - 70, header - 6); cairo_clip(cr);
             ui_text(cr, title ? title : "JLinux", 16, 8, 14, true, 0xedf0ff); cairo_restore(cr);
