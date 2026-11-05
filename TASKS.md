@@ -173,3 +173,8 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - Cabeçalho com reflexão em camadas e pontos de luz no topo/laterais, contorno interno fino para destacar espessura. Efeito exclusivo das molduras em effects/, sem alterar dock/barra, geometria ou hit testing. REFLECTION desativado remove o acabamento adicional; sem animação ou timer novo.
 - Oito testes release e ASan/UBSan passaram; teste do componente compara transparência do brilho com/sem reflexão. Prévia inspecionada e atualizada. Sem blur/refração nas molduras ou benchmark GPU/energia.
 - Sessão DRM reiniciada usando autorização do usuário, com Codex/painel/dock mapeados. Pendente avaliação visual do usuário.
+
+## Bordas de janela com acabamento do dock — fix/window-dock-material
+
+- Gradiente de contorno extraído em helper compartilhado: molduras reutilizam a paleta do dock. Clarões pontuais extras nas laterais removidos; faixa suave contínua e linha interna reforçam espessura. Geometria, controles e material do dock preservados.
+- Oito testes release e ASan/UBSan passaram; prévia do componente atualizada/inspecionada. Sessão DRM reiniciada conforme autorização vigente; Codex/painel/dock mapeados. Aprovação visual pendente; sem benchmark ou blur nas molduras.
