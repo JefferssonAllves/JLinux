@@ -31,3 +31,7 @@ O próximo protótipo deve seguir essas referências diretamente. A implementaç
 ## Histórico substituído
 
 A imagem gerada jlinux-glass-v1.png foi preservada como histórico. As propostas V1 e V2 não são a direção visual escolhida; as referências acima têm precedência.
+
+## Primeira base nativa — estado de implementação
+
+[Desenho inicial do shell C](native-shell-baseline.png): PNG produzido pelas próprias rotinas Cairo/Pango do toolkit, no modo `jlinux-shell --preview`. Não é uma nova referência escolhida, uma imagem gerada por IA ou uma captura da sessão real. Mostra apenas os componentes já desenhados: painel e dock de três ações. Wallpaper, materiais Glass, ícones completos e fidelidade às fotos acima continuam em implementação.

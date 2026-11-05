@@ -1,127 +1,347 @@
-#include <gtk/gtk.h>
-#include <gtk-layer-shell.h>
-
-static gboolean update_clock(gpointer data) {
-    GDateTime *now = g_date_time_new_now_local();
-    gchar *text = g_date_time_format(now, "%d/%m  ·  %H:%M");
-    gtk_label_set_text(GTK_LABEL(data), text);
-    g_free(text);
-    g_date_time_unref(now);
-    return G_SOURCE_CONTINUE;
+#define _GNU_SOURCE
+#include "../toolkit/painter.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <linux/input-event-codes.h>
+#include <poll.h>
+#include <signal.h>
+#include <spawn.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/signalfd.h>
+#include <sys/timerfd.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
+#include <wayland-client.h>
+#include <wayland-cursor.h>
+#include "layer-shell-client.h"
+extern char **environ;
+struct app;
+struct surface {
+    struct app *app;
+    struct wl_surface *wl;
+    struct zwlr_layer_surface_v1 *layer;
+    const char *name;
+    int width, height, buffers, hover;
+    bool dirty, configured;
+};
+struct buffer {
+    struct surface *surface;
+    struct wl_buffer *wl;
+    void *data;
+    size_t size;
+    struct wl_list link;
+};
+struct app {
+    struct wl_display *display;
+    struct wl_registry *registry;
+    struct wl_compositor *compositor;
+    struct wl_shm *shm;
+    struct zwlr_layer_shell_v1 *layers;
+    struct wl_seat *seat;
+    struct wl_pointer *pointer;
+    struct wl_cursor_theme *cursor_theme;
+    struct wl_surface *cursor_surface;
+    struct surface wallpaper, panel, dock;
+    struct surface *pointer_surface;
+    struct wl_list buffers;
+    double pointer_x, pointer_y;
+    bool running, info;
+    int timer, signals;
+    char notice[180];
+};
+static struct ui_rect dock_button(int index) { return (struct ui_rect){10, 14 + index * 66, 48, 48}; }
+static int dock_hit(double x, double y) {
+    for (int i = 0; i < 3; i++) { if (ui_contains(dock_button(i), x, y)) { return i; } }
+    return -1;
 }
-
-static void open_terminal(GtkButton *button, gpointer data) {
-    (void)button;
-    gboolean codex = GPOINTER_TO_INT(data);
-    gchar *plain[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL};
-    gchar *assistant[] = {"foot", "--term=xterm-256color", "--title=JLinux Codex", "codex", NULL};
-    GError *error = NULL;
-    if (!g_spawn_async(NULL, codex ? assistant : plain, NULL, G_SPAWN_SEARCH_PATH,
-                       NULL, NULL, NULL, &error)) {
-        g_warning("Não foi possível abrir terminal: %s", error->message);
-        g_clear_error(&error);
-    }
-}
-
-static GtkWidget *label(const char *text, const char *name) {
-    GtkWidget *widget = gtk_label_new(text);
-    gtk_widget_set_name(widget, name);
-    return widget;
-}
-
-static GtkWidget *layer_window(const char *name, GtkLayerShellLayer layer) {
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_widget_set_name(window, name);
-    gtk_window_set_title(GTK_WINDOW(window), name);
-    gtk_layer_init_for_window(GTK_WINDOW(window));
-    gtk_layer_set_namespace(GTK_WINDOW(window), name);
-    gtk_layer_set_layer(GTK_WINDOW(window), layer);
-    gtk_layer_set_keyboard_mode(GTK_WINDOW(window), GTK_LAYER_SHELL_KEYBOARD_MODE_NONE);
-    gtk_layer_set_anchor(GTK_WINDOW(window), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
-    gtk_layer_set_anchor(GTK_WINDOW(window), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
-    gtk_layer_set_anchor(GTK_WINDOW(window), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-    return window;
-}
-
-int main(int argc, char **argv) {
-    if (!gtk_init_check(&argc, &argv) || !gtk_layer_is_supported()) {
-        g_printerr("JLinux Shell requer sessão Wayland com layer-shell.\n");
-        return 1;
-    }
-    GtkCssProvider *css = gtk_css_provider_new();
-    GError *error = NULL;
-    gtk_css_provider_load_from_data(css,
-        "* { font-family: Sans; color: #e5edf7; }"
-        "#jlinux-wallpaper { background: #090e17; }"
-        "#jlinux-panel { background: #111b29; border-bottom: 1px solid #243449; }"
-        "#brand { color: #6ce5c0; font-size: 15px; font-weight: bold; }"
-        "#workspace { color: #a9b9cc; font-size: 12px; }"
-        "#clock { font-size: 12px; }"
-        "button { background: #203448; color: #e5edf7; border: 0; padding: 4px 12px; }"
-        "#eyebrow { color: #6ce5c0; font-size: 12px; letter-spacing: 3px; }"
-        "#title { font-size: 72px; font-weight: bold; }"
-        "#subtitle { color: #a9b9cc; font-size: 19px; }"
-        "#status { color: #71849b; font-size: 12px; margin-top: 24px; }",
-        -1, &error);
-    if (error) {
-        g_printerr("Tema inválido: %s\n", error->message);
-        g_error_free(error);
-        g_object_unref(css);
-        return 1;
-    }
-    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
-        GTK_STYLE_PROVIDER(css), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(css);
-
-    const gchar *theme_path = g_getenv("JLINUX_THEME");
-    if (theme_path) {
-        GtkCssProvider *custom = gtk_css_provider_new();
-        if (!gtk_css_provider_load_from_path(custom, theme_path, &error)) {
-            g_printerr("Tema adicional inválido: %s\n", error->message);
-            g_clear_error(&error);
-            g_object_unref(custom);
-            return 1;
+static void paint(struct surface *surface, cairo_t *cr) {
+    int width = surface->width, height = surface->height;
+    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE); cairo_set_source_rgba(cr, 0, 0, 0, 0); cairo_paint(cr);
+    cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+    if (surface == &surface->app->wallpaper) {
+        cairo_pattern_t *bg = cairo_pattern_create_linear(0, 0, width, height);
+        cairo_pattern_add_color_stop_rgb(bg, 0, .012, .018, .04);
+        cairo_pattern_add_color_stop_rgb(bg, .6, .025, .045, .105);
+        cairo_pattern_add_color_stop_rgb(bg, 1, .025, .012, .05);
+        cairo_set_source(cr, bg); cairo_paint(cr); cairo_pattern_destroy(bg);
+    } else if (surface == &surface->app->dock) {
+        ui_panel(cr, (struct ui_rect){1, 1, width - 2, height - 2}, 30);
+        const enum ui_icon icons[] = {UI_HOME, UI_TERMINAL, UI_CODE};
+        const unsigned int colors[] = {0xf0f2ff, 0xe3e8f6, 0x78b8f3};
+        for (int i = 0; i < 3; i++) { ui_button(cr, dock_button(i), icons[i], surface->hover == i, colors[i]); }
+    } else {
+        ui_panel(cr, (struct ui_rect){1, 1, width - 2, height - 2}, 25);
+        ui_text(cr, "J", 20, 8, 28, true, 0xa680ff);
+        ui_text(cr, "JLinux", 47, 16, 19, true, 0xf1f2fc);
+        if (width > 1000) { ui_text(cr, "Aplicativos     Arquivos     Configurações", 166, 18, 15, false, 0xd2d7eb); }
+        time_t now = time(NULL); struct tm local;
+        localtime_r(&now, &local);
+        char clock[64]; strftime(clock, sizeof(clock), "%d/%m  •  %H:%M", &local);
+        ui_text(cr, clock, width / 2.0 - 68, 17, 16, true, 0xf1f2fc);
+        ui_icon(cr, UI_WIFI, width - 260, 15, 22, 0xa3aec9);
+        ui_text(cr, "Wi-Fi", width - 232, 18, 13, false, 0xa3aec9);
+        ui_icon(cr, UI_BLUETOOTH, width - 166, 15, 22, 0xa3aec9);
+        ui_text(cr, "Bluetooth", width - 140, 18, 13, false, 0xa3aec9);
+        ui_icon(cr, UI_POWER, width - 44, 15, 23, 0xe9eafa);
+        if (surface->app->info) {
+            /* shortcut: show help in the existing panel; real popovers arrive with shell navigation. */
+            cairo_set_source_rgb(cr, .035, .045, .09); cairo_rectangle(cr, 8, 5, width - 16, 44); cairo_fill(cr);
+            ui_text(cr, surface->app->notice, 24, 17, 14, false, 0xe6defe);
         }
-        gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
-            GTK_STYLE_PROVIDER(custom), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
-        g_object_unref(custom);
     }
-
-    GtkWidget *wallpaper = layer_window("jlinux-wallpaper", GTK_LAYER_SHELL_LAYER_BACKGROUND);
-    gtk_layer_set_anchor(GTK_WINDOW(wallpaper), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
-    GtkWidget *welcome = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
-    gtk_widget_set_halign(welcome, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(welcome, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(welcome), label("SEU ESPAÇO", "eyebrow"), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(welcome), label("JLinux", "title"), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(welcome), label("Uma base feita para ser sua.", "subtitle"), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(welcome), label("Super+Enter: terminal   ·   Super+Esc: sair", "status"), FALSE, FALSE, 0);
-    gtk_container_add(GTK_CONTAINER(wallpaper), welcome);
-
-    GtkWidget *panel = layer_window("jlinux-panel", GTK_LAYER_SHELL_LAYER_TOP);
-    gtk_layer_auto_exclusive_zone_enable(GTK_WINDOW(panel));
-    GtkWidget *bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 24);
-    gtk_widget_set_margin_start(bar, 24);
-    gtk_widget_set_margin_end(bar, 24);
-    gtk_widget_set_margin_top(bar, 14);
-    gtk_widget_set_margin_bottom(bar, 14);
-    gtk_box_pack_start(GTK_BOX(bar), label("JLinux", "brand"), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(bar), label("Desktop 01", "workspace"), FALSE, FALSE, 0);
-    GtkWidget *terminal = gtk_button_new_with_label("Terminal");
-    g_signal_connect(terminal, "clicked", G_CALLBACK(open_terminal), GINT_TO_POINTER(FALSE));
-    gtk_box_pack_start(GTK_BOX(bar), terminal, FALSE, FALSE, 0);
-    GtkWidget *codex = gtk_button_new_with_label("Codex");
-    g_signal_connect(codex, "clicked", G_CALLBACK(open_terminal), GINT_TO_POINTER(TRUE));
-    gtk_box_pack_start(GTK_BOX(bar), codex, FALSE, FALSE, 0);
-    GtkWidget *clock = label("", "clock");
-    gtk_box_pack_end(GTK_BOX(bar), clock, FALSE, FALSE, 0);
-    gtk_container_add(GTK_CONTAINER(panel), bar);
-    update_clock(clock);
-    guint timer = g_timeout_add_seconds(30, update_clock, clock);
-    gtk_widget_show_all(wallpaper);
-    gtk_widget_show_all(panel);
-    gtk_main();
-    g_source_remove(timer);
-    return 0;
+}
+static void buffer_destroy(struct buffer *buffer) {
+    wl_buffer_destroy(buffer->wl); munmap(buffer->data, buffer->size);
+    wl_list_remove(&buffer->link); buffer->surface->buffers--; free(buffer);
+}
+static void released(void *data, struct wl_buffer *wl) { (void)wl; buffer_destroy(data); }
+static const struct wl_buffer_listener buffer_listener = {.release = released};
+static bool draw(struct surface *surface) {
+    if (!surface->configured || !surface->dirty || surface->buffers >= 2) { return true; }
+    if (surface->width < 1 || surface->height < 1 || surface->width > 8192 || surface->height > 8192) { return false; }
+    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, surface->width);
+    if (stride < 0 || surface->height > INT_MAX / stride) { return false; }
+    size_t size = (size_t)stride * surface->height;
+    struct buffer *buffer = calloc(1, sizeof(*buffer));
+    if (!buffer) { return false; }
+    int fd = memfd_create("jlinux-shell", MFD_CLOEXEC);
+    if (fd < 0 || ftruncate(fd, (off_t)size) < 0) {
+        if (fd >= 0) { close(fd); } free(buffer); return false;
+    }
+    void *mapping = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (mapping == MAP_FAILED) { close(fd); free(buffer); return false; }
+    struct wl_shm_pool *pool = wl_shm_create_pool(surface->app->shm, fd, (int)size);
+    if (!pool) { close(fd); munmap(mapping, size); free(buffer); return false; }
+    buffer->wl = wl_shm_pool_create_buffer(pool, 0, surface->width, surface->height, stride, WL_SHM_FORMAT_ARGB8888);
+    wl_shm_pool_destroy(pool); close(fd);
+    if (!buffer->wl) { munmap(mapping, size); free(buffer); return false; }
+    buffer->surface = surface; buffer->data = mapping; buffer->size = size;
+    wl_list_insert(&surface->app->buffers, &buffer->link); surface->buffers++;
+    wl_buffer_add_listener(buffer->wl, &buffer_listener, buffer);
+    cairo_surface_t *image = cairo_image_surface_create_for_data(mapping, CAIRO_FORMAT_ARGB32,
+        surface->width, surface->height, stride);
+    cairo_t *cr = cairo_create(image); paint(surface, cr);
+    bool valid = cairo_status(cr) == CAIRO_STATUS_SUCCESS && cairo_surface_status(image) == CAIRO_STATUS_SUCCESS;
+    cairo_destroy(cr); cairo_surface_destroy(image);
+    if (!valid) { buffer_destroy(buffer); return false; }
+    wl_surface_attach(surface->wl, buffer->wl, 0, 0);
+    wl_surface_damage_buffer(surface->wl, 0, 0, surface->width, surface->height);
+    wl_surface_commit(surface->wl); surface->dirty = false;
+    return true;
+}
+static void configure(void *data, struct zwlr_layer_surface_v1 *layer, uint32_t serial, uint32_t width, uint32_t height) {
+    struct surface *surface = data;
+    zwlr_layer_surface_v1_ack_configure(layer, serial);
+    if (width > 8192 || height > 8192 || !width || !height) { surface->app->running = false; return; }
+    surface->width = (int)width; surface->height = (int)height;
+    surface->configured = true; surface->dirty = true;
+}
+static void closed(void *data, struct zwlr_layer_surface_v1 *layer) {
+    (void)layer; struct surface *surface = data; surface->app->running = false;
+}
+static const struct zwlr_layer_surface_v1_listener layer_listener = {.configure = configure, .closed = closed};
+static bool create_surface(struct app *app, struct surface *surface, const char *name,
+                           uint32_t level, uint32_t anchor, int width, int height, int zone, int margin) {
+    surface->app = app; surface->name = name; surface->hover = -1;
+    surface->wl = wl_compositor_create_surface(app->compositor);
+    if (!surface->wl) { return false; }
+    surface->layer = zwlr_layer_shell_v1_get_layer_surface(app->layers, surface->wl, NULL, level, name);
+    if (!surface->layer) { return false; }
+    zwlr_layer_surface_v1_add_listener(surface->layer, &layer_listener, surface);
+    zwlr_layer_surface_v1_set_size(surface->layer, width, height);
+    zwlr_layer_surface_v1_set_anchor(surface->layer, anchor);
+    zwlr_layer_surface_v1_set_exclusive_zone(surface->layer, zone);
+    zwlr_layer_surface_v1_set_margin(surface->layer, margin, margin, margin, margin);
+    zwlr_layer_surface_v1_set_keyboard_interactivity(surface->layer, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE);
+    if (surface == &app->wallpaper) {
+        struct wl_region *empty = wl_compositor_create_region(app->compositor);
+        if (!empty) { return false; }
+        wl_surface_set_input_region(surface->wl, empty); wl_region_destroy(empty);
+    }
+    wl_surface_commit(surface->wl);
+    return true;
+}
+static void notice(struct app *app, const char *message) {
+    snprintf(app->notice, sizeof(app->notice), "%s", message); app->info = true; app->panel.dirty = true;
+}
+static void launch(struct app *app, bool codex) {
+    char *plain[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL};
+    char *assistant[] = {"foot", "--term=xterm-256color", "--title=JLinux Codex", "codex", NULL};
+    posix_spawnattr_t attributes; int error = posix_spawnattr_init(&attributes);
+    if (!error) {
+        sigset_t empty; sigemptyset(&empty);
+        posix_spawnattr_setsigmask(&attributes, &empty);
+        posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETSIGMASK);
+        pid_t child; error = posix_spawnp(&child, "foot", NULL, &attributes, codex ? assistant : plain, environ);
+        posix_spawnattr_destroy(&attributes);
+    }
+    if (error) { notice(app, "Não foi possível abrir Foot. Verifique a instalação do terminal."); }
+    else { app->info = false; app->panel.dirty = true; }
+}
+static void pointer_enter(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *wl, wl_fixed_t x, wl_fixed_t y) {
+    struct app *app = data;
+    struct wl_cursor *cursor = app->cursor_theme ? wl_cursor_theme_get_cursor(app->cursor_theme, "left_ptr") : NULL;
+    if (cursor && cursor->image_count) {
+        struct wl_cursor_image *image = cursor->images[0];
+        wl_pointer_set_cursor(pointer, serial, app->cursor_surface, (int)image->hotspot_x, (int)image->hotspot_y);
+        wl_surface_attach(app->cursor_surface, wl_cursor_image_get_buffer(image), 0, 0);
+        wl_surface_damage(app->cursor_surface, 0, 0, (int)image->width, (int)image->height);
+        wl_surface_commit(app->cursor_surface);
+    }
+    struct surface *surfaces[] = {&app->panel, &app->dock};
+    app->pointer_surface = NULL;
+    for (size_t i = 0; i < 2; i++) { if (surfaces[i]->wl == wl) { app->pointer_surface = surfaces[i]; } }
+    app->pointer_x = wl_fixed_to_double(x); app->pointer_y = wl_fixed_to_double(y);
+}
+static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *wl) {
+    (void)pointer; (void)serial; (void)wl;
+    struct app *app = data;
+    if (app->pointer_surface) { app->pointer_surface->hover = -1; app->pointer_surface->dirty = true; }
+    app->pointer_surface = NULL;
+}
+static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y) {
+    (void)pointer; (void)time;
+    struct app *app = data; app->pointer_x = wl_fixed_to_double(x); app->pointer_y = wl_fixed_to_double(y);
+    if (app->pointer_surface == &app->dock) {
+        int hit = dock_hit(app->pointer_x, app->pointer_y);
+        if (hit != app->dock.hover) { app->dock.hover = hit; app->dock.dirty = true; }
+    }
+}
+static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
+    (void)pointer; (void)serial; (void)time;
+    struct app *app = data;
+    if (button != BTN_LEFT || state != WL_POINTER_BUTTON_STATE_RELEASED) { return; }
+    if (app->pointer_surface == &app->dock) {
+        int hit = dock_hit(app->pointer_x, app->pointer_y);
+        if (hit == 0) { notice(app, "JLinux • Dock: Terminal e Codex. Super+Enter: terminal. Super+Esc: sair."); }
+        else if (hit == 1 || hit == 2) { launch(app, hit == 2); }
+    } else if (app->pointer_surface == &app->panel) {
+        if (app->info) { app->info = false; app->panel.dirty = true; }
+        else if (app->pointer_x > app->panel.width - 60) {
+            notice(app, "Super+Esc encerra a sessão. Suspender, reiniciar e desligar ainda não estão integrados.");
+        } else { notice(app, "Wi-Fi, Bluetooth e os menus de aplicativos serão conectados aos serviços do sistema."); }
+    }
+}
+static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
+    (void)data; (void)pointer; (void)time; (void)axis; (void)value;
+}
+static const struct wl_pointer_listener pointer_listener = {.enter = pointer_enter, .leave = pointer_leave,
+    .motion = pointer_motion, .button = pointer_button, .axis = pointer_axis};
+static void capabilities(void *data, struct wl_seat *seat, uint32_t capabilities) {
+    struct app *app = data;
+    if ((capabilities & WL_SEAT_CAPABILITY_POINTER) && !app->pointer) {
+        app->pointer = wl_seat_get_pointer(seat); wl_pointer_add_listener(app->pointer, &pointer_listener, app);
+    } else if (!(capabilities & WL_SEAT_CAPABILITY_POINTER) && app->pointer) {
+        wl_pointer_destroy(app->pointer); app->pointer = NULL; app->pointer_surface = NULL;
+    }
+}
+static const struct wl_seat_listener seat_listener = {.capabilities = capabilities};
+static void global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
+    struct app *app = data;
+    if (!strcmp(interface, wl_compositor_interface.name) && version >= 4) {
+        app->compositor = wl_registry_bind(registry, name, &wl_compositor_interface, 4);
+    } else if (!strcmp(interface, wl_shm_interface.name)) {
+        app->shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
+    } else if (!strcmp(interface, zwlr_layer_shell_v1_interface.name)) {
+        app->layers = wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, 1);
+    } else if (!strcmp(interface, wl_seat_interface.name) && !app->seat) {
+        app->seat = wl_registry_bind(registry, name, &wl_seat_interface, 1); wl_seat_add_listener(app->seat, &seat_listener, app);
+    }
+}
+static void global_remove(void *data, struct wl_registry *registry, uint32_t name) { (void)data; (void)registry; (void)name; }
+static const struct wl_registry_listener registry_listener = {.global = global, .global_remove = global_remove};
+static int preview(const char *path) {
+    struct app app = {0};
+    app.wallpaper = (struct surface){.app = &app, .width = 1672, .height = 941};
+    app.panel = (struct surface){.app = &app, .width = 1640, .height = 54};
+    app.dock = (struct surface){.app = &app, .width = 68, .height = 226, .hover = -1};
+    cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1672, 941);
+    cairo_t *cr = cairo_create(image); paint(&app.wallpaper, cr);
+    cairo_push_group(cr); cairo_translate(cr, 16, 12); paint(&app.panel, cr);
+    cairo_pop_group_to_source(cr); cairo_paint(cr); cairo_identity_matrix(cr);
+    cairo_push_group(cr); cairo_translate(cr, 24, (941 - 226) / 2.0); paint(&app.dock, cr);
+    cairo_pop_group_to_source(cr); cairo_paint(cr);
+    cairo_status_t status = cairo_surface_write_to_png(image, path);
+    cairo_destroy(cr); cairo_surface_destroy(image);
+    ui_finish();
+    return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
+}
+int main(int argc, char **argv) {
+    if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2]); }
+    if (argc != 1) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png]\n"); return 1; }
+    struct app app = {.running = true, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
+    if (getenv("JLINUX_THEME")) { fprintf(stderr, "JLINUX_THEME/CSS não é suportado pelo shell nativo.\n"); return 1; }
+    sigset_t signals; sigemptyset(&signals); sigaddset(&signals, SIGINT); sigaddset(&signals, SIGTERM); sigaddset(&signals, SIGCHLD);
+    if (sigprocmask(SIG_BLOCK, &signals, NULL)) { return 1; }
+    app.signals = signalfd(-1, &signals, SFD_CLOEXEC | SFD_NONBLOCK);
+    app.timer = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
+    app.display = wl_display_connect(NULL);
+    int result = 1;
+    if (!app.display || app.signals < 0 || app.timer < 0) { goto cleanup; }
+    app.registry = wl_display_get_registry(app.display); wl_registry_add_listener(app.registry, &registry_listener, &app);
+    if (wl_display_roundtrip(app.display) < 0 || !app.compositor || !app.shm || !app.layers) { goto cleanup; }
+    app.cursor_theme = wl_cursor_theme_load(NULL, 24, app.shm);
+    app.cursor_surface = wl_compositor_create_surface(app.compositor);
+    uint32_t all = ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
+    if (!create_surface(&app, &app.wallpaper, "jlinux-wallpaper", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, all, 0, 0, -1, 0)) { goto cleanup; }
+    if (!create_surface(&app, &app.panel, "jlinux-panel", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 0, 54, 70, 12)) { goto cleanup; }
+    if (!create_surface(&app, &app.dock, "jlinux-dock", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT, 68, 226, 92, 24)) { goto cleanup; }
+    struct itimerspec timer = {.it_value = {.tv_sec = 30}, .it_interval = {.tv_sec = 30}};
+    if (timerfd_settime(app.timer, 0, &timer, NULL)) { goto cleanup; }
+    while (app.running) {
+        if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
+        if (!draw(&app.wallpaper) || !draw(&app.panel) || !draw(&app.dock)) { goto cleanup; }
+        while (wl_display_prepare_read(app.display) != 0) {
+            if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
+        }
+        int flushed = wl_display_flush(app.display);
+        if (flushed < 0 && errno != EAGAIN) { wl_display_cancel_read(app.display); goto cleanup; }
+        struct pollfd fds[] = {{wl_display_get_fd(app.display), POLLIN | (flushed < 0 ? POLLOUT : 0), 0},
+            {app.timer, POLLIN, 0}, {app.signals, POLLIN, 0}};
+        int ready = poll(fds, 3, -1);
+        if (ready < 0) { wl_display_cancel_read(app.display); if (errno == EINTR) { continue; } goto cleanup; }
+        if (fds[0].revents & POLLIN) { if (wl_display_read_events(app.display) < 0) { goto cleanup; } }
+        else { wl_display_cancel_read(app.display); }
+        if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) { goto cleanup; }
+        if (fds[1].revents & POLLIN) { uint64_t ticks; if (read(app.timer, &ticks, sizeof(ticks)) > 0) { app.panel.dirty = true; } }
+        if (fds[2].revents & POLLIN) {
+            struct signalfd_siginfo event;
+            while (read(app.signals, &event, sizeof(event)) == sizeof(event)) {
+                if (event.ssi_signo == SIGCHLD) { while (waitpid(-1, NULL, WNOHANG) > 0) { } }
+                else { app.running = false; }
+            }
+        }
+    }
+    result = 0;
+cleanup:
+    if (app.pointer) { wl_pointer_destroy(app.pointer); }
+    if (app.seat) { wl_seat_destroy(app.seat); }
+    if (app.cursor_surface) { wl_surface_destroy(app.cursor_surface); }
+    if (app.cursor_theme) { wl_cursor_theme_destroy(app.cursor_theme); }
+    struct surface *surfaces[] = {&app.dock, &app.panel, &app.wallpaper};
+    for (size_t i = 0; i < 3; i++) {
+        if (surfaces[i]->layer) { zwlr_layer_surface_v1_destroy(surfaces[i]->layer); }
+        if (surfaces[i]->wl) { wl_surface_destroy(surfaces[i]->wl); }
+    }
+    struct buffer *buffer, *next;
+    wl_list_for_each_safe(buffer, next, &app.buffers, link) { buffer_destroy(buffer); }
+    /* Layer-shell v1 has no protocol destructor. */
+    if (app.layers) { wl_proxy_destroy((struct wl_proxy *)app.layers); }
+    if (app.shm) { wl_shm_destroy(app.shm); }
+    if (app.compositor) { wl_compositor_destroy(app.compositor); }
+    if (app.registry) { wl_registry_destroy(app.registry); }
+    if (app.display) { wl_display_flush(app.display); wl_display_disconnect(app.display); }
+    if (app.timer >= 0) { close(app.timer); }
+    if (app.signals >= 0) { close(app.signals); }
+    ui_finish();
+    return result;
 }

@@ -52,3 +52,16 @@ Isso confirma inicialização e detecção dos periféricos no hardware real, se
 Criação/limpeza de renderizador e alocador wlroots e apresentação/frame-done foram extraídas para src/renderer/renderer.c. Release e ASan/UBSan passaram nos três testes existentes: ciclo de vida, reinício do shell e entrada/foco em terminais reais no backend headless. O TOML v2 foi analisado por tomllib sem erro de sintaxe.
 
 animation/ e effects/ contêm contratos documentados; ainda não há motores, shaders, toggles funcionais ou mudança visual Glass. Esta etapa não mediu desempenho nem reiniciou a sessão gráfica do usuário para teste físico.
+
+## Shell e iniciador nativos — 0.5
+
+O shell GTK/CSS foi substituído por cliente Wayland/C com painel, dock, ponteiro, tipografia Pango e buffers SHM desenhados com Cairo. O iniciador jlinux-session também é C; o script Python de execução e o tema CSS foram removidos. Python permanece nos testes.
+
+- Build release: passou com warnings como erros.
+- Quatro testes headless: passaram; cobrem ciclo de vida, shell/dock/wallpaper e clique que abre terminal, reinício do shell, teclado/foco em terminais e iniciador C com timeout/SIGTERM/validação de duração e limpeza do runtime.
+- Build ASan/UBSan: os mesmos quatro testes passaram, com verificação do status zero do shell no encerramento. Caches de fontes são liberados no shutdown; não foram usadas supressões ou desativação de leak detection.
+- Instalação em staging: passou para compositor, shell e iniciador.
+- `ldd jlinux-shell`: sem GTK ou interpretador Python.
+- PNG de preview: gerado e inspecionado; usa as rotinas nativas de desenho, não uma captura de DRM.
+
+O backend do toolkit ainda rasteriza buffers em CPU, com apresentação pelo compositor. Não houve benchmark ou comparação de eficiência. Não há blur/refração Glass, parser de tema, integração Wi-Fi/Bluetooth/energia ou fidelidade visual completa às referências. Dados e ações ainda indisponíveis são explicitados pelo shell.

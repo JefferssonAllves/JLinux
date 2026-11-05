@@ -60,6 +60,8 @@ struct interaction {
     struct wlr_xcursor_manager *theme;
     struct wl_list views, keyboards, pointers;
     struct view *focused, *grabbed;
+    struct wlr_box workarea;
+    bool has_workarea;
     unsigned int placement;
     uint32_t grab_button;
     bool resizing;
@@ -132,6 +134,7 @@ static void view_committed(struct wl_listener *listener, void *data) {
         struct wlr_output *output = wlr_output_layout_get_center_output(view->owner->layout);
         struct wlr_box area;
         wlr_output_layout_get_box(view->owner->layout, output, &area);
+        if (view->owner->has_workarea) { area = view->owner->workarea; }
         int width = area.width > 1100 ? 1000 : area.width - 80;
         int height = area.height > 760 ? 640 : area.height - 120;
         wlr_xdg_toplevel_set_size(view->xdg, width > 100 ? width : 100, height > 100 ? height : 100);
@@ -521,6 +524,17 @@ struct interaction *interaction_create(struct wl_display *display,
         listen(&state->virtual_pointer, &pointers->events.new_virtual_pointer, virtual_pointer_added);
     }
     return state;
+}
+void interaction_set_workarea(struct interaction *state, const struct wlr_box *area) {
+    if (!state || area->width <= 0 || area->height <= 0) { return; }
+    state->workarea = *area; state->has_workarea = true;
+    struct view *view;
+    wl_list_for_each(view, &state->views, link) {
+        int x = view->tree->node.x, y = view->tree->node.y;
+        if (x < area->x) { x = area->x + 8; }
+        if (y < area->y) { y = area->y + 8; }
+        wlr_scene_node_set_position(&view->tree->node, x, y);
+    }
 }
 void interaction_destroy(struct interaction *state) {
     if (!state) { return; }

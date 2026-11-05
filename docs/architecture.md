@@ -22,7 +22,7 @@ Aplicativos Wayland                 Shell e configurações JLinux
 
 Ferramentas web foram solicitadas para criar protótipos de tela e validar a direção visual com o usuário antes de construir a interface definitiva. shadcn, Magic/21st e skills de frontend/Liquid Glass são recursos dessa fase de exploração. Não estabelecem dependências de execução do desktop.
 
-O fluxo é prototipar a tela, iterar o visual com o usuário e implementar o resultado no ambiente nativo. O shell atual em GTK/CSS é uma etapa provisória para experimentar o compositor e o terminal; não representa a implementação final do toolkit próprio. A migração ainda precisa ser feita.
+O fluxo é prototipar a tela, iterar o visual com o usuário e implementar o resultado no ambiente nativo. O shell GTK/CSS foi substituído por um cliente Wayland/C com componentes próprios. O toolkit é inicial e usa Cairo/Pango para desenho/tipografia; não há fidelidade visual completa ou backend de efeitos ainda.
 
 A escolha técnica deve priorizar as tecnologias mais adequadas e eficientes para cada função, com comparação no hardware real. Avaliar latência, tempo de quadro, CPU/GPU, memória, energia, robustez e custo de manutenção. A linguagem ou biblioteca isolada não prova desempenho. A base atual é C/wlroots/Wayland/Mesa; mudanças dessa base precisam de justificativa técnica, sem adoção automática de uma stack por disponibilidade de ferramentas de prototipação.
 
@@ -65,15 +65,15 @@ Manter política de janelas e interpretação de preferências fora dos detalhes
 
 ## Estado implementado
 
-`jlinux-compositor` inicializa servidor Wayland, backend, renderizador, alocador, cena e saídas. Publica socket, apresenta fundo sólido, organiza superfícies layer-shell por camada e encerra com SIGINT/SIGTERM. `jlinux-shell` é um cliente GTK separado com wallpaper, mensagem de boas-vindas, barra superior e relógio. O shell aceita CSS adicional via JLINUX_THEME; ainda não lê o TOML.
+`jlinux-compositor` mantém servidor, saídas, janelas e entrada. O renderer wlroots é separado em src/renderer/. `jlinux-shell` agora é um cliente libwayland-client em C que implementa diretamente layer-shell, buffers wl_shm limitados por superfície, ponteiro, painel e dock. O toolkit inicial em src/toolkit/ fornece desenho de superfícies, ícones, texto e botões via Cairo/Pango; GTK e CSS saíram do runtime.
 
-O teste headless/Pixman mapeia wallpaper e painel e reinicia o shell duas vezes sem derrubar o compositor. Há build ASan/UBSan separado. Não houve validação visual em monitor físico ou medição de desempenho.
+O iniciador jlinux-session também é C: runtime privado, prontidão por pipe, supervisão por signalfd/timerfd e limpeza dos grupos criados. Python é usado nos testes, não na sessão.
 
-A versão 0.4 adiciona janelas xdg, popups básicos, teclado XKB, ponteiro com cursor, foco por clique, alternância, movimento e redimensionamento via Super+mouse. O terminal inicial é Foot, com shell normal ou Codex CLI. O módulo interaction.c contém essas responsabilidades, separado do shell GTK.
+O shell redesenha por alterações e relógio de 30 segundos. O compositor calcula a área útil dos layers; novas janelas evitam barra/dock e posições encobertas são ajustadas quando essa área muda. Essa política inicial usa a saída central; não constitui gerenciamento multimonitor completo.
 
-Há atalhos para terminal, fechar janela e encerrar sessão. O runner suporta DRM explícito a partir do TTY, supervisiona processos com pidfd e usa grupos de processos para limpeza. Não substitui a sessão de login.
+Dock abre Foot/Codex. Wi-Fi, Bluetooth, menus e ações de energia não estão integrados: o shell mostra aviso em vez de inventar estados ou executar ações. Não há leitura TOML, recarga de tema, blur/refração, animações, IME ou bloqueio. Popups xdg têm suporte inicial; acessibilidade do toolkit, escala fracionária e navegação completa continuam pendentes.
 
-Entrada virtual é habilitada apenas por variável de teste em runtime privado. Popups layer-shell, política completa de área exclusiva para janelas, múltiplas saídas/hotplug avançado, IME, maximização e tela cheia ainda precisam de trabalho. Não há animações, efeitos ou adaptação automática. O primeiro shell usa GTK como etapa de prototipação; toolkit próprio permanece planejado.
+O código nativo é a primeira fundação de execução, não uma reprodução completa das referências. Desenho SHM atual é feito em CPU e composição pode ser acelerada pela GPU; eficiência precisa de baseline e comparação real.
 
 ## Etapas e critérios de entrega
 
