@@ -9,10 +9,10 @@ int main(int argc, char **argv) {
     struct jlinux_window_frame frame = {0};
     CHECK(jlinux_window_frame_create(&frame, &scene->tree));
     struct jlinux_glass effects = {.blur = true, .tint = true, .reflection = true};
-    CHECK(!jlinux_window_frame_update(&frame, 0, 400, "inválido", effects));
-    CHECK(!jlinux_window_frame_update(&frame, 100, 8193, "inválido", effects));
+    CHECK(!jlinux_window_frame_update(&frame, 0, 400, "inválido", effects, false));
+    CHECK(!jlinux_window_frame_update(&frame, 100, 8193, "inválido", effects, false));
     for (int i = 0; i < 12; i++) {
-        CHECK(jlinux_window_frame_update(&frame, 700 + i, 400 + i, "JLinux Terminal", effects));
+        CHECK(jlinux_window_frame_update(&frame, 700 + i, 400 + i, "JLinux Terminal", effects, i % 2 == 0));
         size_t pixels = 0;
         for (int j = 0; j < 4; j++) { pixels += (size_t)frame.parts[j]->buffer->width * frame.parts[j]->buffer->height; }
         CHECK(pixels < 40000);

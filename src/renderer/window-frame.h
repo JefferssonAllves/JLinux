@@ -8,6 +8,6 @@ struct jlinux_window_frame {
 };
 bool jlinux_window_frame_create(struct jlinux_window_frame *frame, struct wlr_scene_tree *parent);
 bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, int height,
-    const char *title, struct jlinux_glass effects);
+    const char *title, struct jlinux_glass effects, bool maximized);
 void jlinux_window_frame_focus(struct jlinux_window_frame *frame, bool focused);
 #endif
