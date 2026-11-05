@@ -44,3 +44,8 @@
 - Comparar o resultado renderizado com as fotos na mesma resolução. Não prometer correspondência exata sem comparação visual nem tratar aplicativos e funções ilustrados como implementados.
 
 - Compositor, shell e iniciador de sessão executam em C. Python permanece apenas em testes/ferramentas de desenvolvimento; não reintroduzir dependência Python na inicialização ou no caminho gráfico.
+
+## Envio das atualizações
+
+- Por pedido explícito do usuário, toda atualização concluída deve receber commit coeso e push para a branch de trabalho no GitHub, após os checks pertinentes. Não deixar a entrega apenas local. Informar se o envio falhar.
+- Essa autorização não inclui push direto em main/develop nem merge de PR, tags ou releases.
