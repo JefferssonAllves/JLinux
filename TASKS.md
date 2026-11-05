@@ -148,3 +148,9 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - **BAR-GLINT · implementado:** três pontos de reflexão estática junto às bordas da barra, controlados por REFLECTION, sem animação/poll adicional.
 - **Validação local:** oito testes release e ASan/UBSan passaram, incluindo lifecycle das faixas e terminais reais com drag, fechar e resize confirmado por stty. Prévias dos componentes inspecionadas; não são screenshots de aplicativos nem aprovação visual do usuário.
 - **Limites:** interior dos apps não retematizado, sem blur nas molduras, máscara arredondada do conteúdo, maximização/minimização ou benchmark GPU/energia. Aplicativos sem negociação de decoração podem manter seu cabeçalho interno.
+
+## Cabeçalho retangular e cantos discretos — fix/rectangular-window-glass
+
+- Moldura comum a todos os xdg-toplevel: cabeçalho retangular de 36 px, vidro compartilhado com shell, reflexos e contorno iluminado. Raio externo reduzido de 14 para 6 px; parte inferior do cabeçalho mantém junção reta com o conteúdo.
+- Oito testes locais release e ASan/UBSan passaram; prévia do componente inspecionada e atualizada.
+- Sessão principal ainda executa compositor antigo. Aplicar molduras nela exige reiniciar o compositor, encerrando clientes existentes; não realizado sem autorização específica para encerrar a sessão. Prévia aninhada anterior não equivale à aplicação global na sessão principal.
