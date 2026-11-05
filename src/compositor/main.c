@@ -183,6 +183,7 @@ static void remove_output(struct wl_listener *listener, void *data) {
     wl_list_remove(&monitor->frame.link);
     wl_list_remove(&monitor->request_state.link);
     wl_list_remove(&monitor->destroy.link);
+    wlr_scene_output_destroy(monitor->scene_output);
     struct shell_surface *surface, *temporary;
     wl_list_for_each_safe(surface, temporary, &monitor->desktop->layers, link) {
         if (surface->layer->output == monitor->output) {

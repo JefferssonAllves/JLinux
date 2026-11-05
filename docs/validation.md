@@ -137,3 +137,7 @@ Um teste real com `chvt 2` reproduziu saída normal do compositor: logind pausou
 Correção: em sessão DRM, manter compositor vivo sem saídas, desassociar/ocultar layers até haver saída disponível e reassociá-los no retorno. Em backend aninhado/headless, comportamento de encerrar na última saída permanece. Layers novos também podem aguardar saída, sem ser destruídos imediatamente. Teste real VT1 -> VT2 -> VT1 manteve supervisor/compositor/shell vivos e os logs confirmaram novo modeset HDMI-A-1 1600×900@60 no retorno. Não equivale à inspeção visual da tela pelo assistente ou teste manual da combinação de teclas.
 
 Script manual reproduzível em scripts/check-vt-recovery.py, fora da CI. Onze testes release e ASan/UBSan passaram novamente. Nova atualização do pacote em andamento.
+
+### Recuperação com janelas abertas
+
+Repetir a troca de VT com um terminal aberto revelou uma segunda falha: assert de listener pendente em `wlr_output_finish`. A scene_output não era destruída explicitamente no callback de remoção da saída. Adicionada destruição antes de liberar monitor, removendo referências/listeners da cena em tempo. Após essa correção, três ciclos reais VT1 -> VT2 -> VT1 preservaram quatro processos (supervisor, compositor, shell e Foot) e onze testes release passaram. ASan/UBSan também repetidos nesta etapa. Não tratar o primeiro teste sem terminal como validação suficiente de lifecycle com janelas.
