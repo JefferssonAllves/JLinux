@@ -1,0 +1,10 @@
+[terminal]
+vt = 1
+switch = true
+
+[general]
+source_profile = false
+
+[default_session]
+command = "/usr/bin/env XKB_DEFAULT_LAYOUT=br /usr/bin/cage -s -d -m last -- /usr/bin/jlinux-greeter"
+user = "greeter"

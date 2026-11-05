@@ -189,3 +189,10 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 - Sombra interna leve, independente de REFLECTION, destaca bordas de janela sem alterar os 3 px aprovados. `JLINUX_GLASS_SHADOW=0/1` controla apenas esse sombreado, sem drop shadow externo ou blur.
 - Barra superior e cabeçalhos compactos com contorno de 0,75 px, bevel reduzido e sem segunda linha interna. Altura de 36 px e brilhos preservados; dock vertical inalterado.
 - Oito testes locais release e ASan/UBSan passaram; teste verifica sombreamento com reflexão desligada e rejeição de parâmetro inválido. Prévias inspecionadas. Aplicação à sessão corrente ainda pendente nesta etapa; próxima entrega instala sessão do Arch solicitada pelo usuário.
+
+## Instalação Arch e login próprio — feature/arch-session-install
+
+- **ARCH-SESSION · em validação:** pacote pacman, entrada Wayland, configuração greetd com backup e TTY2 de recuperação. Usuário autorizou instalar/iniciar a interface no boot; não há autorização para merge/release ou reboot automático do computador.
+- **LOGIN-01 · implementado em validação:** greeter C/Wayland com material nativo, usuário/PAM, campos secretos mascarados, compose XKB e IPC JSON limitado/não bloqueante. greetd autentica; Cage isola a tela de login. Desktop mantém compositor próprio. Prévia explicitamente não autentica.
+- **RECOVERY-VT · implementado:** compositor DRM recebe sessão wlroots emprestada e encaminha Ctrl+Alt+F1…F12; não cria/destrói a sessão do backend. Teste físico pendente.
+- **TESTES:** dez testes release e ASan/UBSan passaram antes do empacotamento; IPC usa servidor simulado, sem senha real. Instalação/boot e PAM físico ainda pendentes nesta etapa. Instruções em docs/arch-installation.md.

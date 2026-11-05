@@ -1,0 +1,32 @@
+pkgname=jlinux-desktop-git
+pkgver=0.5.0.r0
+pkgrel=1
+pkgdesc='Compositor, shell e login Wayland nativos do JLinux'
+arch=('x86_64')
+url='https://github.com/JefferssonAllves/JLinux'
+license=('custom')
+depends=('wlroots0.20' 'wayland' 'libxkbcommon' 'cairo' 'pango' 'fontconfig' 'json-c' 'foot' 'ttf-dejavu' 'dbus')
+makedepends=('git' 'meson' 'ninja' 'pkgconf' 'wayland-protocols' 'python')
+checkdepends=('wtype')
+optdepends=('greetd: login na inicialização' 'cage: compositor isolado da tela de login')
+provides=('jlinux-desktop')
+source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/arch-session-install')
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "$srcdir/JLinux"
+    printf '0.5.0.r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+    arch-meson "$srcdir/JLinux" build -Dshell=true
+    meson compile -C build
+}
+
+check() {
+    meson test -C build --print-errorlogs
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install -C build
+}

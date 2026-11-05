@@ -10,6 +10,7 @@
 #include <sys/wait.h>
 #include <wayland-server-core.h>
 #include <wlr/backend.h>
+#include <wlr/backend/session.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_input_device.h>
@@ -62,6 +63,7 @@ struct popup {
 };
 struct interaction {
     struct wl_display *display;
+    struct wlr_session *session;
     struct wlr_scene *scene;
     struct wlr_scene_tree *windows;
     struct wlr_output_layout *layout;
@@ -358,6 +360,9 @@ static void terminal(struct interaction *state) {
 }
 
 static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t modifiers) {
+    if (state->session && symbol >= XKB_KEY_XF86Switch_VT_1 && symbol <= XKB_KEY_XF86Switch_VT_12) {
+        wlr_session_change_vt(state->session, symbol - XKB_KEY_XF86Switch_VT_1 + 1); return true;
+    }
     if ((modifiers & WLR_MODIFIER_LOGO) && symbol == XKB_KEY_Escape) {
         wl_display_terminate(state->display); return true;
     }
@@ -628,10 +633,11 @@ static size_t listeners(struct interaction *state, struct wl_listener **items) {
 }
 struct interaction *interaction_create(struct wl_display *display,
     struct wlr_backend *backend, struct wlr_output_layout *layout,
-    struct wlr_scene *scene, struct wlr_scene_tree *windows) {
+    struct wlr_scene *scene, struct wlr_scene_tree *windows, struct wlr_session *session) {
     struct interaction *state = calloc(1, sizeof(*state));
     if (!state) { return NULL; }
     if (!jlinux_glass_settings(&state->glass)) { free(state); return NULL; }
+    state->session = session;
     state->display = display; state->scene = scene; state->windows = windows; state->layout = layout;
     wl_list_init(&state->views); wl_list_init(&state->keyboards); wl_list_init(&state->pointers);
     struct wl_listener *items[13];
