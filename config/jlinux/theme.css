@@ -1,0 +1,6 @@
+/* Tema adicional opcional. Use scripts/run-desktop.py --theme este-arquivo. */
+#jlinux-wallpaper { background: #090e17; }
+#jlinux-panel { background: #111b29; border-bottom-color: #243449; }
+#brand, #eyebrow { color: #6ce5c0; }
+#title { color: #e5edf7; font-size: 72px; }
+#subtitle { color: #a9b9cc; }
