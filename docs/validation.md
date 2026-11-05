@@ -129,3 +129,11 @@ Sessão principal anterior encerrada conforme autorização vigente e iniciada c
 A checagem final encontrou a primeira sessão instalada já encerrada; o log antigo não distinguia o status de compositor e shell. Foi preservado localmente e adicionada identificação de código/sinal no supervisor e diagnóstico de fechamento/configuração do shell. Uma sessão de diagnóstico foi iniciada e permaneceu ativa após o terminal inicial encerrar. A causa daquele encerramento isolado ainda não foi comprovada; não registrar como corrigida apenas por adicionar logs.
 
 Também foi corrigido um caso concreto de extensão vazia durante rearranjo de saída: não configurar layers com área de saída nula, e manter último buffer do shell diante de configure sem extensão desenhável. Onze testes locais release e ASan/UBSan passaram novamente. Reempacotamento e teste físico de recuperação estão em andamento.
+
+### Falha de recuperação por VT reproduzida e corrigida
+
+Um teste real com `chvt 2` reproduziu saída normal do compositor: logind pausou o DRM e o wlroots removeu temporariamente HDMI-A-1; a política antiga encerrava o compositor quando output_count chegava a zero e fechava os layers do shell. Essa falha concreta foi identificada; não é prova de que explica todo encerramento anterior sem logs suficientes.
+
+Correção: em sessão DRM, manter compositor vivo sem saídas, desassociar/ocultar layers até haver saída disponível e reassociá-los no retorno. Em backend aninhado/headless, comportamento de encerrar na última saída permanece. Layers novos também podem aguardar saída, sem ser destruídos imediatamente. Teste real VT1 -> VT2 -> VT1 manteve supervisor/compositor/shell vivos e os logs confirmaram novo modeset HDMI-A-1 1600×900@60 no retorno. Não equivale à inspeção visual da tela pelo assistente ou teste manual da combinação de teclas.
+
+Script manual reproduzível em scripts/check-vt-recovery.py, fora da CI. Onze testes release e ASan/UBSan passaram novamente. Nova atualização do pacote em andamento.

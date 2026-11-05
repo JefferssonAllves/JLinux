@@ -55,6 +55,14 @@ struct shell_surface {
 };
 
 static void arrange_desktop(struct desktop *desktop) {
+    struct wlr_output *center = wlr_output_layout_get_center_output(desktop->layout);
+    struct shell_surface *pending;
+    wl_list_for_each(pending, &desktop->layers, link) {
+        if (!pending->layer->output && center) {
+            pending->layer->output = center;
+            wlr_scene_node_set_enabled(&pending->scene->tree->node, pending->layer->surface->mapped);
+        }
+    }
     struct monitor *monitor;
     wl_list_for_each(monitor, &desktop->monitors, link) {
         struct wlr_box bounds;
@@ -126,10 +134,6 @@ static void add_shell_surface(struct wl_listener *listener, void *data) {
     if (!layer->output) {
         layer->output = wlr_output_layout_get_center_output(desktop->layout);
     }
-    if (!layer->output) {
-        wlr_layer_surface_v1_destroy(layer);
-        return;
-    }
     struct shell_surface *surface = calloc(1, sizeof(*surface));
     if (!surface) {
         wlr_layer_surface_v1_destroy(layer);
@@ -174,22 +178,28 @@ static void resize_output(struct wl_listener *listener, void *data) {
 static void remove_output(struct wl_listener *listener, void *data) {
     (void)data;
     struct monitor *monitor = wl_container_of(listener, monitor, destroy);
+    struct desktop *desktop = monitor->desktop;
+    wlr_log(WLR_INFO, "Saída removida: %s", monitor->output->name);
     wl_list_remove(&monitor->frame.link);
     wl_list_remove(&monitor->request_state.link);
     wl_list_remove(&monitor->destroy.link);
     struct shell_surface *surface, *temporary;
     wl_list_for_each_safe(surface, temporary, &monitor->desktop->layers, link) {
         if (surface->layer->output == monitor->output) {
-            wlr_layer_surface_v1_destroy(surface->layer);
+            if (desktop->session) {
+                surface->layer->output = NULL;
+                wlr_scene_node_set_enabled(&surface->scene->tree->node, false);
+            } else { wlr_layer_surface_v1_destroy(surface->layer); }
         }
     }
     wl_list_remove(&monitor->link);
     wlr_scene_node_destroy(&monitor->background->node);
     monitor->desktop->output_count--;
-    if (monitor->desktop->output_count == 0) {
+    if (monitor->desktop->output_count == 0 && !desktop->session) {
         wl_display_terminate(monitor->desktop->display);
     }
     free(monitor);
+    arrange_desktop(desktop);
 }
 
 static void add_output(struct wl_listener *listener, void *data) {
@@ -249,7 +259,7 @@ static void add_output(struct wl_listener *listener, void *data) {
 }
 
 static int stop_server(int signal_number, void *data) {
-    (void)signal_number;
+    wlr_log(WLR_INFO, "Encerrando compositor por sinal %d", signal_number);
     wl_display_terminate(data);
     return 0;
 }
