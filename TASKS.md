@@ -93,3 +93,9 @@ Referências: docs/visual-pipeline.md e docs/visual-style.md. O exemplo TOML v2 
 ## Avaliação visual Glass V1
 
 **DESIGN-01 · aguardando avaliação do usuário:** imagem conceitual em docs/design/jlinux-glass-v1.png, com página de prévia docs/design/README.md. Dock à esquerda, barra superior com Wi-Fi/Bluetooth/energia, menu de suspensão/reinício/desligamento e paleta roxo/rosa. Não é captura real ou funcionalidade implementada. Próxima ação: receber feedback e iterar a composição antes da interface nativa definitiva.
+
+## Referências escolhidas pelo usuário — cf4238a
+
+**DESIGN-01 · alvo visual definido pelo usuário:** as duas fotos do commit “Estilo que eu quero” foram localizadas e inspecionadas. Usar docs/design/README.md como índice. As propostas geradas V1/V2 foram rejeitadas e não orientam a próxima reprodução.
+
+Próxima entrega visual: protótipo que reproduza fielmente composição, materiais, bordas, ícones, espaçamentos e fundo das referências. Comparar renderização e fotos na mesma resolução e registrar diferenças. Nenhum aplicativo, material ou integração foi implementado nesta atualização documental.

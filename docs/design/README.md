@@ -1,19 +1,33 @@
-# JLinux Glass — proposta visual V1
+# JLinux — referências visuais escolhidas pelo usuário
 
-**Imagem conceitual para avaliação.** Gerada como referência visual; não é captura da sessão atual e não comprova implementação dos componentes ou efeitos.
+As duas imagens do commit **cf4238a — “Estilo que eu quero”**, enviado pelo usuário em feature/glass-design-preview, são a referência principal para reproduzir o visual das próximas telas. O pedido é seguir essas fotos fielmente, sem reinterpretar o estilo a partir das propostas geradas anteriormente.
 
-![Proposta JLinux Glass em roxo e rosa, dock à esquerda e menu de energia no topo](jlinux-glass-v1.png)
+## Referência 1 — desktop, dock e aplicativo
 
-[Abrir a imagem](jlinux-glass-v1.png?raw=true) para ampliar no navegador do celular. Não precisa de visualizador instalado no computador.
+![Referência do usuário: desktop com dock à esquerda, barra superior e janela de música em vidro azul-preto](1E9E8B07-9F84-40EA-B5AA-73308C2A7A66.png)
 
-## Direção solicitada
+[Abrir referência 1 no celular](1E9E8B07-9F84-40EA-B5AA-73308C2A7A66.png?raw=true).
 
-- Dock vertical de aplicativos **à esquerda**.
-- Barra superior com Wi-Fi, Bluetooth, informações de estado e botão de energia.
-- Menu de energia com Suspender, Reiniciar e Desligar.
-- Visual inspirado em Glass, com bastante detalhe em roxo/rosa.
-- Terminal ilustrativo para mostrar o material aplicado a uma janela.
+## Referência 2 — janelas sobrepostas e componentes
 
-O usuário ainda avaliará a composição. Cores, intensidade de brilho, transparência, dock, ícones e proporções podem ser ajustados na próxima versão antes da implementação nativa. Não assumir aprovação desta imagem.
+![Referência do usuário: navegador e aplicativo de música com superfícies escuras e bordas luminosas](D415668D-8698-411F-A41D-0DE333BCE255.png)
 
-As ações de energia e conectividade são ilustradas apenas. Sua implementação dependerá de integração real com os serviços do sistema. Os efeitos nativos continuam separados entre animation/, effects/ e renderer/, com controles individuais e medição de desempenho.
+[Abrir referência 2 no celular](D415668D-8698-411F-A41D-0DE333BCE255.png?raw=true).
+
+## Elementos a reproduzir
+
+- Material escuro azul-preto, translúcido, com profundidade; evitar vidro cinza/prateado dominante ou superfícies inteiramente roxas.
+- Bordas finas iluminadas, reflexos azuis/violetas localizados e curvas suaves, conforme as fotos.
+- Dock estreito à esquerda, com ícones coloridos e a composição da primeira referência.
+- Barra superior e espaçamentos da primeira referência: identidade JLinux, menus à esquerda, data/hora ao centro e informações/energia à direita.
+- Janelas amplas com cantos arredondados, cabeçalhos e controles compactos; painéis internos e divisórias conforme os exemplos.
+- Paisagem noturna espacial com lago/montanhas, luz azul e vegetação/reflexos rosas, como fundo mostrado nas imagens.
+- Tipografia, proporções e hierarquia visual das referências, mantendo leitura nítida.
+
+As imagens são o alvo visual; não comprovam que navegador, música, conectividade ou efeitos já estejam implementados. Elas não contêm assets separados nem especificações de medidas. Na reprodução, comparar o resultado renderizado com as referências na mesma resolução e registrar diferenças, em vez de declarar fidelidade sem inspeção.
+
+O próximo protótipo deve seguir essas referências diretamente. A implementação definitiva permanece nativa e mantém animation/, effects/ e renderer/ separados, com controle individual de efeitos e desempenho medido.
+
+## Histórico substituído
+
+A imagem gerada jlinux-glass-v1.png foi preservada como histórico. As propostas V1 e V2 não são a direção visual escolhida; as referências acima têm precedência.

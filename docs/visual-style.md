@@ -1,5 +1,11 @@
 # Direção visual: Glass no JLinux
 
+## Referência principal atual
+
+O usuário rejeitou as propostas geradas anteriormente e forneceu duas imagens no commit cf4238a, “Estilo que eu quero”. Pediu reprodução fiel dessas fotos. A [galeria de referências](design/README.md) passa a definir o visual: material azul-preto translúcido, bordas finas iluminadas e reflexos azuis/violetas localizados, ícones coloridos, dock à esquerda e composição das fotos. As seções de propostas anteriores abaixo são histórico e não prevalecem sobre essas referências.
+
+Não criar uma nova interpretação cinza/prateada nem recolorir o desktop inteiro de roxo. O próximo protótipo deve ser comparado diretamente às imagens do usuário, antes da implementação nativa definitiva.
+
 Preferência do usuário: ambiente inspirado no vidro dos dispositivos Apple, com identidade e parâmetros próprios do JLinux. Esta é a direção para os próximos protótipos; não uma afirmação de que o desktop atual já apresenta Glass.
 
 A referência é Apple Liquid Glass: materiais para navegação e controles, profundidade e separação legível do conteúdo. A orientação da Apple prioriza uso seletivo e adaptação a preferências de contraste e transparência. Referência primária: https://developer.apple.com/design/human-interface-guidelines/materials.
