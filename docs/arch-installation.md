@@ -64,3 +64,7 @@ O usuário também relatou travamento antes desse reinício. O journal registra 
 Onze testes locais passaram em release/ASan/UBSan e no build do pacote final. Login UI e protocolo também foram testados com credenciais fictícias, sem invocar PAM nesses testes. Os registros de boot acima constituem a confirmação PAM real, separada dos testes automatizados.
 
 A pausa DRM por troca de VT remove temporariamente a saída neste hardware. O compositor agora preserva layers/sessão e os reassocia quando a saída volta. Foi validada a ida e volta com `chvt`, preservando processos; o teste manual reproduzível é `python scripts/check-vt-recovery.py --session-pid PID --target-vt 2`. Isso não substitui validação do primeiro login PAM.
+
+### Idioma da sessão e do terminal
+
+O iniciador C importa LANG de /etc/locale.conf quando a variável não foi fornecida pelo login. Usa C.UTF-8 se não há valor válido no arquivo; LANG e categorias LC_* já fornecidos pelo usuário são preservados. Não executa o conteúdo desse arquivo. A mudança garante idioma/UTF-8 aos filhos da sessão, sem modificar regras PAM ou habilitar source_profile. Sessões já abertas mantêm seu ambiente até novo login.

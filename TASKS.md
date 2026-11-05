@@ -217,3 +217,9 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 Nome e símbolo JLinux removidos da barra superior; menus começam a 24 px da margem interna. Layout restante preservado. Build e teste shell-headless passaram; prévia atualizada. Empacotamento aponta para esta branch para instalar a revisão correta. Ativação visível depende de novo shell; sessão greetd atual preservada.
 
 **Remoção da marca · instalada:** pacote `0.5.0.r39.g766bcaf-1` instalado pelo pacman, com onze testes do pacote aprovados. Sessão atual do greetd preservada, sem logout/reinício ou teste de VT. Nome/símbolo removidos ficarão visíveis no próximo login; processo antigo ainda desenha a barra atual.
+
+## Locale do terminal — fix/terminal-locale
+
+- Logs confirmaram Foot iniciando sem LANG, caindo em C e avisando sobre UTF-8, embora /etc/locale.conf configure pt_BR.UTF-8. Iniciador C passa a carregar LANG do arquivo do sistema quando ausente, com fallback C.UTF-8, sem avaliar comandos e sem sobrescrever LANG/LC_* explícitos.
+- Doze testes release e ASan/UBSan passaram: locale válido/entre aspas, ambiente explícito preservado, entradas inválidas ignoradas, fallback e terminal real sem aviso de locale em ambiente limpo.
+- Avisos de protocolos Wayland ainda não implementados permanecem nos logs. A mensagem exata mencionada pelo usuário ainda não foi confirmada; não tratar a correção de locale como resolução de todo possível problema do terminal.
