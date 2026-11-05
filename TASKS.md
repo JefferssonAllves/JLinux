@@ -4,6 +4,15 @@ Este arquivo é a fonte central das tarefas iniciais. Personalização ampla, co
 
 Estados: **concluído** = implementação e evidências indicadas; **em andamento** = trabalho ativo; **pendente** = não entregue. Uma tarefa pode estar concluída na branch sem estar integrada em develop/main. Cada entrega registra PR, validação e limites. CI verde não é teste de GPU.
 
+## Diretriz para as próximas telas
+
+As ferramentas web servem para criar e iterar protótipos visuais antes da interface definitiva nativa. O shell GTK/CSS atual é provisório. Tecnologias de produção serão escolhidas por adequação e desempenho medido, preservando personalização.
+
+| ID | Prioridade / estado | Tarefa | Dependências | Critério de conclusão |
+| --- | --- | --- | --- | --- |
+| DESIGN-01 | P1 · pendente | Prototipar e validar a próxima tela com o usuário | Direção visual do usuário | Protótipo identificado como tal, feedback incorporado e visual acordado antes da implementação nativa definitiva |
+| NATIVE-01 | P1 · pendente | Definir a implementação nativa do visual acordado | DESIGN-01, PERF-01 | Decisão documentada com critérios e evidências; plano de substituição do shell provisório pelo toolkit próprio, sem transportar dependências web para o desktop |
+
 ## Preparação e primeira interface
 
 | ID | Prioridade / estado | Tarefa | Dependências | Perfil | Critério de conclusão |

@@ -19,3 +19,12 @@
 - Skills do projeto ficam em .agents/skills/. Para C/Wayland, desempenho e visual, carregar somente a skill relevante. Skills externas são auxiliares; verificar APIs e exemplos contra o código, headers e fontes oficiais.
 - Testar em headless/aninhado antes de DRM. Não substituir sessão de login, ativar serviços ou alterar parâmetros de kernel para experimentar.
 - Na entrega, distinguir teste local, CI, teste visual e benchmark. Não fabricar revisão independente ou resultados de hardware.
+
+## Prototipação visual e escolha de tecnologias
+
+- As ferramentas web solicitadas pelo usuário (shadcn, Magic/21st, frontend-design e referências Liquid Glass) destinam-se a protótipos de tela para experimentar e validar o visual antes da implementação definitiva. Sua instalação não autoriza adotar uma stack web no desktop.
+- Fluxo visual: protótipo de tela → iteração com o usuário → implementação nativa do visual acordado. Distinguir protótipo visual, shell provisório e interface definitiva em tarefas, PRs e entregas.
+- A interface definitiva segue o objetivo de compositor, toolkit visual e motor de animações próprios. O shell GTK/CSS existente é provisório e não define a tecnologia final.
+- Escolher tecnologias pela adequação à função e pelo desempenho demonstrável no hardware do usuário: latência, tempo de quadro, CPU/GPU, memória e energia. Não escolher por moda, familiaridade ou por ter instalado uma ferramenta. Não declarar uma opção a mais rápida sem medição comparável.
+- Priorizar execução nativa, renderização acelerada e orientada a eventos, controle de recursos e dependências justificadas. Reutilizar infraestrutura madura quando isso ajudar o objetivo; desenvolver componentes próprios onde o projeto exige identidade, controle ou funcionalidades próprias.
+- Eficiência deve preservar a personalização solicitada. Efeitos e aparência são escolhas do usuário; adaptações automáticas respeitam seus limites.
