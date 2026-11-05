@@ -62,7 +62,7 @@ void ui_icon(cairo_t *cr, enum ui_icon icon, double x, double y, double size, un
 }
 void ui_button(cairo_t *cr, struct ui_rect rect, enum ui_icon icon, bool hovered, unsigned int accent) {
     round_rect(cr, rect, 12);
-    color(cr, hovered ? 0x26335a : 0x141d32, hovered ? .65 : .24); cairo_fill(cr);
+    color(cr, hovered ? 0x647392 : 0x0c101b, hovered ? .38 : .16); cairo_fill(cr);
     ui_icon(cr, icon, rect.x + (rect.width - 26) / 2, rect.y + (rect.height - 26) / 2, 26, accent);
 }
 

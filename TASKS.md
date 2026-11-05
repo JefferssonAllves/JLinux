@@ -113,3 +113,9 @@ Próxima entrega visual: protótipo que reproduza fielmente composição, materi
 - **EFFECT-01 · parcial:** painel e dock amostram wallpaper com box blur em cache reduzido, tonalização e reflexos estáticos. Três controles independentes por ambiente; sem recarga ao vivo. Não desfoca janelas, não implementa refração/sombra difusa nem GPU Glass.
 - **DESIGN-01 · em implementação:** prévia nativa em docs/design/native-glass-preview.png; wallpaper procedural provisório para tornar a amostragem visível. Continua diferente das fotos escolhidas; não representa aprovação do usuário.
 - **Validação local:** seis testes release e ASan/UBSan passaram, incluindo impulso/constância do blur e oito combinações dos controles. Prévia inspecionada; não é captura DRM nem benchmark de GPU/energia.
+
+## Ajuste visual de dock e barra — fix/glass-contrast
+
+- Tonalização azul-acinzentada mais clara, reflexos localizados azuis/violetas, borda interna iluminada e botões menos opacos para tornar o material perceptível sobre fundo escuro.
+- Wallpaper preservado. Escopo desta iteração: material do dock/barra; composição completa e ícones das referências continuam pendentes. Não declarar reprodução exata ou aprovação visual.
+- Seis testes locais passaram em release e ASan/UBSan; prévia nativa atualizada. Sem medição de GPU/energia nesta alteração.
