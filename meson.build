@@ -12,7 +12,7 @@ layer_header = custom_target('layer-shell-header',
 xdg_header = custom_target('xdg-shell-header',
   input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-protocol.h',
   command: [scanner, 'server-header', '@INPUT@', '@OUTPUT@'])
-compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', layer_header, xdg_header,
+compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/renderer/renderer.c', layer_header, xdg_header,
   dependencies: [wlroots, wayland, xkb], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
 if get_option('shell')
   gtk = dependency('gtk+-3.0', version: '>=3.22')

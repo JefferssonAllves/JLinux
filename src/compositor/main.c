@@ -1,12 +1,10 @@
 #define _POSIX_C_SOURCE 200809L
 #include "interaction.h"
+#include "../renderer/renderer.h"
 #include <signal.h>
 #include <stdlib.h>
-#include <time.h>
 #include <wayland-server-core.h>
 #include <wlr/backend.h>
-#include <wlr/render/allocator.h>
-#include <wlr/render/wlr_renderer.h>
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
@@ -21,8 +19,7 @@
 struct desktop {
     struct wl_display *display;
     struct wlr_backend *backend;
-    struct wlr_renderer *renderer;
-    struct wlr_allocator *allocator;
+    struct jlinux_renderer render;
     struct wlr_output_layout *layout;
     struct wlr_scene *scene;
     struct wlr_scene_output_layout *scene_layout;
@@ -140,13 +137,10 @@ static void add_shell_surface(struct wl_listener *listener, void *data) {
 static void render_frame(struct wl_listener *listener, void *data) {
     (void)data;
     struct monitor *monitor = wl_container_of(listener, monitor, frame);
-    if (!wlr_scene_output_commit(monitor->scene_output, NULL)) {
+    if (!jlinux_renderer_present(monitor->scene_output)) {
         wlr_log(WLR_ERROR, "Falha ao apresentar quadro em %s", monitor->output->name);
         return;
     }
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    wlr_scene_output_send_frame_done(monitor->scene_output, &now);
 }
 
 static void resize_output(struct wl_listener *listener, void *data) {
@@ -181,7 +175,7 @@ static void remove_output(struct wl_listener *listener, void *data) {
 static void add_output(struct wl_listener *listener, void *data) {
     struct desktop *desktop = wl_container_of(listener, desktop, new_output);
     struct wlr_output *output = data;
-    if (!wlr_output_init_render(output, desktop->allocator, desktop->renderer)) {
+    if (!wlr_output_init_render(output, desktop->render.allocator, desktop->render.renderer)) {
         wlr_log(WLR_ERROR, "Não foi possível inicializar saída %s", output->name);
         return;
     }
@@ -257,12 +251,7 @@ int main(void) {
     struct wl_event_loop *loop = wl_display_get_event_loop(desktop.display);
     desktop.backend = wlr_backend_autocreate(loop, NULL);
     if (!desktop.backend) { goto cleanup; }
-    desktop.renderer = wlr_renderer_autocreate(desktop.backend);
-    if (!desktop.renderer || !wlr_renderer_init_wl_display(desktop.renderer, desktop.display)) {
-        goto cleanup;
-    }
-    desktop.allocator = wlr_allocator_autocreate(desktop.backend, desktop.renderer);
-    if (!desktop.allocator) { goto cleanup; }
+    if (!jlinux_renderer_init(&desktop.render, desktop.backend, desktop.display)) { goto cleanup; }
     desktop.layout = wlr_output_layout_create(desktop.display);
     desktop.scene = wlr_scene_create();
     if (!desktop.layout || !desktop.scene) { goto cleanup; }
@@ -286,7 +275,7 @@ int main(void) {
     wl_signal_add(&shell->events.new_surface, &desktop.new_layer);
     desktop.scene_layout = wlr_scene_attach_output_layout(desktop.scene, desktop.layout);
     if (!desktop.scene_layout ||
-        !wlr_compositor_create(desktop.display, 5, desktop.renderer) ||
+        !wlr_compositor_create(desktop.display, 5, desktop.render.renderer) ||
         !wlr_subcompositor_create(desktop.display)) { goto cleanup; }
     desktop.new_output.notify = add_output;
     wl_signal_add(&desktop.backend->events.new_output, &desktop.new_output);
@@ -313,8 +302,7 @@ cleanup:
     wl_list_remove(&desktop.layout_change.link);
     if (desktop.backend) { wlr_backend_destroy(desktop.backend); }
     if (desktop.scene) { wlr_scene_node_destroy(&desktop.scene->tree.node); }
-    if (desktop.allocator) { wlr_allocator_destroy(desktop.allocator); }
-    if (desktop.renderer) { wlr_renderer_destroy(desktop.renderer); }
+    jlinux_renderer_finish(&desktop.render);
     wl_display_destroy(desktop.display);
     return result;
 }

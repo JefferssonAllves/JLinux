@@ -46,3 +46,9 @@ Foot e wtype são binários do sistema, não instrumentados no build ASan. O tes
 Em 05/11/2026, após CI verde do PR #6, a sessão foi iniciada por `run-desktop.py --drm --codex`, sem temporizador. Logs confirmaram renderização GLES2 pela Radeon/radeonsi, saída HDMI-A-1 ativa, teclado USB/interno e mouse/touchpad conectados. Wallpaper, painel e terminal foram mapeados. A árvore de processos confirmou `foot` com `codex` como filho; Codex CLI estava autenticado com ChatGPT.
 
 Isso confirma inicialização e detecção dos periféricos no hardware real, sem afirmar teste manual de movimento/digitação pelo usuário, inspeção visual ou benchmark. Logs locais de supervisão ficam em `~/.local/state/jlinux/desktop.log`; a sessão pode ser encerrada por Super+Esc. A inicialização não instalou serviço ou entrada de login.
+
+## Separação do pipeline visual
+
+Criação/limpeza de renderizador e alocador wlroots e apresentação/frame-done foram extraídas para src/renderer/renderer.c. Release e ASan/UBSan passaram nos três testes existentes: ciclo de vida, reinício do shell e entrada/foco em terminais reais no backend headless. O TOML v2 foi analisado por tomllib sem erro de sintaxe.
+
+animation/ e effects/ contêm contratos documentados; ainda não há motores, shaders, toggles funcionais ou mudança visual Glass. Esta etapa não mediu desempenho nem reiniciou a sessão gráfica do usuário para teste físico.
