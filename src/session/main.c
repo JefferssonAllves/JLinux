@@ -126,9 +126,13 @@ int main(int argc, char **argv) {
             int status; pid_t pid;
             while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
                 if (pid == children[0]) {
+                    fprintf(stderr, "Compositor encerrou: %s %d.\n", WIFSIGNALED(status) ? "sinal" : "código", WIFSIGNALED(status) ? WTERMSIG(status) : WEXITSTATUS(status));
                     children[0] = 0; result = WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : 1; goto cleanup;
                 }
-                if (pid == children[1]) { children[1] = 0; goto cleanup; }
+                if (pid == children[1]) {
+                    fprintf(stderr, "Shell encerrou: %s %d.\n", WIFSIGNALED(status) ? "sinal" : "código", WIFSIGNALED(status) ? WTERMSIG(status) : WEXITSTATUS(status));
+                    children[1] = 0; goto cleanup;
+                }
                 if (pid == children[2]) {
                     children[2] = 0;
                     if (!WIFEXITED(status) || WEXITSTATUS(status)) { fprintf(stderr, "Terminal encerrou com erro.\n"); }

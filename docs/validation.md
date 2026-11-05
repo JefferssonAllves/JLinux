@@ -123,3 +123,9 @@ Pacote Arch `jlinux-desktop-git 0.5.0.r33.g45c6752-1` compilado a partir do GitH
 Configurador executado: greetd habilitado (alias display-manager), graphical.target padrão, TTY2 habilitado/ativo. Backup em `/var/lib/jlinux-login-backup.qsemGPVh`. Serviço greetd permanece inativo nesta sessão para não encerrar o TTY1 que sustenta o trabalho; será iniciado no próximo boot. Nenhuma regra PAM foi alterada, nenhum autologin configurado. Primeiro boot/login com senha e troca física de VT permanecem pendentes.
 
 Sessão principal anterior encerrada conforme autorização vigente e iniciada com `/usr/bin/jlinux-session --drm --codex`; processos compositor/shell também são os instalados em `/usr/bin`. Logs confirmam Codex/painel/dock mapeados. É execução instalada real, sem dependência de binários em /srv/JLinux, mas ainda não é uma sessão autenticada através do novo greeter.
+
+### Verificação adicional antes de encerrar a instalação
+
+A checagem final encontrou a primeira sessão instalada já encerrada; o log antigo não distinguia o status de compositor e shell. Foi preservado localmente e adicionada identificação de código/sinal no supervisor e diagnóstico de fechamento/configuração do shell. Uma sessão de diagnóstico foi iniciada e permaneceu ativa após o terminal inicial encerrar. A causa daquele encerramento isolado ainda não foi comprovada; não registrar como corrigida apenas por adicionar logs.
+
+Também foi corrigido um caso concreto de extensão vazia durante rearranjo de saída: não configurar layers com área de saída nula, e manter último buffer do shell diante de configure sem extensão desenhável. Onze testes locais release e ASan/UBSan passaram novamente. Reempacotamento e teste físico de recuperação estão em andamento.

@@ -59,6 +59,7 @@ static void arrange_desktop(struct desktop *desktop) {
     wl_list_for_each(monitor, &desktop->monitors, link) {
         struct wlr_box bounds;
         wlr_output_layout_get_box(desktop->layout, monitor->output, &bounds);
+        if (bounds.width <= 0 || bounds.height <= 0) { continue; }
         wlr_scene_node_set_position(&monitor->background->node, bounds.x, bounds.y);
         wlr_scene_rect_set_size(monitor->background, bounds.width, bounds.height);
         struct wlr_box usable = bounds;
