@@ -22,7 +22,7 @@ Aplicativos Wayland                 Shell e configurações JLinux
 
 Ferramentas web foram solicitadas para criar protótipos de tela e validar a direção visual com o usuário antes de construir a interface definitiva. shadcn, Magic/21st e skills de frontend/Liquid Glass são recursos dessa fase de exploração. Não estabelecem dependências de execução do desktop.
 
-O fluxo é prototipar a tela, iterar o visual com o usuário e implementar o resultado no ambiente nativo. O shell GTK/CSS foi substituído por um cliente Wayland/C com componentes próprios. O toolkit é inicial e usa Cairo/Pango para desenho/tipografia; não há fidelidade visual completa ou backend de efeitos ainda.
+O fluxo é prototipar a tela, iterar o visual com o usuário e implementar o resultado no ambiente nativo. O shell GTK/CSS foi substituído por um cliente Wayland/C com componentes próprios. O toolkit é inicial e usa Cairo/Pango para desenho/tipografia; o material inicial do painel/dock usa blur CPU do wallpaper em cache, tonalização e reflexo de borda. Fidelidade completa e efeitos GPU sobre janelas ainda não estão implementados.
 
 A escolha técnica deve priorizar as tecnologias mais adequadas e eficientes para cada função, com comparação no hardware real. Avaliar latência, tempo de quadro, CPU/GPU, memória, energia, robustez e custo de manutenção. A linguagem ou biblioteca isolada não prova desempenho. A base atual é C/wlroots/Wayland/Mesa; mudanças dessa base precisam de justificativa técnica, sem adoção automática de uma stack por disponibilidade de ferramentas de prototipação.
 

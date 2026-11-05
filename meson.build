@@ -29,8 +29,11 @@ if get_option('shell')
   client_xdg_code = custom_target('xdg-client-code',
     input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-client.c',
     command: [scanner, 'private-code', '@INPUT@', '@OUTPUT@'])
-  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/toolkit/painter.c', client_layer_header, client_layer_code, client_xdg_code,
+  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
     dependencies: [client, cursor, cairo, pango, fontconfig], install: true)
+  blur_test = executable('jlinux-test-blur', 'tests/blur.c', 'src/renderer/blur.c', dependencies: cairo)
+  test('blur-image', blur_test)
+  test('glass-preview', find_program('scripts/smoke-glass.py'), args: [shell], timeout: 20)
   session = executable('jlinux-session', 'src/session/main.c', install: true)
   session_smoke = find_program('scripts/smoke-session.py')
   test('session-headless', session_smoke, args: [session], timeout: 20)

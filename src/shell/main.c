@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
 #include "../toolkit/painter.h"
+#include "../effects/glass.h"
+#include "../renderer/blur.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -54,6 +56,9 @@ struct app {
     bool running, info;
     int timer, signals;
     char notice[180];
+    cairo_surface_t *backdrop;
+    int backdrop_width, backdrop_height;
+    struct jlinux_glass glass;
 };
 static struct ui_rect dock_button(int index) { return (struct ui_rect){10, 14 + index * 66, 48, 48}; }
 static int dock_hit(double x, double y) {
@@ -65,18 +70,16 @@ static void paint(struct surface *surface, cairo_t *cr) {
     cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE); cairo_set_source_rgba(cr, 0, 0, 0, 0); cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
     if (surface == &surface->app->wallpaper) {
-        cairo_pattern_t *bg = cairo_pattern_create_linear(0, 0, width, height);
-        cairo_pattern_add_color_stop_rgb(bg, 0, .012, .018, .04);
-        cairo_pattern_add_color_stop_rgb(bg, .6, .025, .045, .105);
-        cairo_pattern_add_color_stop_rgb(bg, 1, .025, .012, .05);
-        cairo_set_source(cr, bg); cairo_paint(cr); cairo_pattern_destroy(bg);
+        ui_wallpaper(cr, width, height);
     } else if (surface == &surface->app->dock) {
-        ui_panel(cr, (struct ui_rect){1, 1, width - 2, height - 2}, 30);
+        jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, 30,
+            surface->app->backdrop, 24, (surface->app->wallpaper.height - height) / 2.0, surface->app->glass);
         const enum ui_icon icons[] = {UI_HOME, UI_TERMINAL, UI_CODE};
         const unsigned int colors[] = {0xf0f2ff, 0xe3e8f6, 0x78b8f3};
         for (int i = 0; i < 3; i++) { ui_button(cr, dock_button(i), icons[i], surface->hover == i, colors[i]); }
     } else {
-        ui_panel(cr, (struct ui_rect){1, 1, width - 2, height - 2}, 25);
+        jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, 25,
+            surface->app->backdrop, 12, 12, surface->app->glass);
         ui_text(cr, "J", 20, 8, 28, true, 0xa680ff);
         ui_text(cr, "JLinux", 47, 16, 19, true, 0xf1f2fc);
         if (width > 1000) { ui_text(cr, "Aplicativos     Arquivos     Configurações", 166, 18, 15, false, 0xd2d7eb); }
@@ -96,6 +99,34 @@ static void paint(struct surface *surface, cairo_t *cr) {
         }
     }
 }
+static bool glass_settings(struct app *app) {
+    const char *names[] = {"JLINUX_GLASS_BLUR", "JLINUX_GLASS_TINT", "JLINUX_GLASS_REFLECTION"};
+    bool *values[] = {&app->glass.blur, &app->glass.tint, &app->glass.reflection};
+    for (int i = 0; i < 3; i++) {
+        const char *value = getenv(names[i]);
+        if (value && strcmp(value, "0") && strcmp(value, "1")) {
+            fprintf(stderr, "%s deve ser 0 ou 1.\n", names[i]); return false;
+        }
+        *values[i] = !value || !strcmp(value, "1");
+    }
+    return true;
+}
+/* shortcut: wallpaper-only backdrop; live window blur belongs in the compositor GPU pipeline. */
+static bool prepare_backdrop(struct app *app) {
+    int width = app->wallpaper.width, height = app->wallpaper.height;
+    if (!width || !height) { return true; }
+    if (app->backdrop && width == app->backdrop_width && height == app->backdrop_height) { return true; }
+    cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, (width + 3) / 4, (height + 3) / 4);
+    cairo_t *cr = cairo_create(image); cairo_scale(cr, .25, .25); ui_wallpaper(cr, width, height);
+    bool valid = cairo_status(cr) == CAIRO_STATUS_SUCCESS;
+    cairo_destroy(cr);
+    if (valid && app->glass.blur) { valid = jlinux_blur(image, 5); }
+    if (!valid || cairo_surface_status(image) != CAIRO_STATUS_SUCCESS) { cairo_surface_destroy(image); return false; }
+    if (app->backdrop) { cairo_surface_destroy(app->backdrop); }
+    app->backdrop = image; app->backdrop_width = width; app->backdrop_height = height;
+    app->panel.dirty = true; app->dock.dirty = true;
+    return true;
+}
 static void buffer_destroy(struct buffer *buffer) {
     wl_buffer_destroy(buffer->wl); munmap(buffer->data, buffer->size);
     wl_list_remove(&buffer->link); buffer->surface->buffers--; free(buffer);
@@ -105,6 +136,7 @@ static const struct wl_buffer_listener buffer_listener = {.release = released};
 static bool draw(struct surface *surface) {
     if (!surface->configured || !surface->dirty || surface->buffers >= 2) { return true; }
     if (surface->width < 1 || surface->height < 1 || surface->width > 8192 || surface->height > 8192) { return false; }
+    if (!prepare_backdrop(surface->app)) { return false; }
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, surface->width);
     if (stride < 0 || surface->height > INT_MAX / stride) { return false; }
     size_t size = (size_t)stride * surface->height;
@@ -258,17 +290,20 @@ static void global_remove(void *data, struct wl_registry *registry, uint32_t nam
 static const struct wl_registry_listener registry_listener = {.global = global, .global_remove = global_remove};
 static int preview(const char *path) {
     struct app app = {0};
+    if (!glass_settings(&app)) { return 1; }
     app.wallpaper = (struct surface){.app = &app, .width = 1672, .height = 941};
-    app.panel = (struct surface){.app = &app, .width = 1640, .height = 54};
+    app.panel = (struct surface){.app = &app, .width = 1648, .height = 54};
     app.dock = (struct surface){.app = &app, .width = 68, .height = 226, .hover = -1};
     cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1672, 941);
+    if (!prepare_backdrop(&app)) { cairo_surface_destroy(image); return 1; }
     cairo_t *cr = cairo_create(image); paint(&app.wallpaper, cr);
-    cairo_push_group(cr); cairo_translate(cr, 16, 12); paint(&app.panel, cr);
+    cairo_push_group(cr); cairo_translate(cr, 12, 12); paint(&app.panel, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr); cairo_identity_matrix(cr);
     cairo_push_group(cr); cairo_translate(cr, 24, (941 - 226) / 2.0); paint(&app.dock, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr);
     cairo_status_t status = cairo_surface_write_to_png(image, path);
     cairo_destroy(cr); cairo_surface_destroy(image);
+    cairo_surface_destroy(app.backdrop);
     ui_finish();
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
@@ -277,6 +312,7 @@ int main(int argc, char **argv) {
     if (argc != 1) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png]\n"); return 1; }
     struct app app = {.running = true, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
     if (getenv("JLINUX_THEME")) { fprintf(stderr, "JLINUX_THEME/CSS não é suportado pelo shell nativo.\n"); return 1; }
+    if (!glass_settings(&app)) { return 1; }
     sigset_t signals; sigemptyset(&signals); sigaddset(&signals, SIGINT); sigaddset(&signals, SIGTERM); sigaddset(&signals, SIGCHLD);
     if (sigprocmask(SIG_BLOCK, &signals, NULL)) { return 1; }
     app.signals = signalfd(-1, &signals, SFD_CLOEXEC | SFD_NONBLOCK);
@@ -323,6 +359,7 @@ int main(int argc, char **argv) {
     }
     result = 0;
 cleanup:
+    if (app.backdrop) { cairo_surface_destroy(app.backdrop); }
     if (app.pointer) { wl_pointer_destroy(app.pointer); }
     if (app.seat) { wl_seat_destroy(app.seat); }
     if (app.cursor_surface) { wl_surface_destroy(app.cursor_surface); }
