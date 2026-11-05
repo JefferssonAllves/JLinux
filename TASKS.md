@@ -215,3 +215,5 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 ## Remoção da marca na barra — fix/remove-panel-brand
 
 Nome e símbolo JLinux removidos da barra superior; menus começam a 24 px da margem interna. Layout restante preservado. Build e teste shell-headless passaram; prévia atualizada. Empacotamento aponta para esta branch para instalar a revisão correta. Ativação visível depende de novo shell; sessão greetd atual preservada.
+
+**Remoção da marca · instalada:** pacote `0.5.0.r39.g766bcaf-1` instalado pelo pacman, com onze testes do pacote aprovados. Sessão atual do greetd preservada, sem logout/reinício ou teste de VT. Nome/símbolo removidos ficarão visíveis no próximo login; processo antigo ainda desenha a barra atual.
