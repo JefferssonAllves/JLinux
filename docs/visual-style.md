@@ -37,3 +37,7 @@ No hardware com Radeon integrada, medir largura de banda, memória, tempo de qua
 O usuário definiu dock vertical à esquerda, barra superior com Wi-Fi/Bluetooth e menu Suspender/Reiniciar/Desligar, visual Glass e detalhes predominantes em roxo/rosa. A correção mais recente de posição é **à esquerda**.
 
 A [imagem V1](design/README.md) é um estudo visual gerado para avaliação pelo celular via GitHub. Não é screenshot do desktop atual nem visual aprovado. Próxima implementação deve considerar o feedback do usuário antes de reproduzir a composição nativamente.
+
+## Ajuste solicitado de material do dock e barra
+
+O usuário pediu concentrar a iteração no dock e na barra superior, deixando o wallpaper em segundo plano. O material inicial agora usa tonalização azul-acinzentada mais clara, reflexos estáticos azuis/violetas localizados e iluminação interna do contorno. Botões deixam mais material visível. A referência continua sendo a foto do usuário; este ajuste não significa fidelidade exata ou aprovação. Blur segue limitado ao wallpaper, conforme visual-pipeline.md.

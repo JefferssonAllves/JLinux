@@ -17,27 +17,45 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
         cairo_paint(cr); cairo_restore(cr);
     }
     if (effects.tint) {
-        cairo_set_source_rgba(cr, .018, .028, .055, .32); cairo_paint(cr);
+        /* A cool translucent veil keeps glass readable even over a dark wallpaper. */
+        cairo_set_source_rgba(cr, .34, .39, .49, .24); cairo_paint(cr);
     }
     if (effects.reflection) {
         cairo_pattern_t *shine = cairo_pattern_create_linear(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
-        cairo_pattern_add_color_stop_rgba(shine, 0, .66, .81, 1, .23);
-        cairo_pattern_add_color_stop_rgba(shine, .25, .34, .48, .77, .035);
-        cairo_pattern_add_color_stop_rgba(shine, .75, .28, .19, .42, .025);
-        cairo_pattern_add_color_stop_rgba(shine, 1, .66, .43, .8, .14);
+        cairo_pattern_add_color_stop_rgba(shine, 0, .77, .85, 1, .34);
+        cairo_pattern_add_color_stop_rgba(shine, .25, .45, .53, .69, .10);
+        cairo_pattern_add_color_stop_rgba(shine, .75, .23, .21, .34, .035);
+        cairo_pattern_add_color_stop_rgba(shine, 1, .66, .51, .81, .22);
         cairo_set_source(cr, shine); cairo_paint(cr); cairo_pattern_destroy(shine);
+        /* Local light catches the bevel; it is not an animated reflection. */
+        const double positions[] = {.18, .62, .93};
+        for (int i = 0; i < 3; i++) {
+            double x = rect.x + rect.width * positions[i];
+            double y = i == 1 ? rect.y : rect.y + rect.height;
+            double spread = rect.height > rect.width ? 90 : 125;
+            if (rect.height > rect.width) { x = i == 1 ? rect.x : rect.x + rect.width; y = rect.y + rect.height * positions[i]; }
+            cairo_pattern_t *light = cairo_pattern_create_radial(x, y, 0, x, y, spread);
+            cairo_pattern_add_color_stop_rgba(light, 0, i == 1 ? .48 : .64, .54, 1, .35);
+            cairo_pattern_add_color_stop_rgba(light, .24, .32, .32, .7, .10);
+            cairo_pattern_add_color_stop_rgba(light, 1, .2, .25, .5, 0);
+            cairo_set_source(cr, light); cairo_paint(cr); cairo_pattern_destroy(light);
+        }
+        rounded(cr, rect, radius); cairo_set_source_rgba(cr, .74, .81, 1, .07);
+        cairo_set_line_width(cr, 10); cairo_stroke(cr);
+        rounded(cr, rect, radius); cairo_set_source_rgba(cr, .81, .87, 1, .12);
+        cairo_set_line_width(cr, 4); cairo_stroke(cr);
     }
     cairo_restore(cr);
     if (effects.reflection) {
         rounded(cr, rect, radius);
         cairo_pattern_t *edge = cairo_pattern_create_linear(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
         cairo_pattern_add_color_stop_rgba(edge, 0, .78, .89, 1, .8);
-        cairo_pattern_add_color_stop_rgba(edge, .3, .39, .56, .8, .25);
-        cairo_pattern_add_color_stop_rgba(edge, .7, .32, .25, .5, .18);
-        cairo_pattern_add_color_stop_rgba(edge, 1, .73, .49, .83, .65);
+        cairo_pattern_add_color_stop_rgba(edge, .3, .55, .64, .9, .48);
+        cairo_pattern_add_color_stop_rgba(edge, .7, .53, .43, .72, .35);
+        cairo_pattern_add_color_stop_rgba(edge, 1, .82, .65, 1, .86);
         cairo_set_source(cr, edge); cairo_set_line_width(cr, 1); cairo_stroke(cr);
         struct ui_rect inner = {rect.x + 2, rect.y + 2, rect.width - 4, rect.height - 4};
-        rounded(cr, inner, radius - 2); cairo_set_source_rgba(cr, .66, .78, 1, .09);
+        rounded(cr, inner, radius - 2); cairo_set_source_rgba(cr, .75, .83, 1, .18);
         cairo_set_line_width(cr, 1); cairo_stroke(cr); cairo_pattern_destroy(edge);
     }
 }
