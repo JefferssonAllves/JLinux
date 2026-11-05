@@ -9,6 +9,7 @@ static void rounded(cairo_t *cr, struct ui_rect r, double radius) {
 }
 void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
         cairo_surface_t *backdrop, double origin_x, double origin_y, struct jlinux_glass effects) {
+    bool horizontal = rect.width > rect.height;
     cairo_save(cr); rounded(cr, rect, radius); cairo_clip(cr);
     if (backdrop) {
         cairo_save(cr); cairo_scale(cr, 4, 4);
@@ -25,7 +26,7 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
         cairo_pattern_add_color_stop_rgba(shine, 0, .77, .85, 1, .34);
         cairo_pattern_add_color_stop_rgba(shine, .25, .45, .53, .69, .10);
         cairo_pattern_add_color_stop_rgba(shine, .75, .23, .21, .34, .035);
-        cairo_pattern_add_color_stop_rgba(shine, 1, .66, .51, .81, .22);
+        cairo_pattern_add_color_stop_rgba(shine, 1, horizontal ? .50 : .66, horizontal ? .57 : .51, horizontal ? .76 : .81, horizontal ? .18 : .22);
         cairo_set_source(cr, shine); cairo_paint(cr); cairo_pattern_destroy(shine);
         /* Local light catches the bevel; it is not an animated reflection. */
         const double positions[] = {.18, .62, .93};
@@ -35,7 +36,11 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
             double spread = rect.height > rect.width ? 90 : 125;
             if (rect.height > rect.width) { x = i == 1 ? rect.x : rect.x + rect.width; y = rect.y + rect.height * positions[i]; }
             cairo_pattern_t *light = cairo_pattern_create_radial(x, y, 0, x, y, spread);
-            cairo_pattern_add_color_stop_rgba(light, 0, i == 1 ? .36 : .72, i == 1 ? .69 : .48, 1, .46);
+            if (horizontal && i == 2) {
+                cairo_pattern_add_color_stop_rgba(light, 0, .45, .60, 1, .32);
+            } else {
+                cairo_pattern_add_color_stop_rgba(light, 0, i == 1 ? .36 : .72, i == 1 ? .69 : .48, 1, .46);
+            }
             cairo_pattern_add_color_stop_rgba(light, .24, .35, .34, .82, .14);
             cairo_pattern_add_color_stop_rgba(light, 1, .2, .25, .5, 0);
             cairo_set_source(cr, light); cairo_paint(cr); cairo_pattern_destroy(light);
@@ -58,8 +63,8 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
             cairo_pattern_add_color_stop_rgba(edge, 2 * radius / rect.width, .65, .86, 1, .95);
         }
         cairo_pattern_add_color_stop_rgba(edge, .3, .38, .64, 1, .68);
-        cairo_pattern_add_color_stop_rgba(edge, .7, .66, .40, .95, .58);
-        cairo_pattern_add_color_stop_rgba(edge, 1, .88, .61, 1, .98);
+        cairo_pattern_add_color_stop_rgba(edge, .7, horizontal ? .48 : .66, horizontal ? .49 : .40, horizontal ? .83 : .95, .58);
+        cairo_pattern_add_color_stop_rgba(edge, 1, horizontal ? .55 : .88, horizontal ? .67 : .61, horizontal ? .95 : 1, horizontal ? .70 : .98);
         cairo_set_source(cr, edge); cairo_set_line_width(cr, 1); cairo_stroke(cr);
         struct ui_rect inner = {rect.x + 2, rect.y + 2, rect.width - 4, rect.height - 4};
         rounded(cr, inner, radius - 2); cairo_set_source_rgba(cr, .75, .83, 1, .12);

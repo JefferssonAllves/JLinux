@@ -135,3 +135,9 @@ Próxima entrega visual: protótipo que reproduza fielmente composição, materi
 ## Correção localizada — fix/panel-left-edge
 
 Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40 de alpha, retornando gradualmente ao brilho anterior após a curva. Dock, tonalização e restante do material preservados. Seis testes release passaram; prévia atualizada. Ajuste visual sem benchmark nesta alteração.
+
+## Barra de 36 px e borda direita — fix/compact-panel-right-rim
+
+- Barra de 44 para 36 px, preservando margem de 6 px. Reserva superior reduzida junto com a altura; conteúdo continua centralizado e prévia usa as constantes do shell.
+- Borda e reflexo direitos da barra com azul-violeta menos rosado e intensidade mais uniforme. Dock e redução de brilho da ponta esquerda preservados.
+- Seis testes release passaram; prévia inspecionada. Sem nova execução de sanitizers ou benchmark nesta alteração visual.

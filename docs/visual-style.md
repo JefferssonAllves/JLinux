@@ -49,3 +49,7 @@ Após feedback positivo sobre o material mais claro, a barra passa a 44 px de al
 ### Dock compacto
 
 Dock com 56 px de largura, 6 px de margem esquerda e botões de 40×40. Detalhes azuis/violetas das bordas e reflexos localizados recebem mais brilho, preservando a tonalização clara e a barra de 44 px. Prévia e geometria de execução compartilham constantes; wallpaper preservado.
+
+### Refinamento da barra superior
+
+Altura atual: 36 px, margem de 6 px. A extremidade direita usa azul-violeta menos rosado e menos intenso, com reflexo localizado suavizado. O dock mantém seu material e geometria anteriores. A ponta esquerda da barra mantém o brilho reduzido solicitado.
