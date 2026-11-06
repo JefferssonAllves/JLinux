@@ -29,6 +29,11 @@ int main(int argc, char **argv) {
     uint32_t left = *(uint32_t *)((unsigned char *)pixels + stride + 80 * 4);
     uint32_t middle = *(uint32_t *)((unsigned char *)pixels + stride + 360 * 4);
     uint32_t right = *(uint32_t *)((unsigned char *)pixels + stride + 640 * 4);
+    uint32_t edge = *(uint32_t *)((unsigned char *)pixels + 2 * stride + 80 * 4);
+    CHECK((edge & 255) > (left & 255));
+    uint32_t pink = *(uint32_t *)((unsigned char *)pixels + 2 * stride + 230 * 4);
+    CHECK(((pink >> 16) & 255) * 100 > (pink & 255) * 85);
+    CHECK(((pink >> 16) & 255) > ((pink >> 8) & 255) * 2);
     /* Continuous light: no former bottom hotspot; hue still changes along the rim. */
     for (int x = 81; x < 640; x++) {
         uint32_t previous = *(uint32_t *)((unsigned char *)pixels + stride + (x - 1) * 4);
@@ -45,6 +50,9 @@ int main(int argc, char **argv) {
     CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[0]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,
         &pixels, &format, &stride));
     uint32_t plain = *(uint32_t *)((unsigned char *)pixels + stride + 195 * 4);
+    uint32_t header_center = *(uint32_t *)((unsigned char *)pixels + 18 * stride + 360 * 4);
+    CHECK((header_center >> 24) >= 220 && (header_center >> 24) < 255);
+    CHECK(((header_center >> 16) & 255) <= 8 && ((header_center >> 8) & 255) <= 8 && (header_center & 255) <= 8);
     wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
     CHECK((lit >> 24) > (plain >> 24));
     CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[3]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,
@@ -58,7 +66,13 @@ int main(int argc, char **argv) {
     uint32_t unshaded = *(uint32_t *)((unsigned char *)pixels + stride + 280 * 4);
     wlr_buffer_end_data_ptr_access(frame.parts[3]->buffer);
     CHECK((shaded >> 24) > (unshaded >> 24));
-    effects.shadow = true;
+    effects.tint = false;
+    CHECK(jlinux_window_frame_update(&frame, 711, 411, "JLinux Terminal", effects, false));
+    CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[0]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,
+        &pixels, &format, &stride));
+    CHECK(*(uint32_t *)((unsigned char *)pixels + 18 * stride + 360 * 4) == 0);
+    wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
+    effects.tint = true; effects.shadow = true;
 
     effects.reflection = true;
     CHECK(jlinux_window_frame_update(&frame, 711, 411, "JLinux Terminal", effects, false));

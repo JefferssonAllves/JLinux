@@ -22,6 +22,9 @@ frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
   'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
   dependencies: [wlroots, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
 test('window-frame-lifecycle', frame_test)
+panel_test = executable('jlinux-test-glass-panel', 'tests/glass-panel.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
+  dependencies: [cairo, pango, fontconfig, math])
+test('glass-panel-fade', panel_test)
 if get_option('shell')
   client = dependency('wayland-client')
   cursor = dependency('wayland-cursor')
