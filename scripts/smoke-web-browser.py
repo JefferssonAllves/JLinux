@@ -79,7 +79,7 @@ def main():
                          processes, "janela e primeira página")
                 dimensions = re.search(r"Janela mapeada:.*\((\d+)x(\d+)", log())
                 window_width, window_height = map(int, dimensions.groups())
-                wait_for(lambda: f"/viewport?w={window_width}&h={window_height - 148}" in Handler.events,
+                wait_for(lambda: f"/viewport?w={window_width}&h={window_height - 100}" in Handler.events,
                          processes, "viewport desconta a altura do cabeçalho")
                 assert "/pagead/banner.js" not in Handler.events, "Default blocking did not prevent download"
                 before = Handler.events.count("/shown?path=/first")
@@ -92,13 +92,13 @@ def main():
                 assert Handler.events.count("/pagead/banner.js") == 1, "Exceção vazou para outra aba"
                 keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
                 before = Handler.events.count("/shown?path=/first")
-                click(300, 208)  # Re-enable on the original tab using the header status row.
+                keys("-M", "ctrl", "-M", "shift", "-k", "b", "-m", "shift", "-m", "ctrl")
                 wait_for(lambda: Handler.events.count("/shown?path=/first") > before,
-                         processes, "reativar bloqueio pelo cabeçalho")
+                         processes, "reativar bloqueio pelo atalho")
                 assert Handler.events.count("/pagead/banner.js") == 1, "Ad was downloaded after re-enabling"
                 keys("-k", "Escape", "-d", "10", "native")
                 wait_for(lambda: "/typed?value=native" in Handler.events, processes, "entrada na página")
-                click(75, 238)
+                click(75, 190)
                 wait_for(lambda: "/page-click" in Handler.events, processes, "primeiro clique na página")
                 # The address field remains clickable after navigation and Escape, without Ctrl+L.
                 click(340, 165)
@@ -157,16 +157,16 @@ def main():
                 wait_for(lambda: f"/viewport?w={width}&h={height - 148}" in Handler.events,
                          processes, "viewport maximizado desconta o cabeçalho")
                 before = Handler.events.count("/page-click")
-                click(x + 35, y + 158)
+                click(x + 35, y + 110)
                 wait_for(lambda: Handler.events.count("/page-click") > before, processes, "topo após maximizar")
                 before = Handler.events.count("/bottom-click")
                 click(x + 35, y + height - 10)
                 wait_for(lambda: Handler.events.count("/bottom-click") > before, processes, "rodapé após maximizar")
                 click(x + width - 24, y + 18)  # Header still handles input at its new position.
                 keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
-                before = Handler.events.count(f"/viewport?w={window_width}&h={window_height - 148}")
+                before = Handler.events.count(f"/viewport?w={window_width}&h={window_height - 100}")
                 keys("-M", "logo", "-k", "Down", "-m", "logo")
-                wait_for(lambda: Handler.events.count(f"/viewport?w={window_width}&h={window_height - 148}") > before,
+                wait_for(lambda: Handler.events.count(f"/viewport?w={window_width}&h={window_height - 100}") > before,
                          processes, "restaurar viewport")
                 click(40 + window_width + 2, 80 + window_height + 2,
                       40 + window_width + 66, 80 + window_height - 78)

@@ -6,7 +6,7 @@
 #include <wpe/webkit.h>
 #include "../effects/glass.h"
 #include "address.h"
-#define BROWSER_CHROME_HEIGHT 148
+#define BROWSER_CHROME_HEIGHT 100
 #define BROWSER_TAB_HEIGHT 36
 #define BROWSER_TAB_WIDTH 180
 struct browser_chrome {
