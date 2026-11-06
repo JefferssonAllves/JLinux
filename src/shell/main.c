@@ -25,7 +25,7 @@
 #include "layer-shell-client.h"
 extern char **environ;
 enum { PANEL_HEIGHT = 36, PANEL_MARGIN = 6, PANEL_ZONE = 44,
-    DOCK_WIDTH = 56, DOCK_HEIGHT = 226, DOCK_MARGIN = 6, DOCK_ZONE = 64 };
+    DOCK_WIDTH = 56, DOCK_SLOTS = 4, DOCK_HEIGHT = 28 + DOCK_SLOTS * 66, DOCK_MARGIN = 6, DOCK_ZONE = 64 };
 struct app;
 struct surface {
     struct app *app;
@@ -73,7 +73,7 @@ struct app {
 };
 static struct ui_rect dock_button(int index) { return (struct ui_rect){8, 18 + index * 66, 40, 40}; }
 static int dock_hit(double x, double y) {
-    for (int i = 0; i < 3; i++) { if (ui_contains(dock_button(i), x, y)) { return i; } }
+    for (int i = 0; i < DOCK_SLOTS; i++) { if (ui_contains(dock_button(i), x, y)) { return i; } }
     return -1;
 }
 static GAppInfo *pinned_app(struct app *app, unsigned int index) {
@@ -151,8 +151,9 @@ static void paint(struct surface *surface, cairo_t *cr) {
             surface->app->backdrop, DOCK_MARGIN, (surface->app->wallpaper.height - height + PANEL_ZONE + PANEL_MARGIN) / 2.0, surface->app->glass);
         const enum ui_icon icons[] = {UI_FOLDER, UI_TERMINAL, UI_CODE};
         const unsigned int colors[] = {0x87b8f5, 0xe3e8f6, 0x78b8f3};
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < DOCK_SLOTS; i++) {
             unsigned int index = i + surface->app->dock_scroll;
+            if (index >= 3 + surface->app->apps.pins->len) { continue; }
             if (index < 3) { ui_button(cr, dock_button(i), icons[index], surface->hover == i, colors[index]); }
             else {
                 GAppInfo *info = pinned_app(surface->app, index - 3);
@@ -166,7 +167,7 @@ static void paint(struct surface *surface, cairo_t *cr) {
                 ui_text(cr, initial, button.x + 12, button.y + 9, 18, true, 0xe0e6ff);
             }
         }
-        ui_text(cr, "+", 20, 199, 20, true, 0xc3d5ff);
+        ui_text(cr, "+", 20, DOCK_HEIGHT - 27, 20, true, 0xc3d5ff);
     } else {
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (height - 2) / 2.0,
             surface->app->backdrop, PANEL_MARGIN, PANEL_MARGIN, surface->app->glass);
@@ -312,7 +313,8 @@ static void toggle_chooser(struct app *app) {
         app->chooser.configured = false; app->chooser.dirty = false; return;
     }
     dock_apps_finish(&app->apps); dock_apps_init(&app->apps);
-    if (app->dock_scroll > app->apps.pins->len) { app->dock_scroll = app->apps.pins->len; }
+    unsigned int maximum = app->apps.pins->len ? app->apps.pins->len - 1 : 0;
+    if (app->dock_scroll > maximum) { app->dock_scroll = maximum; }
     app->dock.dirty = true;
     app->chooser_scroll = 0; app->dock_message[0] = 0;
     if (!app->apps.writable) { snprintf(app->dock_message, sizeof(app->dock_message), "dock.ini inválido; edição desativada."); }
@@ -416,8 +418,8 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
             if (index < app->apps.apps->len) {
                 GError *error = NULL; GAppInfo *info = g_ptr_array_index(app->apps.apps, index);
                 if (dock_apps_toggle(&app->apps, info, &error)) {
-                    snprintf(app->dock_message, sizeof(app->dock_message), "%s", dock_apps_pinned(&app->apps, info) ? "Fixado. Role o dock para encontrar o app." : "Removido do dock.");
-                    app->dock_scroll = app->apps.pins->len;
+                    snprintf(app->dock_message, sizeof(app->dock_message), "%s", dock_apps_pinned(&app->apps, info) ? "Aplicativo fixado no dock." : "Removido do dock.");
+                    app->dock_scroll = app->apps.pins->len ? app->apps.pins->len - 1 : 0;
                     app->dock.dirty = true;
                 } else { snprintf(app->dock_message, sizeof(app->dock_message), "%s", error->message); g_clear_error(&error); }
                 app->chooser.dirty = true;
@@ -434,8 +436,8 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
         }
     } else if (app->pointer_surface == &app->dock) {
         int hit = dock_hit(app->pointer_x, app->pointer_y);
-        if (app->pointer_y >= 198 && app->pointer_y < 224) { toggle_chooser(app); }
-        else if (hit >= 0 && hit < 3) { launch(app, hit + (int)app->dock_scroll); }
+        if (app->pointer_y >= DOCK_HEIGHT - 28 && app->pointer_y < DOCK_HEIGHT - 2) { toggle_chooser(app); }
+        else if (hit >= 0 && (unsigned int)hit + app->dock_scroll < 3 + app->apps.pins->len) { launch(app, hit + (int)app->dock_scroll); }
     } else if (app->pointer_surface == &app->panel) {
         if (app->info) { app->info = false; app->panel.dirty = true; }
         else if (app->pointer_x > app->panel.width - 60) {
@@ -447,7 +449,7 @@ static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, 
     (void)pointer; (void)time; struct app *app = data;
     if (axis != WL_POINTER_AXIS_VERTICAL_SCROLL || !value) { return; }
     unsigned int *scroll = NULL, maximum = 0;
-    if (app->pointer_surface == &app->dock) { scroll = &app->dock_scroll; maximum = app->apps.pins->len; }
+    if (app->pointer_surface == &app->dock) { scroll = &app->dock_scroll; maximum = app->apps.pins->len ? app->apps.pins->len - 1 : 0; }
     else if (app->pointer_surface == &app->chooser) { scroll = &app->chooser_scroll; maximum = app->apps.apps->len > 8 ? app->apps.apps->len - 8 : 0; }
     if (scroll) {
         if (value > 0 && *scroll < maximum) { (*scroll)++; }

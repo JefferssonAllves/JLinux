@@ -64,10 +64,10 @@ def main():
                     time.sleep(0.15)
                     assert client.poll() is None, "Shell encerrou após mapear"
                     if pointer_client:
-                        subprocess.run([pointer_client, "34", "310"], env=env, check=True, timeout=3)
+                        subprocess.run([pointer_client, "34", "277"], env=env, check=True, timeout=3)
                         wait_for(lambda: log().count("Janela mapeada: Arquivos") > iteration,
                                  [server, client], "dock abriu arquivos")
-                        subprocess.run([pointer_client, "34", "377"], env=env, check=True, timeout=3)
+                        subprocess.run([pointer_client, "34", "344"], env=env, check=True, timeout=3)
                         wait_for(lambda: log().count("Janela mapeada: JLinux Terminal") > iteration,
                                  [server, client], "dock abriu terminal")
                         subprocess.run(["wtype", "-s", "200", "-M", "logo", "-k", "Up", "-m", "logo"],
