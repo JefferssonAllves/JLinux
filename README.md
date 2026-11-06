@@ -34,6 +34,7 @@ O iniciador localiza os binários na própria pasta, cria runtime privado, aguar
 | Ação | Controle |
 | --- | --- |
 | Abrir terminal | Super+Enter |
+| Mostrar/esconder dock circular | Super sozinha |
 | Abrir Codex | `codex` no terminal |
 | Abrir Arquivos | `jlinux-files` no terminal |
 | Alternar janela | Alt+Tab |
@@ -83,3 +84,5 @@ Pacote `jlinux-desktop-git`, login próprio em C/Wayland e inicialização via g
 Janelas abrem livres. Arraste pelo cabeçalho e solte na borda esquerda ou direita para ocupar aquela metade da área útil. Puxar para longe da borda restaura o tamanho anterior. Abrir/fechar outras janelas não reorganiza o desktop. Veja [controles e limites](docs/window-management.md).
 
 O dock lateral foi removido, incluindo lista de aplicativos fixados, configuração e modo de sobreposição. A área útil não tem reserva à esquerda. Arquivos, Terminal e Codex continuam disponíveis pelos comandos acima.
+
+Interface Futurista nativa, evidências e limites: [docs/futurista.md](docs/futurista.md).

@@ -348,3 +348,12 @@ O usuário autorizou instalar/aplicar diretamente no sistema toda alteração so
 - Auditoria identificou que o pacote c81b589 preservava apenas o rosado simplificado de #56. Faltavam a combinação completa de #54 (rosado), #49 (cabeçalho preto/contorno nítido) e #47 (painel reto/fade). Esses componentes foram reutilizados sobre a base sem dock de #57, preservando encaixe manual, remoção de menus, associação de pastas e controles existentes. Inventário em docs/applied-updates.md.
 - Código do navegador instalado em 21be53d já inclui os pedidos anteriores e o fix de imagens Blob; a branch atual só acrescenta documentação. Sem reinstalação ou alteração do navegador nesta entrega.
 - 20 testes locais release passaram; novo assert de pixels distingue o rosado mais recente da adaptação anterior. Prévias do shell/moldura/Arquivos inspecionadas. Os 20 cenários também passaram com ASan/UBSan; pacote e ativação física ainda não realizados nesta etapa. Não reintroduzir docks, menus ou tiling automático substituídos por pedidos posteriores.
+
+### FUTURISTA — interface nativa e dock radial
+
+- Referência atual: Downloads/Central de Controle JLinux Futurista.png, copiada para docs/design/futurista-reference.png.
+- Implementados: shell C/Wayland com barra, wallpaper reconstruído, dez setores, centro de controle, hover/cliques, volume e confirmação de energia; Super isolada alterna a superfície sem conflitar com Super+Enter/drag.
+- Validação: 21 testes release; quatro cenários headless ASan/UBSan, teste do dock repetido após layout e prévia com LeakSanitizer passaram. Comparação nativa 1672×941 tem MAE RGB normalizado 0,0584804: não é idêntica.
+- O usuário autorizou instalar a prévia completa e adiou a reconstrução exata dos assets que não tem separados. Controles sem backend mostram indisponibilidade. Fidelidade exata, integração dos controles restantes e validação na sessão real permanecem pendentes; ver docs/futurista.md.
+
+FUTURISTA — instalação confirmada: pacote `0.5.0.r76.g18a1cae-1` instalado; `pacman -Qkk` sem alterações, prévia gerada pelo executável instalado. Ativação no próximo login; processos atuais preservados. Commit/backup e limites em docs/arch-installation.md. Fidelidade pixel a pixel e backends ausentes continuam pendentes; não tratados como concluídos.

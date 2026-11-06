@@ -16,7 +16,7 @@ math = meson.get_compiler('c').find_library('m')
 cairo = dependency('cairo')
 pango = dependency('pangocairo')
 fontconfig = dependency('fontconfig')
-compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
+compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
   dependencies: [wlroots, wayland, xkb, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
 frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
   'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
@@ -58,8 +58,10 @@ if get_option('shell')
   install_data('packaging/greetd/config.toml', install_dir: get_option('datadir') / 'jlinux', rename: 'greetd.toml')
   install_data('packaging/arch/enable-login.sh', install_dir: get_option('libexecdir') / 'jlinux', install_mode: 'rwxr-xr-x')
   install_data('data/wayland-sessions/jlinux.desktop', install_dir: get_option('datadir') / 'wayland-sessions')
-  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/volume.c', 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
-    dependencies: [client, cursor, cairo, pango, fontconfig, math, glib], install: true)
+  install_data('data/futurista/README.md', install_dir: get_option('datadir') / 'licenses/jlinux-desktop-git', rename: 'futurista-assets.md')
+  futurista_resources = import('gnome').compile_resources('futurista-resources', 'data/futurista/assets.xml', source_dir: 'data/futurista')
+  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/volume.c', 'src/shell/control.c', 'src/shell/futurista.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
+    c_args: ['-Wno-overlength-strings'], dependencies: [client, cursor, cairo, pango, fontconfig, math, dependency('gio-2.0')], install: true)
   volume_test = executable('jlinux-test-volume', 'tests/volume.c', 'src/shell/volume.c', dependencies: [glib, math])
   test('volume-response', volume_test)
   blur_test = executable('jlinux-test-blur', 'tests/blur.c', 'src/renderer/blur.c', dependencies: cairo)
@@ -89,6 +91,7 @@ if foot.found() and wtype.found()
   if get_option('shell')
     test('files-headless', find_program('scripts/smoke-files.py'), args: [compositor, files, pointer_test, wtype], timeout: 30)
     test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
+    test('futurista-headless', find_program('scripts/smoke-futurista.py'), args: [compositor, shell, wtype, pointer_test], timeout: 30)
     test('shell-headless', shell_smoke, args: [compositor, shell, pointer_test], timeout: 20)
     test('volume-headless', find_program('scripts/smoke-volume.py'), args: [compositor, shell, pointer_test], timeout: 35)
     test('power-menu-headless', find_program('scripts/smoke-power.py'), args: [compositor, shell, pointer_test], timeout: 35)
@@ -107,6 +110,7 @@ else
   if get_option('shell')
     test('files-headless', find_program('scripts/smoke-files.py'), args: [compositor, files, pointer_test, wtype], timeout: 30)
     test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
+    test('futurista-headless', find_program('scripts/smoke-futurista.py'), args: [compositor, shell, wtype, pointer_test], timeout: 30)
     test('shell-headless', shell_smoke, args: [compositor, shell], timeout: 15)
   endif
 endif

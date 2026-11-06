@@ -101,3 +101,7 @@ Os controles independentes de tint/reflection continuam respeitados. São novos 
 ## Consolidação aplicada aos pedidos mais recentes
 
 A integração `feature/apply-pending-updates` reúne o cabeçalho preto translúcido (88%), contorno nítido (1,6 px), halo reduzido (2,2 px a 18%) e o rosado de #54 — RGB (.84, .24, .91) no stop antes violeta. A barra superior ocupa toda a largura no topo, com cantos retos e 16 px de fade abaixo dos 36 px de controles. Dock e rótulos de menus removidos permanecem ausentes. Inventário e precedência dos pedidos em [applied-updates.md](applied-updates.md); versões anteriores descritas acima são histórico.
+
+## Referência Futurista mais recente
+
+Por pedido do usuário, a tela de Downloads “Central de Controle JLinux Futurista.png” orienta a nova composição: dock circular central acionado por Super, centro de controle à direita e barra arredondada azul-violeta. Substitui a orientação de ausência de dock para esta implementação; não restaura o dock lateral antigo. Código, prévia, comparação e limites em [futurista.md](futurista.md). O usuário autorizou instalar a prévia completa sem exigir agora reconstrução exata dos assets ausentes.
