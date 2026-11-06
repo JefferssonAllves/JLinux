@@ -225,3 +225,12 @@ Nome e símbolo JLinux removidos da barra superior; menus começam a 24 px da ma
 - Avisos de protocolos Wayland ainda não implementados permanecem nos logs. A mensagem exata mencionada pelo usuário ainda não foi confirmada; não tratar a correção de locale como resolução de todo possível problema do terminal.
 
 **TERMINAL-UTF8 · instalado:** pacote `0.5.0.r41.g94ddb52-1` instalado pelo pacman após doze testes de pacote aprovados. Terminal adicional aberto na sessão atual com LANG=pt_BR.UTF-8 e ausência do aviso de locale confirmada em log próprio. Sessão atual preservada. Correção herdada automaticamente por dock/atalho/terminal inicial requer próximo login, pois os processos antigos conservam ambiente anterior. Outros avisos Wayland permanecem como diagnósticos.
+
+
+## Primeiras funções da barra — feature/top-panel
+
+- **SHELL-01 · parcial:** Aplicativos abre Terminal/Codex; relógio abre calendário do mês atual, com destaque do dia; Atalhos consulta os comandos de janela existentes. Clique novamente no botão ou em Fechar recolhe o painel. Regiões transparentes deixam a entrada passar para os aplicativos; a zona exclusiva da barra permanece 44 px.
+- Menus em C/Wayland com material compartilhado, sem dependência nova ou loop de animação. Calendário somente de consulta do mês atual; lançador limitado aos dois aplicativos já suportados, sem catálogo .desktop, navegação por teclado ou fechamento por clique fora.
+- Rede, Bluetooth, arquivos e energia continuam sem integração nesta branch. Trabalho local paralelo de arquivos/navegador preservado na árvore original.
+- Validação: build release e 12 testes locais passaram; smoke de entrada ampliado abre calendário e lança terminal pelo menu. Prévia nativa do calendário inspecionada; visual preserva o material existente, ainda diferente das fotos de referência. Os 12 testes ASan/UBSan também passaram; maximização com calendário aberto confirmou a mesma geometria útil 1204×631 em 73,86 na saída headless 1280×720.
+- Instalação pacman/sessão greetd atual preservadas. Esta branch não atualiza os binários em /usr/bin; sem teste DRM, VT, benchmark ou alegação de fidelidade completa.

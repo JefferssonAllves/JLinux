@@ -74,6 +74,26 @@ def main():
                         sizes = re.findall(r"Janela maximizada: .* \((\d+)x(\d+) em (\d+),(\d+)\)", log())
                         assert tuple(map(int, sizes[-1])) == (1204, 631, 73, 86), sizes[-1]
 
+                    if pointer_client:
+                        # Calendar opens below the bar and closes without changing workarea.
+                        subprocess.run([pointer_client, "640", "24"], env=env, check=True, timeout=3)
+                        time.sleep(0.15)
+                        maximized = log().count("Janela maximizada:")
+                        subprocess.run(["wtype", "-M", "logo", "-k", "Down", "-k", "Up", "-m", "logo"],
+                                       env=env, check=True, timeout=4)
+                        wait_for(lambda: log().count("Janela maximizada:") > maximized,
+                                 [server, client], "maximização com calendário aberto")
+                        sizes = re.findall(r"Janela maximizada: .* \((\d+)x(\d+) em (\d+),(\d+)\)", log())
+                        assert tuple(map(int, sizes[-1])) == (1204, 631, 73, 86), sizes[-1]
+                        subprocess.run([pointer_client, "770", "65"], env=env, check=True, timeout=3)
+                        # Launch from the top menu, independently of the dock.
+                        before = log().count("Janela mapeada: JLinux Terminal")
+                        subprocess.run([pointer_client, "65", "24"], env=env, check=True, timeout=3)
+                        time.sleep(0.15)
+                        subprocess.run([pointer_client, "100", "120"], env=env, check=True, timeout=3)
+                        wait_for(lambda: log().count("Janela mapeada: JLinux Terminal") > before,
+                                 [server, client], "menu de aplicativos abriu terminal")
+
                     stop(client)
                     assert client.returncode == 0, f"Shell encerrou com erro: {client.returncode}"
                     assert server.poll() is None, "Compositor encerrou com o shell"

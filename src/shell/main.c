@@ -25,6 +25,7 @@
 extern char **environ;
 enum { PANEL_HEIGHT = 36, PANEL_MARGIN = 6, PANEL_ZONE = 44,
     DOCK_WIDTH = 56, DOCK_HEIGHT = 226, DOCK_MARGIN = 6, DOCK_ZONE = 64 };
+enum panel_menu { MENU_NONE, MENU_APPS, MENU_CALENDAR, MENU_HELP };
 struct app;
 struct surface {
     struct app *app;
@@ -56,6 +57,7 @@ struct app {
     struct wl_list buffers;
     double pointer_x, pointer_y;
     bool running, info;
+    enum panel_menu menu;
     int timer, signals;
     char notice[180];
     cairo_surface_t *backdrop;
@@ -66,6 +68,56 @@ static struct ui_rect dock_button(int index) { return (struct ui_rect){8, 18 + i
 static int dock_hit(double x, double y) {
     for (int i = 0; i < 3; i++) { if (ui_contains(dock_button(i), x, y)) { return i; } }
     return -1;
+}
+static struct ui_rect menu_rect(struct app *app) {
+    return (struct ui_rect){app->menu == MENU_CALENDAR ? app->panel.width / 2.0 - 160 : 16,
+        PANEL_HEIGHT + 6, 320, 250};
+}
+static void set_menu(struct app *app, enum panel_menu menu) {
+    app->menu = app->menu == menu ? MENU_NONE : menu;
+    app->info = false;
+    struct wl_region *region = wl_compositor_create_region(app->compositor);
+    if (!region) { app->running = false; return; }
+    wl_region_add(region, 0, 0, app->panel.width, PANEL_HEIGHT);
+    if (app->menu) {
+        struct ui_rect r = menu_rect(app);
+        wl_region_add(region, (int)r.x, (int)r.y, (int)r.width, (int)r.height);
+    }
+    wl_surface_set_input_region(app->panel.wl, region);
+    wl_region_destroy(region);
+    zwlr_layer_surface_v1_set_size(app->panel.layer, 0, app->menu ? PANEL_HEIGHT + 262 : PANEL_HEIGHT);
+    app->panel.dirty = true;
+}
+static void paint_menu(struct app *app, cairo_t *cr) {
+    if (!app->menu) { return; }
+    struct ui_rect r = menu_rect(app);
+    jlinux_glass_paint(cr, r, 12, app->backdrop, PANEL_MARGIN, PANEL_MARGIN, app->glass);
+    double x = r.x + 18, y = r.y + 16;
+    ui_text(cr, "Fechar ×", r.x + 232, y, 13, false, 0xd2d7eb);
+    if (app->menu == MENU_APPS) {
+        ui_text(cr, "Aplicativos", x, y, 16, true, 0xf1f2fc);
+        ui_button(cr, (struct ui_rect){x, y + 38, 40, 40}, UI_TERMINAL, false, 0xe3e8f6);
+        ui_text(cr, "Terminal", x + 52, y + 48, 15, false, 0xf1f2fc);
+        ui_button(cr, (struct ui_rect){x, y + 94, 40, 40}, UI_CODE, false, 0x78b8f3);
+        ui_text(cr, "Codex", x + 52, y + 104, 15, false, 0xf1f2fc);
+    } else if (app->menu == MENU_HELP) {
+        const char *lines[] = {"Atalhos", "Super+Enter · Terminal", "Alt+Tab · Trocar janela", "Super+Q · Fechar janela", "Super+↑ / ↓ · Maximizar / restaurar", "Super+arraste · Mover janela"};
+        for (int i = 0; i < 6; i++) { ui_text(cr, lines[i], x, y + i * 34, i ? 13 : 16, !i, 0xf1f2fc); }
+    } else {
+        time_t now = time(NULL); struct tm today; localtime_r(&now, &today);
+        char title[32]; snprintf(title, sizeof(title), "%02d / %d", today.tm_mon + 1, today.tm_year + 1900);
+        ui_text(cr, title, x, y, 16, true, 0xf1f2fc);
+        ui_text(cr, "Dom  Seg  Ter  Qua  Qui  Sex  Sáb", x, y + 36, 13, false, 0xa3aec9);
+        struct tm first = today; first.tm_mday = 1; first.tm_hour = 12; first.tm_isdst = -1;
+        mktime(&first);
+        struct tm next = first; next.tm_mon++; next.tm_mday = 0; next.tm_isdst = -1; mktime(&next);
+        for (int day = 1; day <= next.tm_mday && day <= 31; day++) {
+            int cell = first.tm_wday + day - 1;
+            char label[8]; snprintf(label, sizeof(label), "%2d", day);
+            ui_text(cr, label, x + cell % 7 * 40, y + 65 + cell / 7 * 26, 14,
+                day == today.tm_mday, day == today.tm_mday ? 0x87b8f5 : 0xf1f2fc);
+        }
+    }
 }
 static void paint(struct surface *surface, cairo_t *cr) {
     int width = surface->width, height = surface->height;
@@ -80,10 +132,11 @@ static void paint(struct surface *surface, cairo_t *cr) {
         const unsigned int colors[] = {0xf0f2ff, 0xe3e8f6, 0x78b8f3};
         for (int i = 0; i < 3; i++) { ui_button(cr, dock_button(i), icons[i], surface->hover == i, colors[i]); }
     } else {
-        jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (height - 2) / 2.0,
+        jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, PANEL_HEIGHT - 2}, (PANEL_HEIGHT - 2) / 2.0,
             surface->app->backdrop, PANEL_MARGIN, PANEL_MARGIN, surface->app->glass);
-        cairo_save(cr); cairo_translate(cr, 0, (height - 54) / 2.0);
-        if (width > 1000) { ui_text(cr, "Aplicativos     Arquivos     Configurações", 24, 18, 15, false, 0xd2d7eb); }
+        cairo_save(cr); cairo_translate(cr, 0, (PANEL_HEIGHT - 54) / 2.0);
+        if (width > 1000) { ui_text(cr, "Aplicativos", 24, 18, 15, false, 0xd2d7eb); }
+        if (width > 1000) { ui_text(cr, "Atalhos", 150, 18, 15, false, 0xd2d7eb); }
         time_t now = time(NULL); struct tm local;
         localtime_r(&now, &local);
         char clock[64]; strftime(clock, sizeof(clock), "%d/%m  •  %H:%M", &local);
@@ -94,11 +147,12 @@ static void paint(struct surface *surface, cairo_t *cr) {
         ui_text(cr, "Bluetooth", width - 140, 18, 13, false, 0xa3aec9);
         ui_icon(cr, UI_POWER, width - 44, 15, 23, 0xe9eafa);
         if (surface->app->info) {
-            /* shortcut: show help in the existing panel; real popovers arrive with shell navigation. */
+            /* shortcut: service errors stay in the panel until the notification component exists. */
             cairo_set_source_rgb(cr, .035, .045, .09); cairo_rectangle(cr, 8, 10, width - 16, 34); cairo_fill(cr);
             ui_text(cr, surface->app->notice, 24, 17, 14, false, 0xe6defe);
         }
         cairo_restore(cr);
+        paint_menu(surface->app, cr);
     }
 }
 /* shortcut: wallpaper-only backdrop; live window blur belongs in the compositor GPU pipeline. */
@@ -250,10 +304,28 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
         if (hit == 0) { notice(app, "JLinux • Dock: Terminal e Codex. Super+Enter: terminal. Super+Esc: sair."); }
         else if (hit == 1 || hit == 2) { launch(app, hit == 2); }
     } else if (app->pointer_surface == &app->panel) {
-        if (app->info) { app->info = false; app->panel.dirty = true; }
-        else if (app->pointer_x > app->panel.width - 60) {
+        double x = app->pointer_x, y = app->pointer_y;
+        if (y >= PANEL_HEIGHT) {
+            struct ui_rect r = menu_rect(app);
+            if (app->menu && ui_contains(r, x, y)) {
+                if (y < r.y + 44 && x > r.x + 220) { set_menu(app, MENU_NONE); }
+                else if (app->menu == MENU_APPS && y >= r.y + 54 && y < r.y + 150) {
+                    bool codex = y >= r.y + 110;
+                    set_menu(app, MENU_NONE); launch(app, codex);
+                }
+            }
+        } else if (app->info) { app->info = false; app->panel.dirty = true; }
+        else if (x > app->panel.width - 60) {
+            set_menu(app, MENU_NONE);
             notice(app, "Super+Esc encerra a sessão. Suspender, reiniciar e desligar ainda não estão integrados.");
-        } else { notice(app, "Wi-Fi, Bluetooth e os menus de aplicativos serão conectados aos serviços do sistema."); }
+        } else if (x >= app->panel.width / 2.0 - 85 && x < app->panel.width / 2.0 + 85) {
+            set_menu(app, MENU_CALENDAR);
+        } else if (app->panel.width > 1000 && x >= 16 && x < 135) { set_menu(app, MENU_APPS); }
+        else if (app->panel.width > 1000 && x >= 140 && x < 220) { set_menu(app, MENU_HELP); }
+        else if (x > app->panel.width - 280) {
+            set_menu(app, MENU_NONE);
+            notice(app, "Rede e Bluetooth: integração com os serviços do sistema ainda pendente.");
+        } else { set_menu(app, MENU_NONE); }
     }
 }
 static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
@@ -284,11 +356,11 @@ static void global(void *data, struct wl_registry *registry, uint32_t name, cons
 }
 static void global_remove(void *data, struct wl_registry *registry, uint32_t name) { (void)data; (void)registry; (void)name; }
 static const struct wl_registry_listener registry_listener = {.global = global, .global_remove = global_remove};
-static int preview(const char *path) {
-    struct app app = {0};
+static int preview(const char *path, bool calendar) {
+    struct app app = {.menu = calendar ? MENU_CALENDAR : MENU_NONE};
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
     app.wallpaper = (struct surface){.app = &app, .width = 1672, .height = 941};
-    app.panel = (struct surface){.app = &app, .width = 1672 - 2 * PANEL_MARGIN, .height = PANEL_HEIGHT};
+    app.panel = (struct surface){.app = &app, .width = 1672 - 2 * PANEL_MARGIN, .height = calendar ? PANEL_HEIGHT + 262 : PANEL_HEIGHT};
     app.dock = (struct surface){.app = &app, .width = DOCK_WIDTH, .height = DOCK_HEIGHT, .hover = -1};
     cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1672, 941);
     if (!prepare_backdrop(&app)) { cairo_surface_destroy(image); return 1; }
@@ -304,8 +376,9 @@ static int preview(const char *path) {
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
 int main(int argc, char **argv) {
-    if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2]); }
-    if (argc != 1) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png]\n"); return 1; }
+    if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2], false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-calendar")) { return preview(argv[2], true); }
+    if (argc != 1) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-calendar arquivo.png]\n"); return 1; }
     struct app app = {.running = true, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
     if (getenv("JLINUX_THEME")) { fprintf(stderr, "JLINUX_THEME/CSS não é suportado pelo shell nativo.\n"); return 1; }
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
