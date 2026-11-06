@@ -316,3 +316,9 @@ WM-SNAP substitui WM-AUTO por decisão do usuário. Removidos algoritmo de divis
 ### WINDOW-PINK-INSTALLED
 
 Aplicar contorno discretamente rosado sobre a base do pacote instalado 6df67d0, preservando encaixe lateral. Mudança restrita ao stop violeta do contorno. Sem recarregamento ao vivo: o processo existente não oferece essa função. Ativação no próximo login, sem encerrar a sessão atual.
+**WM-SNAP · instalado em 06/11/2026:** pacote `0.5.0.r62.g6df67d0-1`, fonte 6df67d0, compilado do GitHub com 21 testes aprovados no makepkg e instalado via pacman. 21 testes locais release e ASan/UBSan passaram. Instalação substitui o modo automático rejeitado e preserva volume, dock e tema. Compositor da sessão atual preservado: janelas livres e encaixe lateral passam a valer no próximo login. Sem reinício/logout/VT nesta entrega. PR #44, base feature/panel-volume, sem merge; CI e avaliação visual física pendentes neste registro.
+
+
+## Barra superior sem menus à esquerda — fix/remove-panel-menus
+
+Aplicativos, Arquivos e Configurações removidos da barra superior por pedido do usuário. Cliques na área vazia não mostram mais o aviso de menus pendentes. Relógio, Som, Wi-Fi, Bluetooth, energia e dock preservados. Base feature/window-side-snap (#44), que corresponde à instalação atual; sem alteração no comportamento das janelas. Validação e instalação registradas após conclusão.
