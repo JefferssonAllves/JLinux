@@ -31,7 +31,29 @@ Abrir/alternar não recarrega páginas: texto em formulários e histórico da ab
 
 O campo inicial permite substituir tudo ou acrescentar/remover texto no fim. Edição com cursor, seleção por trecho, IME, acessibilidade e escalas precisam de implementação/validação. A prévia de componente em `docs/design/` não é uma janela completa, visual definitivo aprovado ou prova de equivalência com as fotos.
 
-## Políticas e limites
+## Vídeo e encerramentos — feature/browser-media
+
+Vídeo HTML5 foi validado em Wayland headless/Pixman com arquivos locais gerados pelo FFmpeg: MP4 H.264/AAC, WebM VP8/Opus e MediaSource com MP4 fragmentado. O teste exige avanço de `currentTime`, dimensão de vídeo válida e quadros decodificados, não apenas detecção de codecs. Os elementos `<video controls>` dos sites apresentam os controles do motor. Autoplay sem som é permitido; autoplay com som continua sujeito à interação do usuário. Não há implementação de Widevine/DRM de serviços comerciais, fullscreen do desktop ou garantia de compatibilidade com todo site de streaming.
+
+Dependências mínimas do pacote: `gst-plugins-base`, `gst-plugins-good` e `gst-libav`, além do WPE. `gst-plugins-bad` é opcional para formatos adicionais. Não é necessário escrever um decodificador próprio ou usar Python em execução. A pré-verificação nativa confirma `autoaudiosink` e `playbin3`: se faltarem, desativa mídia/WebAudio e mostra aviso em vez de permitir um abort do motor. O teste também executa o navegador com diretórios/registro de plugins vazios e confere que continua navegando sem abortar.
+
+**Causa encontrada nos registros:** os cores de WPEWebProcess de 05/11/2026 às 21:51:52 e 22:00:01 abortaram em `MediaPlayerPrivateGStreamer::createAudioSink()` (`libWPEWebKit-2.0.so.1+0x47f7cda`), durante carregamento de HTMLMediaElement. Os símbolos foram obtidos do debuginfod Arch para o build ID `c28cd278047800f9ef8b8b9cd4e893743db3b315`. A implementação WPE 2.54.2 contém `RELEASE_ASSERT(audioSink)` quando não consegue criar o sink. `gst-plugins-good`, que fornece `autoaudiosink`, não estava instalado, nem os pacotes base/libav. A instalação dos plugins corrige essa dependência ausente; a pré-verificação evita a mesma falha em instalações incompletas. Os dois SIGSEGV antigos do executável de 21:20 pertencem à investigação anterior de limpeza EGL, já corrigida na base; não foram confundidos com esses aborts de mídia.
+
+Fontes: [multimídia no WPE](https://docs.webkit.org/Ports/WebKitGTK%20and%20WPE%20WebKit/Multimedia.html), [createAudioSink na versão 2.54.2](https://github.com/WebKit/WebKit/blob/webkitgtk-2.54.2/Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.cpp). Cores e dumps completos permanecem fora do Git.
+
+Também foi testado matar somente o processo de conteúdo com SIGKILL: o navegador permanece aberto, mostra o aviso existente e Ctrl+R recria a página e volta a reproduzir vídeo. Isso não promete recuperar dados que estavam apenas no DOM do processo morto. Sandbox, validação TLS e bloqueio de permissões foram preservados; não há reinício automático em loop.
+
+Nesta máquina foram instalados PipeWire-Pulse, PipeWire-Audio e WirePlumber para fornecer áudio ao navegador. Os sockets/serviços do usuário foram iniciados para esse recurso, sem reiniciar login/compositor. Placas/saídas analógica e HDMI foram detectadas; audição física pelo usuário continua pendente. O JLinux usa runtime Wayland privado: quando não há `PULSE_SERVER`/`PULSE_RUNTIME_PATH` explícitos, o navegador usa o socket padrão `/run/user/UID/pulse/native` somente se existir, for socket e pertencer ao próprio UID. Não altera preferências explícitas, volume ou seleção de saída.
+
+## Instalação persistente e dock
+
+`packaging/arch/browser/PKGBUILD` gera `jlinux-browser-git`, instalado separadamente de `jlinux-desktop-git`. A receita compila/testa a branch `feature/browser-media` e empacota apenas `/usr/bin/jlinux-browser` e `org.jlinux.Browser.desktop`. Não executa `meson install` sobre o desktop instalado. O antigo diretório `/tmp/jlinux-web-browser` desapareceu no reboot; a nova worktree de desenvolvimento fica em `~/.local/src/jlinux-browser`, mas a abertura instalada usa `/usr/bin` e não depende dessa worktree.
+
+No dock configurável já instalado, fixar `org.jlinux.Browser.desktop` em `~/.config/jlinux/dock.ini`, preservando os demais IDs, usa a infraestrutura existente e não requer um quarto botão fixo no código. O shell recarrega a configuração ao abrir “+”; role o dock para chegar ao atalho adicional. O catálogo de entradas `.desktop` pode precisar de novo shell/login para reconhecer uma instalação nova. Não reiniciar o compositor para isso. O botão “+” permite remover o atalho posteriormente.
+
+Validação desta entrega: 16 testes locais release e os quatro testes do navegador com ASan/UBSan (`detect_leaks=0`) passaram, incluindo vídeo/MediaSource, ausência de plugins e recuperação de processo web. CI, pacote instalado, teste visual físico, saída de áudio audível e benchmark são evidências separadas. Não foi feito novo benchmark nem teste de VT/DRM.
+
+## Políticas e limites de navegação
 
 Esta versão tem múltiplas abas por janela e perfil efêmero: cookies e armazenamento são compartilhados entre as abas da mesma execução e não persistem entre execuções. Voltar/avançar é histórico em memória de cada aba. Ainda não há favoritos, histórico em disco, downloads, extensão, restauração de sessão ou suspensão de abas. Links que pedem novas janelas continuam bloqueados; esta entrega abre abas pelo usuário, sem alterar a política de popups.
 

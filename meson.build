@@ -29,7 +29,7 @@ if get_option('browser')
   browser = executable('jlinux-browser', 'src/browser/main.c', 'src/browser/address.c',
     'src/browser/chrome.c', 'src/toolkit/painter.c', 'src/effects/glass.c',
     dependencies: [wpe, wpe_wayland, wpe_headless, dependency('wayland-client'),
-      xkb, cairo, pango, fontconfig, math, dependency('egl')], install: true)
+      xkb, cairo, pango, fontconfig, math, dependency('egl'), dependency('gstreamer-1.0')], install: true)
   address_test = executable('jlinux-test-web-address', 'tests/web-address.c',
     'src/browser/address.c', dependencies: dependency('glib-2.0'))
   test('web-address', address_test)
@@ -89,6 +89,7 @@ if foot.found() and wtype.found()
     dependencies: client_dep)
   if get_option('browser')
     test('web-browser-wayland', find_program('scripts/smoke-web-browser.py'), args: [compositor, browser, wtype, pointer_test], timeout: 60)
+    test('web-browser-media', find_program('scripts/smoke-web-media.py'), args: [compositor, browser, wtype], timeout: 90)
   endif
   if get_option('shell')
     test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
