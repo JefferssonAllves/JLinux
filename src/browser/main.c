@@ -217,7 +217,11 @@ static gboolean policy(WebKitWebView *web, WebKitPolicyDecision *decision, WebKi
     if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
         WebKitNavigationAction *action = webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
         const char *uri = webkit_uri_request_get_uri(webkit_navigation_action_get_request(action));
-        if (!browser_uri_allowed(uri)) {
+        // Blob URLs stay in the creating page's WebKit origin; address-bar input remains HTTP/HTTPS only.
+        gboolean blob = uri && strlen(uri) <= BROWSER_ADDRESS_LIMIT
+            && (g_str_has_prefix(uri, "blob:https://") || g_str_has_prefix(uri, "blob:http://"))
+            && browser_uri_allowed(uri + 5);
+        if (!browser_uri_allowed(uri) && !blob) {
             webkit_policy_decision_ignore(decision);
             web_notice(app, web, "Este endereço não é permitido nesta versão experimental.");
             if (app->probe) { app->status = 1; quit(app); } return TRUE;

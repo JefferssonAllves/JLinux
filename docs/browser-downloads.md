@@ -9,3 +9,11 @@ Nomes sugeridos são reduzidos ao nome-base; colisões com arquivos existentes, 
 Validação: teste Wayland isolado salva duas cópias, preserva arquivo preexistente, verifica os bytes, provoca falha de destino e abre a pasta via handler padrão de teste. Exercita também abas, navegação e resize. Não mede memória nem comprova compatibilidade com todos os sites, redirecionamentos ou downloads autenticados.
 
 Instalado em 06/11/2026 pelo pacote `jlinux-browser-git 0.1.0.r55.g5a9a774-1` (commit 5a9a774). Backup do executável anterior em `/var/backups/jlinux-browser-before-downloads/`. Reabrir o navegador para carregar a atualização. O desktop recebeu a associação padrão de pastas pelo pacote `0.5.0.r69.g850294f-1`. Compilação e empacotamento locais concluídos; testes de downloads/interação, vídeo e bloqueador passaram em headless, sem validação visual na sessão real nem benchmark de memória.
+
+## Imagens geradas pela página (Blob)
+
+A política de navegação agora aceita URLs `blob:http://` e `blob:https://` originadas no conteúdo web, com validação da URL interna e limite de tamanho. O acesso ao objeto segue as regras de origem do próprio WebKit. Isso permite links `<a download>` de imagens geradas ou recebidas via JavaScript. A barra de endereço continua recusando URLs blob, file, data e javascript; a alteração não habilita leitura de arquivos locais.
+
+Regressão reproduzida em página local: o navegador anterior (5a9a774) não salvava a imagem Blob; a correção salva e verifica os bytes. O teste cobre PNG criado via Blob, além dos downloads HTTP, colisões de nomes e falha de destino já existentes. Não houve acesso à conta do usuário para comprovar o fluxo real do ChatGPT. Janelas adicionais (`target=_blank`/`window.open`) continuam bloqueadas nesta versão; um site que dependa desse fluxo precisa de investigação separada.
+
+Correção Blob instalada em 06/11/2026 pelo pacote `jlinux-browser-git 0.1.0.r58.g21be53d-1`. Backup do executável anterior em `/var/backups/jlinux-browser-before-blob/`. O navegador aberto não foi encerrado: reabrir para ativar. Testes locais web-address e web-browser-wayland passaram; o teste anterior com o mesmo fluxo Blob falhou na versão 5a9a774. Conta real do ChatGPT e fluxos que abrem nova janela permanecem sem validação.
