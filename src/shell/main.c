@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "../toolkit/painter.h"
 #include "dock.h"
+#include "volume.h"
 #include "../effects/glass.h"
 #include "../renderer/blur.h"
 #include <errno.h>
@@ -54,14 +55,15 @@ struct app {
     struct wl_pointer *pointer;
     struct wl_cursor_theme *cursor_theme;
     struct wl_surface *cursor_surface;
-    struct surface wallpaper, panel, dock, power, chooser;
+    struct surface wallpaper, panel, dock, power, chooser, audio;
+    struct volume volume;
     struct dock_apps apps;
     unsigned int dock_scroll, chooser_scroll;
     char dock_message[180];
     struct surface *pointer_surface;
     struct wl_list buffers;
     double pointer_x, pointer_y;
-    bool running, info, power_panel, dock_panel;
+    bool running, info, power_panel, dock_panel, volume_panel;
     int power_action;
     pid_t power_pid;
     bool power_error;
@@ -127,11 +129,29 @@ static void paint_power(struct app *app, cairo_t *cr) {
     }
     ui_text(cr, app->power_pid ? "Fechar" : "Cancelar / Fechar", 18, 230, 14, false, 0xa3aec9);
 }
+static void paint_volume(struct app *app, cairo_t *cr) {
+    cairo_set_source_rgb(cr, .025, .035, .075); cairo_paint(cr);
+    jlinux_glass_paint(cr, (struct ui_rect){1, 1, 298, 158}, 10, NULL, 0, 0, app->glass);
+    ui_text(cr, "Volume", 18, 14, 17, true, 0xf1f2fc);
+    char label[64];
+    if (app->volume.pid) { snprintf(label, sizeof(label), "Atualizando…"); }
+    else if (!app->volume.available) { snprintf(label, sizeof(label), "Áudio indisponível · tentar novamente"); }
+    else { snprintf(label, sizeof(label), "%.0f%%%s", app->volume.level * 100, app->volume.muted ? " · silenciado" : ""); }
+    ui_text(cr, label, 18, 48, 13, false, 0xd2d7eb);
+    ui_text(cr, "−", 24, 82, 22, true, 0xf1f2fc);
+    ui_text(cr, app->volume.muted ? "Ativar som" : "Silenciar", 80, 88, 14, true, 0xf1f2fc);
+    ui_text(cr, "+", 250, 82, 22, true, 0xf1f2fc);
+    ui_text(cr, "Fechar", 18, 132, 13, false, 0xa3aec9);
+}
 static void paint(struct surface *surface, cairo_t *cr) {
     int width = surface->width, height = surface->height;
     cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE); cairo_set_source_rgba(cr, 0, 0, 0, 0); cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-    if (surface == &surface->app->chooser) {
+    if (surface == &surface->app->audio) {
+        paint_volume(surface->app, cr);
+    } else if (surface == &surface->app->panel && surface->app->volume_panel) {
+        ui_text(cr, "Som", 10, 8, 13, true, 0xe9eafa);
+    } else if (surface == &surface->app->chooser) {
         paint_chooser(surface->app, cr);
     } else if (surface == &surface->app->power) {
         paint_power(surface->app, cr);
@@ -177,6 +197,7 @@ static void paint(struct surface *surface, cairo_t *cr) {
         localtime_r(&now, &local);
         char clock[64]; strftime(clock, sizeof(clock), "%d/%m  •  %H:%M", &local);
         ui_text(cr, clock, width / 2.0 - 68, 17, 16, true, 0xf1f2fc);
+        ui_text(cr, "Som", width - 316, 18, 13, true, 0xe9eafa);
         ui_icon(cr, UI_WIFI, width - 260, 15, 22, 0xa3aec9);
         ui_text(cr, "Wi-Fi", width - 232, 18, 13, false, 0xa3aec9);
         ui_icon(cr, UI_BLUETOOTH, width - 166, 15, 22, 0xa3aec9);
@@ -287,6 +308,21 @@ static bool create_surface(struct app *app, struct surface *surface, const char 
 static void notice(struct app *app, const char *message) {
     snprintf(app->notice, sizeof(app->notice), "%s", message); app->info = true; app->panel.dirty = true;
 }
+static void toggle_volume(struct app *app) {
+    if (app->audio.wl) {
+        if (app->pointer_surface == &app->audio) { app->pointer_surface = NULL; }
+        zwlr_layer_surface_v1_destroy(app->audio.layer); wl_surface_destroy(app->audio.wl);
+        app->audio.layer = NULL; app->audio.wl = NULL; app->audio.configured = false; app->audio.dirty = false;
+        return;
+    }
+    if (!create_surface(app, &app->audio, "jlinux-volume", ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 300, 160, -1, PANEL_MARGIN)) {
+        app->running = false; return;
+    }
+    zwlr_layer_surface_v1_set_margin(app->audio.layer, 48, 60, 0, 0);
+    wl_surface_commit(app->audio.wl);
+    volume_start(&app->volume, 0);
+}
 static void close_power(struct app *app) {
     if (app->pointer_surface == &app->power) { app->pointer_surface = NULL; }
     if (app->power.layer) { zwlr_layer_surface_v1_destroy(app->power.layer); }
@@ -388,9 +424,9 @@ static void pointer_enter(void *data, struct wl_pointer *pointer, uint32_t seria
         wl_surface_damage(app->cursor_surface, 0, 0, (int)image->width, (int)image->height);
         wl_surface_commit(app->cursor_surface);
     }
-    struct surface *surfaces[] = {&app->panel, &app->dock, &app->power, &app->chooser};
+    struct surface *surfaces[] = {&app->panel, &app->dock, &app->power, &app->chooser, &app->audio};
     app->pointer_surface = NULL;
-    for (size_t i = 0; i < 4; i++) { if (surfaces[i]->wl == wl) { app->pointer_surface = surfaces[i]; } }
+    for (size_t i = 0; i < 5; i++) { if (surfaces[i]->wl == wl) { app->pointer_surface = surfaces[i]; } }
     app->pointer_x = wl_fixed_to_double(x); app->pointer_y = wl_fixed_to_double(y);
 }
 static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *wl) {
@@ -411,7 +447,13 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
     (void)pointer; (void)serial; (void)time;
     struct app *app = data;
     if (button != BTN_LEFT || state != WL_POINTER_BUTTON_STATE_RELEASED) { return; }
-    if (app->pointer_surface == &app->chooser) {
+    if (app->pointer_surface == &app->audio) {
+        if (app->pointer_y >= 122) { toggle_volume(app); }
+        else if (app->pointer_y >= 78 && app->pointer_y < 116) {
+            volume_start(&app->volume, app->pointer_x < 64 ? 1 : app->pointer_x > 230 ? 2 : 3);
+            app->audio.dirty = true;
+        } else if (app->pointer_y >= 42) { volume_start(&app->volume, 0); app->audio.dirty = true; }
+    } else if (app->pointer_surface == &app->chooser) {
         if (app->pointer_y >= 390) { toggle_chooser(app); }
         else if (app->pointer_y >= 72 && app->pointer_y < 360) {
             unsigned int index = app->chooser_scroll + (unsigned int)((app->pointer_y - 72) / 36);
@@ -439,7 +481,8 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
         if (app->pointer_y >= DOCK_HEIGHT - 28 && app->pointer_y < DOCK_HEIGHT - 2) { toggle_chooser(app); }
         else if (hit >= 0 && (unsigned int)hit + app->dock_scroll < 3 + app->apps.pins->len) { launch(app, hit + (int)app->dock_scroll); }
     } else if (app->pointer_surface == &app->panel) {
-        if (app->info) { app->info = false; app->panel.dirty = true; }
+        if (app->volume_panel || (app->pointer_x >= app->panel.width - 326 && app->pointer_x < app->panel.width - 272)) { toggle_volume(app); }
+        else if (app->info) { app->info = false; app->panel.dirty = true; }
         else if (app->pointer_x > app->panel.width - 60) {
             toggle_power(app);
         } else { notice(app, "Wi-Fi, Bluetooth e os menus de aplicativos serão conectados aos serviços do sistema."); }
@@ -521,12 +564,13 @@ static int preview(const char *path) {
     dock_apps_finish(&app.apps); ui_finish();
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
-static int preview_power(const char *path, bool chooser) {
+static int preview_power(const char *path, int kind) {
     struct app app = {.power_action = -1};
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
-    cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, chooser ? 380 : 320, chooser ? 420 : 260);
+    cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, kind == 2 ? 300 : kind ? 380 : 320, kind == 2 ? 160 : kind ? 420 : 260);
     cairo_t *cr = cairo_create(image);
-    if (chooser) { dock_apps_init(&app.apps); paint_chooser(&app, cr); dock_apps_finish(&app.apps); }
+    if (kind == 2) { app.volume.available = true; app.volume.level = .4; paint_volume(&app, cr); }
+    else if (kind) { dock_apps_init(&app.apps); paint_chooser(&app, cr); dock_apps_finish(&app.apps); }
     else { paint_power(&app, cr); }
     cairo_status_t status = cairo_surface_write_to_png(image, path);
     cairo_destroy(cr); cairo_surface_destroy(image); ui_finish();
@@ -534,12 +578,14 @@ static int preview_power(const char *path, bool chooser) {
 }
 int main(int argc, char **argv) {
     bool dock_panel = argc == 2 && !strcmp(argv[1], "--dock-panel");
+    bool volume_panel = argc == 2 && !strcmp(argv[1], "--volume-panel");
     bool power_panel = argc == 2 && !strcmp(argv[1], "--power-panel");
+    if (argc == 3 && !strcmp(argv[1], "--preview-volume")) { return preview_power(argv[2], 2); }
     if (argc == 3 && !strcmp(argv[1], "--preview-power")) { return preview_power(argv[2], false); }
     if (argc == 3 && !strcmp(argv[1], "--preview-dock-apps")) { return preview_power(argv[2], true); }
     if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2]); }
-    if (argc != 1 && !power_panel && !dock_panel) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-power arquivo.png | --power-panel | --dock-panel]\n"); return 1; }
-    struct app app = {.running = true, .power_panel = power_panel, .dock_panel = dock_panel, .power_action = -1, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
+    if (argc != 1 && !power_panel && !dock_panel && !volume_panel) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-power arquivo.png | --power-panel | --dock-panel | --volume-panel]\n"); return 1; }
+    struct app app = {.running = true, .power_panel = power_panel, .volume_panel = volume_panel, .dock_panel = dock_panel, .power_action = -1, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
     if (getenv("JLINUX_THEME")) { fprintf(stderr, "JLINUX_THEME/CSS não é suportado pelo shell nativo.\n"); return 1; }
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
     dock_apps_init(&app.apps);
@@ -557,20 +603,26 @@ int main(int argc, char **argv) {
     app.cursor_surface = wl_compositor_create_surface(app.compositor);
     uint32_t all = ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
-    if (!power_panel && !dock_panel && !create_surface(&app, &app.wallpaper, "jlinux-wallpaper", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, all, 0, 0, -1, 0)) { goto cleanup; }
-    if (!dock_panel && !create_surface(&app, &app.panel, power_panel ? "jlinux-power-button" : "jlinux-panel", power_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+    if (!power_panel && !dock_panel && !volume_panel && !create_surface(&app, &app.wallpaper, "jlinux-wallpaper", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, all, 0, 0, -1, 0)) { goto cleanup; }
+    if (!dock_panel && !volume_panel && !create_surface(&app, &app.panel, power_panel ? "jlinux-power-button" : "jlinux-panel", power_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT |
         (power_panel ? 0 : ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT), power_panel ? 44 : 0, PANEL_HEIGHT, power_panel ? -1 : PANEL_ZONE, PANEL_MARGIN)) { goto cleanup; }
-    if (!power_panel && !create_surface(&app, &app.dock, "jlinux-dock", dock_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+    if (!power_panel && !volume_panel && !create_surface(&app, &app.dock, "jlinux-dock", dock_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | (dock_panel ? ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP : 0), DOCK_WIDTH, DOCK_HEIGHT, dock_panel ? -1 : DOCK_ZONE, DOCK_MARGIN)) { goto cleanup; }
     if (dock_panel) {
         position_live_dock(&app);
+    }
+    if (volume_panel) {
+        if (!create_surface(&app, &app.panel, "jlinux-volume-button", ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
+            ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 54, PANEL_HEIGHT, -1, PANEL_MARGIN)) { goto cleanup; }
+        zwlr_layer_surface_v1_set_margin(app.panel.layer, PANEL_MARGIN, 278, 0, 0);
+        wl_surface_commit(app.panel.wl);
     }
     struct itimerspec timer = {.it_value = {.tv_sec = 30}, .it_interval = {.tv_sec = 30}};
     if (timerfd_settime(app.timer, 0, &timer, NULL)) { goto cleanup; }
     while (app.running) {
         if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
-        if (!draw(&app.wallpaper) || !draw(&app.panel) || !draw(&app.dock) || !draw(&app.power) || !draw(&app.chooser)) { goto cleanup; }
+        if (!draw(&app.wallpaper) || !draw(&app.panel) || !draw(&app.dock) || !draw(&app.power) || !draw(&app.chooser) || !draw(&app.audio)) { goto cleanup; }
         while (wl_display_prepare_read(app.display) != 0) {
             if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
         }
@@ -578,19 +630,25 @@ int main(int argc, char **argv) {
         if (flushed < 0 && errno != EAGAIN) { wl_display_cancel_read(app.display); goto cleanup; }
         struct pollfd fds[] = {{wl_display_get_fd(app.display), POLLIN | (flushed < 0 ? POLLOUT : 0), 0},
             {app.timer, POLLIN, 0}, {app.signals, POLLIN, 0}};
-        int ready = poll(fds, 3, -1);
+        int ready = poll(fds, 3, app.volume.pid ? 100 : -1);
         if (ready < 0) { wl_display_cancel_read(app.display); if (errno == EINTR) { continue; } goto cleanup; }
         if (fds[0].revents & POLLIN) { if (wl_display_read_events(app.display) < 0) { goto cleanup; } }
         else { wl_display_cancel_read(app.display); }
+        if (app.volume.pid) {
+            struct timespec now; clock_gettime(CLOCK_MONOTONIC, &now);
+            if ((now.tv_sec - app.volume.started.tv_sec) * 1000000000LL + now.tv_nsec - app.volume.started.tv_nsec >= 3000000000LL) { kill(app.volume.pid, SIGKILL); }
+        }
         if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) { goto cleanup; }
-        if (fds[1].revents & POLLIN) { uint64_t ticks; if (read(app.timer, &ticks, sizeof(ticks)) > 0) { app.panel.dirty = true; } }
+        if (fds[1].revents & POLLIN) { uint64_t ticks; if (read(app.timer, &ticks, sizeof(ticks)) > 0) { app.panel.dirty = true; if (app.audio.wl) { volume_start(&app.volume, 0); app.audio.dirty = true; } } }
         if (fds[2].revents & POLLIN) {
             struct signalfd_siginfo event;
             while (read(app.signals, &event, sizeof(event)) == sizeof(event)) {
                 if (event.ssi_signo == SIGCHLD) {
                     int status; pid_t child;
                     while ((child = waitpid(-1, &status, WNOHANG)) > 0) {
-                        if (child == app.power_pid) {
+                        if (child == app.volume.pid) {
+                            volume_complete(&app.volume, status); app.audio.dirty = true;
+                        } else if (child == app.power_pid) {
                             app.power_pid = 0;
                             if (!WIFEXITED(status) || WEXITSTATUS(status)) {
                                 app.power_error = true;
@@ -607,14 +665,15 @@ int main(int argc, char **argv) {
     result = 0;
 cleanup:
     if (result) { fprintf(stderr, "Shell falhou: Wayland=%d, errno=%d\n", app.display ? wl_display_get_error(app.display) : 0, errno); }
+    volume_finish(&app.volume);
     if (app.backdrop) { cairo_surface_destroy(app.backdrop); }
     if (app.pointer) { wl_pointer_destroy(app.pointer); }
     if (app.seat) { wl_seat_destroy(app.seat); }
     if (app.output) { wl_output_destroy(app.output); }
     if (app.cursor_surface) { wl_surface_destroy(app.cursor_surface); }
     if (app.cursor_theme) { wl_cursor_theme_destroy(app.cursor_theme); }
-    struct surface *surfaces[] = {&app.dock, &app.panel, &app.wallpaper, &app.power, &app.chooser};
-    for (size_t i = 0; i < 5; i++) {
+    struct surface *surfaces[] = {&app.dock, &app.panel, &app.wallpaper, &app.power, &app.chooser, &app.audio};
+    for (size_t i = 0; i < 6; i++) {
         if (surfaces[i]->layer) { zwlr_layer_surface_v1_destroy(surfaces[i]->layer); }
         if (surfaces[i]->wl) { wl_surface_destroy(surfaces[i]->wl); }
     }
