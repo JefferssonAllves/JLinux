@@ -1,10 +1,14 @@
+#define _GNU_SOURCE
 #include "chrome.h"
 #include <EGL/egl.h>
 #include <glib-unix.h>
+#include <gst/gst.h>
 #include <locale.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <wpe/webkit.h>
 #include <wpe/headless/wpe-headless.h>
 #include <xkbcommon/xkbcommon.h>
@@ -18,6 +22,7 @@ struct app {
     WebKitNetworkSession *session;
     struct browser_chrome chrome;
     gboolean probe;
+    gboolean media_available;
     gboolean consumed[768];
     guint consumed_buttons;
     gint64 started, load_started;
@@ -38,7 +43,8 @@ static void web_notice(struct app *app, WebKitWebView *web, const char *message)
 static void show_address(struct app *app) {
     const char *uri = webkit_web_view_get_uri(app->web);
     g_strlcpy(app->chrome.address, uri && strcmp(uri, "about:blank") ? uri : "", sizeof(app->chrome.address));
-    app->chrome.selected = TRUE; app->chrome.visible = TRUE; app->chrome.message[0] = 0;
+    app->chrome.selected = TRUE; app->chrome.visible = TRUE;
+    g_strlcpy(app->chrome.message, app->media_available ? "" : "Vídeo indisponível: instale os plugins GStreamer base/good/libav.", sizeof(app->chrome.message));
     browser_chrome_update(&app->chrome);
 }
 static void navigate(struct app *app) {
@@ -244,6 +250,17 @@ static void resized(WPEView *view, gpointer data) {
 static gboolean timeout(gpointer data) {
     struct app *app = data; g_printerr("Tempo excedido no teste do motor web\n"); app->status = 1; quit(app); return G_SOURCE_CONTINUE;
 }
+static void configure_audio(void) {
+    if (g_getenv("PULSE_SERVER") || g_getenv("PULSE_RUNTIME_PATH")) { return; }
+    char *path = g_strdup_printf("/run/user/%lu/pulse/native", (unsigned long)getuid());
+    struct stat metadata;
+    // JLinux isolates Wayland in a private runtime; audio stays on the user's standard socket.
+    if (!stat(path, &metadata) && S_ISSOCK(metadata.st_mode) && metadata.st_uid == getuid()) {
+        char *server = g_strconcat("unix:", path, NULL);
+        g_setenv("PULSE_SERVER", server, FALSE); g_free(server);
+    }
+    g_free(path);
+}
 static void select_tab(struct app *app, guint index) {
     if (index >= app->chrome.tabs->len) { return; }
     WebKitWebView *web = g_ptr_array_index(app->chrome.tabs, index);
@@ -256,7 +273,13 @@ static void select_tab(struct app *app, guint index) {
     if (message) { notice(app, message); }
 }
 static void new_tab(struct app *app, const char *uri) {
-    WebKitWebView *web = g_object_new(WEBKIT_TYPE_WEB_VIEW, "display", app->display, "network-session", app->session, NULL);
+    WebKitSettings *settings = webkit_settings_new();
+    webkit_settings_set_enable_media(settings, app->media_available);
+    webkit_settings_set_enable_webaudio(settings, app->media_available);
+    WebKitWebsitePolicies *policies = webkit_website_policies_new_with_policies("autoplay", WEBKIT_AUTOPLAY_ALLOW_WITHOUT_SOUND, NULL);
+    WebKitWebView *web = g_object_new(WEBKIT_TYPE_WEB_VIEW, "display", app->display, "network-session", app->session,
+        "settings", settings, "website-policies", policies, NULL);
+    g_object_unref(settings); g_object_unref(policies);
     WPEView *view = webkit_web_view_get_wpe_view(web);
     g_ptr_array_add(app->chrome.tabs, web);
     g_signal_connect(view, "closed", G_CALLBACK(closed), app);
@@ -320,6 +343,15 @@ int main(int argc, char **argv) {
     }
     char *uri = browser_address_uri(app.probe ? argv[2] : argc == 2 ? argv[1] : "about:blank");
     if (!uri) { g_printerr("Endereço inválido: use HTTP ou HTTPS.\n"); return 2; }
+    configure_audio();
+    if (gst_init_check(NULL, NULL, NULL)) {
+        GstElementFactory *sink = gst_element_factory_find("autoaudiosink");
+        GstElementFactory *player = gst_element_factory_find("playbin3");
+        app.media_available = sink && player;
+        if (sink) { gst_object_unref(sink); }
+        if (player) { gst_object_unref(player); }
+    }
+    if (!app.media_available) { g_printerr("Plugins GStreamer ausentes; mídia desativada para evitar abort no WPE.\n"); }
     // Never fall back to DRM: the browser must not acquire a VT or replace the desktop.
     WPEDisplay *display = app.probe ? wpe_display_headless_new() : wpe_display_wayland_new();
     GError *error = NULL;

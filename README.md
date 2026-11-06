@@ -18,7 +18,7 @@ Requer Meson >=1.6 e wlroots 0.20.x. Python e wtype são usados nos testes, não
 ## Navegador experimental
 
 ```sh
-sudo pacman -S --needed wpewebkit
+sudo pacman -S --needed wpewebkit gst-plugins-base gst-plugins-good gst-libav
 meson setup build-browser --buildtype=release -Dbrowser=true
 meson compile -C build-browser
 meson test -C build-browser --print-errorlogs
@@ -26,6 +26,8 @@ meson test -C build-browser --print-errorlogs
 ```
 
 Requer WPE WebKit >=2.54 com WPEPlatform Wayland/headless. Abas com páginas/históricos independentes e sessão efêmera compartilhada. Ctrl+T abre aba, Ctrl+W fecha, Ctrl+Tab/Ctrl+Shift+Tab alternam; a barra nativa aberta por Ctrl+L também oferece títulos, “+” e “×”. Enter navega, Esc retorna à página, Alt+←/→ navega no histórico, Ctrl+R recarrega e Ctrl+Q fecha a janela. Ainda não é navegador para uso diário: downloads e persistência continuam pendentes. Não substitui o navegador padrão nem atualiza o pacote do desktop instalado. [Implementação, testes e limites](docs/browser.md).
+
+Vídeo HTML5 (MP4/WebM e MediaSource) usa GStreamer. Reprodução com som exige um servidor de áudio e dispositivo disponíveis; PipeWire-Pulse/WirePlumber são a configuração aplicada nesta máquina. Há receita separada em `packaging/arch/browser/PKGBUILD`, que instala somente o navegador e sua entrada `.desktop`, sem substituir o pacote do desktop. Os testes de mídia também requerem FFmpeg para gerar vídeos locais.
 
 ## Executar sem Python
 

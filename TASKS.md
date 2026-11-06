@@ -10,6 +10,13 @@ As ferramentas web servem para criar e iterar protótipos visuais antes da inter
 
 ## Navegador próprio — feature/web-browser
 
+### Mídia, estabilidade e instalação — feature/browser-media
+
+- **BROWSER-MEDIA · validado localmente:** MP4 H.264/AAC, WebM VP8/Opus e MediaSource com MP4 fragmentado; teste verifica tempo avançando e frames decodificados em Wayland headless. Plugins base/good/libav declarados no novo pacote separado. Autoplay com áudio continua exigindo interação; sem Widevine, fullscreen do desktop ou alegação de compatibilidade universal.
+- **BROWSER-CRASH · causa identificada/corrigida:** dois cores WPE 2.54.2 abortam em `createAudioSink`; faltava `gst-plugins-good`/autoaudiosink. Plugins instalados e pré-verificação adicionada: mídia/WebAudio desativados com aviso se o sink/player faltarem. Falha simulada do processo web não fecha o aplicativo; Ctrl+R recupera a página e o vídeo. Evidências em docs/browser.md.
+- **BROWSER-INSTALL · em validação:** receita `packaging/arch/browser/PKGBUILD` instala somente o navegador e `.desktop`, sem substituir o desktop atual. Worktree persistente em `~/.local/src/jlinux-browser`; a antiga em `/tmp` foi apagada no reboot. Fixação no dock do usuário usa a configuração existente, sem novo shell/compositor paralelo.
+- **Checks locais:** 16 testes release; quatro testes do navegador com ASan/UBSan e `detect_leaks=0`. LeakSanitizer, hardware visual/áudio, CI e benchmark separados. PipeWire/Pulse/WirePlumber instalados e iniciados para o áudio do aplicativo; saídas analógica/HDMI detectadas, sem alterar volume/saída ou reiniciar sessão. Pacote/ativação final serão registrados após instalação.
+
 ### Abas — feature/browser-tabs
 
 - **BROWSER-TABS · implementado na branch:** Ctrl+T/“+” abre aba; Ctrl+Tab/Ctrl+Shift+Tab, títulos clicáveis e setas alternam; Ctrl+W/“×” fecha, inclusive a última (encerra a janela). Um toplevel, WebView/histórico/DOM por aba, sessão efêmera compartilhada e somente a view ativa visível. Fileira integrada à barra provisória aberta por Ctrl+L; títulos e avisos associados à aba correta. Sem dependências novas ou mudanças no desktop.

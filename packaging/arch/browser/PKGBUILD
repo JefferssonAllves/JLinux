@@ -1,0 +1,32 @@
+pkgname=jlinux-browser-git
+pkgver=0.1.0.r0
+pkgrel=1
+pkgdesc='Navegador Wayland experimental do JLinux, com abas e vídeo'
+arch=('x86_64')
+url='https://github.com/JefferssonAllves/JLinux'
+license=('custom')
+depends=('wpewebkit>=2.54' 'wayland' 'libxkbcommon' 'cairo' 'pango' 'fontconfig' 'gst-plugins-base' 'gst-plugins-good' 'gst-libav' 'ttf-dejavu')
+makedepends=('git' 'base-devel' 'meson' 'ninja' 'pkgconf' 'wayland-protocols' 'wlroots0.20')
+checkdepends=('python' 'wtype' 'foot' 'openssl' 'ffmpeg')
+optdepends=('pipewire-pulse: servidor de áudio' 'wireplumber: seleção de dispositivos de áudio' 'gst-plugins-bad: formatos de mídia adicionais')
+source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/browser-media')
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "$srcdir/JLinux"
+    printf '0.1.0.r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+    arch-meson "$srcdir/JLinux" build -Dshell=false -Dbrowser=true
+    meson compile -C build
+}
+
+check() {
+    meson test -C build --print-errorlogs
+}
+
+package() {
+    install -Dm755 build/jlinux-browser "$pkgdir/usr/bin/jlinux-browser"
+    install -Dm644 "$srcdir/JLinux/data/applications/org.jlinux.Browser.desktop" "$pkgdir/usr/share/applications/org.jlinux.Browser.desktop"
+}
