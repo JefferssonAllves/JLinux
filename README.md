@@ -49,3 +49,7 @@ meson install -C build
 - `docs/`: hardware, arquitetura, evolução e validação.
 - `scripts/`: coleta de hardware e teste headless.
 - `.github/workflows/`: compilação e teste automatizado em Arch Linux.
+
+## Pesquisa de ferramentas de desenvolvimento
+
+A [varredura de plugins e skills de 06/11/2026](docs/research/skills-plugins-2026-11-06.md) avalia design e uso de contexto no desenvolvimento. É pesquisa com propostas de pilotos, sem instalar ferramentas ou adicionar dependências ao desktop. O [índice de trabalho](TASKS.md) registra seu estado.
