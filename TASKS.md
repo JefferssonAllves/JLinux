@@ -322,3 +322,7 @@ Aplicar contorno discretamente rosado sobre a base do pacote instalado 6df67d0, 
 ## Barra superior sem menus à esquerda — fix/remove-panel-menus
 
 Aplicativos, Arquivos e Configurações removidos da barra superior por pedido do usuário. Cliques na área vazia não mostram mais o aviso de menus pendentes. Relógio, Som, Wi-Fi, Bluetooth, energia e dock preservados. Base feature/window-side-snap (#44), que corresponde à instalação atual; sem alteração no comportamento das janelas. Validação e instalação registradas após conclusão.
+
+### FILES-DEFAULT
+
+Associação de sistema para inode/directory em /etc/xdg/mimeapps.list, preservando precedência das preferências pessoais. xdg-utils passa a ser dependência do desktop. Usuário atual configurado com gio mime; xdg-mime confirmou org.jlinux.Files.desktop e xdg-open abriu Downloads em jlinux-files. Não substitui seletores internos nem oferece FileManager1 por D-Bus.
