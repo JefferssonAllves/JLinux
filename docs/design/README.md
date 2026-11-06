@@ -59,3 +59,7 @@ Imagem gerada por `jlinux-greeter --preview`, usando o toolkit C do projeto. Mat
 ![Prévia do cliente nativo com dados fictícios](native-files-preview.png)
 
 Gerada por `jlinux-files --preview`: barra Glass compartilhada e lista opaca. Não é captura da sessão, não demonstra blur do conteúdo nem operações de gerenciamento além das descritas em ../files.md.
+
+### Iteração de neon discreto
+
+As prévias nativas de moldura e Arquivos acima foram atualizadas: sem pontos focais nas janelas, contorno contínuo azul/violeta e fundo azul-ardósia no cliente. São desenhos dos componentes, não capturas de sessão nem prova de fidelidade exata às fotos. A barra e o dock conservam seu acabamento anterior.

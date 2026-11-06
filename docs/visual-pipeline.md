@@ -61,3 +61,7 @@ As molduras usam transparência real sobre a cena, tonalização e reflexos est�
 A barra superior recebe três reflexos estreitos localizados junto ao contorno, visíveis com REFLECTION ativado. Não há animação, timer adicional ou movimento automático dos brilhos.
 
 Sombreamento interno das molduras: `JLINUX_GLASS_SHADOW=0/1` (padrão ligado) controla um traço escuro interno em passe próprio, independente de REFLECTION. Não cria sombra externa nem blur. O shell valida essa preferência compartilhada, mas não aplica esse sombreado ao dock/painel.
+
+### Acabamento contínuo atual das janelas
+
+O pedido de borda neon discreta substitui os quatro pontos de brilho da moldura: gradiente azul/violeta, traço de 0,85 px e halo interno recortado de 2,8 px. A geometria segue 3 px nas laterais/inferior. REFLECTION controla esse acabamento; SHADOW permanece independente. Material de janela não chama os reflexos pontuais do dock/painel; esses componentes permanecem intactos. Renderização continua por eventos, em faixas estreitas, sem loop novo.

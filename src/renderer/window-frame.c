@@ -49,7 +49,7 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
         /* Extend the header below its strip so its lower edge stays square. */
         int material_height = i == 0 ? header + JLINUX_FRAME_RADIUS : full_height;
         struct jlinux_glass material = effects;
-        if (i != 0) { material.reflection = false; }
+        material.reflection = false; /* Window rims have their own continuous finish. */
         jlinux_glass_paint(cr, (struct ui_rect){.5, .5, full_width - 1, material_height - 1},
             JLINUX_FRAME_RADIUS, NULL, 0, 0, material);
         if (effects.shadow) {

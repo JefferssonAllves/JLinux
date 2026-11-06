@@ -94,8 +94,15 @@ static void activate(struct app *app) {
     g_free(path);
 }
 static void paint(struct app *app, cairo_t *cr) {
-    cairo_set_source_rgb(cr, .025, .035, .065); cairo_paint(cr);
-    jlinux_glass_paint(cr, (struct ui_rect){12, 12, app->width - 24, 50}, 6, NULL, 0, 0, app->glass);
+    cairo_pattern_t *background = cairo_pattern_create_linear(0, 0, app->width, app->height);
+    cairo_pattern_add_color_stop_rgb(background, 0, .15, .20, .29);
+    cairo_pattern_add_color_stop_rgb(background, .55, .105, .145, .22);
+    cairo_pattern_add_color_stop_rgb(background, 1, .15, .16, .25);
+    cairo_set_source(cr, background); cairo_paint(cr); cairo_pattern_destroy(background);
+    struct ui_rect toolbar = {12, 12, app->width - 24, 50};
+    struct jlinux_glass material = app->glass; material.reflection = false;
+    jlinux_glass_paint(cr, toolbar, 6, NULL, 0, 0, material);
+    if (app->glass.reflection) { jlinux_glass_window_reflections(cr, toolbar, 6, 50); }
     ui_icon(cr, UI_HOME, 26, 25, 23, 0xdde6fa);
     ui_icon(cr, UI_UP, 68, 25, 23, 0xdde6fa);
     ui_icon(cr, UI_REFRESH, 110, 25, 23, 0xdde6fa);

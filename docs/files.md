@@ -13,3 +13,5 @@ Execute `jlinux-files [pasta]`, ou use o primeiro ícone do dock na nova versão
 Esta versão não copia, move, renomeia ou exclui arquivos. Não monitora alterações externas: use F5. Listagem síncrona limitada a 50 mil itens; pastas lentas/remotas podem bloquear temporariamente este aplicativo. Não há benchmark de desempenho ou validação de acessibilidade completa. Renderização por buffers SHM ocorre por eventos; não é um renderer acelerado novo.
 
 A prévia em design/native-files-preview.png usa arquivos fictícios e o mesmo desenho do aplicativo; não é captura da pasta pessoal ou da sessão real. Testes headless cobrem navegação, teclado, clique, abertura por associação com nomes especiais e lançamento pelo dock. Teste de modelo cobre links, ocultos, nomes inválidos em UTF-8 e preservação após erro.
+
+O fundo atual é um gradiente opaco azul-ardósia, sem preto predominante; barra interna usa contorno contínuo azul/violeta sem pontos focais. Transparência e blur do conteúdo continuam pendentes.
