@@ -25,7 +25,7 @@ meson test -C build-browser --print-errorlogs
 ./build-browser/jlinux-browser https://example.org
 ```
 
-Requer WPE WebKit >=2.54 com WPEPlatform Wayland/headless. Uma página por janela, sessão efêmera e barra nativa sobreposta por Ctrl+L; Enter navega, Esc retorna à página, Alt+←/→ navega no histórico, Ctrl+R recarrega e Ctrl+Q fecha. Ainda não é navegador para uso diário: abas, downloads e persistência continuam pendentes. Não substitui o navegador padrão nem atualiza o pacote do desktop instalado. [Implementação, testes e limites](docs/browser.md).
+Requer WPE WebKit >=2.54 com WPEPlatform Wayland/headless. Abas com páginas/históricos independentes e sessão efêmera compartilhada. Ctrl+T abre aba, Ctrl+W fecha, Ctrl+Tab/Ctrl+Shift+Tab alternam; a barra nativa aberta por Ctrl+L também oferece títulos, “+” e “×”. Enter navega, Esc retorna à página, Alt+←/→ navega no histórico, Ctrl+R recarrega e Ctrl+Q fecha a janela. Ainda não é navegador para uso diário: downloads e persistência continuam pendentes. Não substitui o navegador padrão nem atualiza o pacote do desktop instalado. [Implementação, testes e limites](docs/browser.md).
 
 ## Executar sem Python
 

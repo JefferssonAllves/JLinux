@@ -65,7 +65,7 @@ Manter política de janelas e interpretação de preferências fora dos detalhes
 
 ## Estado implementado
 
-O navegador opcional `jlinux-browser` é um cliente separado em C sobre WPE WebKit >=2.54/WPEPlatform. O motor não entra no compositor, shell ou iniciador. A primeira barra nativa reutiliza toolkit/effects em uma subsuperfície Wayland, sobreposta temporariamente ao conteúdo; o motor possui sua própria renderização e sandbox. Isso não conclui o toolkit acelerado nem o visual do navegador das referências. Build, políticas e limitações em [browser.md](browser.md).
+O navegador opcional `jlinux-browser` é um cliente separado em C sobre WPE WebKit >=2.54/WPEPlatform. O motor não entra no compositor, shell ou iniciador. Cada aba mantém uma WebView com histórico/DOM independentes; um toplevel Wayland e a sessão de rede efêmera são compartilhados, com somente uma view visível. A barra nativa de navegação/abas reutiliza toolkit/effects em uma subsuperfície Wayland, sobreposta temporariamente ao conteúdo; o motor possui sua própria renderização e sandbox. Isso não conclui o toolkit acelerado nem o visual do navegador das referências. Build, políticas e limitações em [browser.md](browser.md).
 
 `jlinux-compositor` mantém servidor, saídas, janelas e entrada. O renderer wlroots é separado em src/renderer/. `jlinux-shell` agora é um cliente libwayland-client em C que implementa diretamente layer-shell, buffers wl_shm limitados por superfície, ponteiro, painel e dock. O toolkit inicial em src/toolkit/ fornece desenho de superfícies, ícones, texto e botões via Cairo/Pango; GTK e CSS saíram do runtime.
 
