@@ -32,7 +32,7 @@ struct desktop {
     struct wlr_scene_output_layout *scene_layout;
     struct wl_listener new_output, new_layer, layout_change;
     struct wl_list monitors, layers;
-    struct wlr_scene_tree *wallpapers, *layer_trees[4], *windows;
+    struct wlr_scene_tree *wallpapers, *layer_trees[4], *windows, *fullscreens;
     struct interaction *interaction;
     unsigned int output_count;
 };
@@ -293,6 +293,10 @@ int main(void) {
             desktop.windows = wlr_scene_tree_create(&desktop.scene->tree);
             if (!desktop.windows) { goto cleanup; }
         }
+        if (level == 3) {
+            desktop.fullscreens = wlr_scene_tree_create(&desktop.scene->tree);
+            if (!desktop.fullscreens) { goto cleanup; }
+        }
         desktop.layer_trees[level] = wlr_scene_tree_create(&desktop.scene->tree);
         if (!desktop.layer_trees[level]) { goto cleanup; }
     }
@@ -300,7 +304,7 @@ int main(void) {
     wl_signal_add(&desktop.layout->events.change, &desktop.layout_change);
     struct wlr_layer_shell_v1 *shell = wlr_layer_shell_v1_create(desktop.display, 4);
     desktop.interaction = interaction_create(desktop.display, desktop.backend, desktop.layout,
-        desktop.scene, desktop.windows, desktop.session);
+        desktop.scene, desktop.windows, desktop.fullscreens, desktop.session);
     if (!shell || !desktop.interaction) { goto cleanup; }
     desktop.new_layer.notify = add_shell_surface;
     wl_signal_add(&shell->events.new_surface, &desktop.new_layer);
