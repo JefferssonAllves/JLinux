@@ -10,11 +10,17 @@ As ferramentas web servem para criar e iterar protótipos visuais antes da inter
 
 ## Navegador próprio — feature/web-browser
 
+### Conteúdo abaixo do cabeçalho — fix/browser-content-layout
+
+- **BROWSER-LAYOUT · implementado na branch:** cabeçalho em área própria acima da origem da página; viewport recebe altura da janela menos 148 px, inclusive após trocar abas ou redimensionar. Cliques de cabeçalho e conteúdo tratados nas respectivas superfícies, preservando renderização WPE.
+- **Regressão local:** mede o viewport e testa topo/rodapé clicáveis, sete abas sem tamanho intermediário incorreto, entrada no cabeçalho maximizado, maximizar/restaurar e resize pela borda. Passaram os 16 testes locais release e os quatro do navegador com ASan/UBSan (`detect_leaks=0`). Oito checks do pacote passaram; instalado `0.1.0.r48.gfdcdfdf-1` (código `fdcdfdf`) em 06/11/2026. Teste Wayland de layout/entrada repetido com sucesso usando `/usr/bin/jlinux-browser`. PR #48 enviado; uma execução da CI passou e outra seguia em execução antes da atualização documental. Janelas anteriores preservadas até reabrir.
+- **Limites:** sem novo benchmark ou validação visual em GPU/HiDPI; não modifica CSS de sites, sessão de login ou desktop instalado.
+
 ### Barra persistente e Google — feature/browser-search-bar
 
 - **BROWSER-SEARCH · implementado:** termos abrem Google com parâmetros codificados; URLs continuam validadas. Barra/abas permanecem visíveis, com foco de edição separado; Esc cancela e devolve o foco à página. URI atualiza fora da edição.
 - **Checks locais:** 16 testes release, incluindo teclado/mouse sem reabrir barra, primeiro clique na página, buscas/entradas inválidas e regressões de mídia/abas. Quatro testes do navegador com ASan/UBSan passaram (`detect_leaks=0`). Oito checks do pacote passaram; instalado `0.1.0.r46.g6e7897c-1`, código `6e7897c`, em 06/11/2026. Busca Google via executável instalado completou DOM/JS. PR #46 enviado, CI em execução; janelas existentes preservadas até reabrir.
-- **Limite explícito:** barra ainda sobrepõe 148 px da página; reserva de viewport depende de incorporação WPE própria e permanece pendente. Sem mudança de CSS dos sites ou novo benchmark.
+- **Correção posterior:** a sobreposição desta entrega foi removida em `fix/browser-content-layout`, acima. Sem mudança de CSS dos sites ou novo benchmark.
 
 ### Mídia, estabilidade e instalação — feature/browser-media
 

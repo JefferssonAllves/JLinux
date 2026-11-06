@@ -22,8 +22,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         Handler.events.append(self.path)
         body = b"""<!doctype html><meta charset='utf-8'><title>Browser fixture</title>
-        <body><button style='position:fixed;left:8px;top:200px' onclick="fetch('/page-click')">tap</button><input autofocus oninput="fetch('/typed?value='+encodeURIComponent(this.value))">
-        <script>addEventListener('pageshow',()=>fetch('/shown?path='+location.pathname));</script></body>"""
+        <body><button style='position:fixed;left:8px;top:0' onclick="fetch('/page-click')">tap</button><button style='position:fixed;left:8px;bottom:0' onclick="fetch('/bottom-click')">bottom</button><input autofocus oninput="fetch('/typed?value='+encodeURIComponent(this.value))">
+        <script>addEventListener('pageshow',()=>fetch('/shown?path='+location.pathname));
+        function viewport(){fetch('/viewport?w='+innerWidth+'&h='+innerHeight);}
+        addEventListener('resize',viewport); viewport();</script></body>"""
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -59,8 +61,8 @@ def main():
         def typed(text, expected):
             keys("-k", "Escape", "-d", "10", text)
             wait_for(lambda: "/typed?value=" + expected in Handler.events, processes, "estado da aba " + expected)
-        def click(x, y):
-            subprocess.run([pointer, str(x), str(y)], env=env, check=True, timeout=5)
+        def click(x, y, *end):
+            subprocess.run([pointer, str(x), str(y), *map(str, end)], env=env, check=True, timeout=5)
         try:
             with logfile.open("w") as output:
                 server = subprocess.Popen([compositor], env=env, stdout=output, stderr=subprocess.STDOUT)
@@ -72,10 +74,13 @@ def main():
                 processes.append(client)
                 wait_for(lambda: "Janela mapeada:" in log() and "/shown?path=/first" in Handler.events,
                          processes, "janela e primeira página")
-                window_width = int(re.search(r"Janela mapeada:.*\((\d+)x", log()).group(1))
+                dimensions = re.search(r"Janela mapeada:.*\((\d+)x(\d+)", log())
+                window_width, window_height = map(int, dimensions.groups())
+                wait_for(lambda: f"/viewport?w={window_width}&h={window_height - 148}" in Handler.events,
+                         processes, "viewport desconta a altura do cabeçalho")
                 keys("-k", "Escape", "-d", "10", "native")
                 wait_for(lambda: "/typed?value=native" in Handler.events, processes, "entrada na página")
-                click(75, 290)
+                click(75, 238)
                 wait_for(lambda: "/page-click" in Handler.events, processes, "primeiro clique na página")
                 # The address field remains clickable after navigation and Escape, without Ctrl+L.
                 click(340, 165)
@@ -108,10 +113,10 @@ def main():
                 navigate("/third")
                 keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
                 typed("x", "twomorex")
-                # The initial content origin is 40,80; the overlay begins at 16,16.
+                # The window/header origin is 40,80; the page starts 148 px below it.
                 click(110, 110)
                 typed("y", "keeponey")
-                click(window_width - 12, 110)  # +
+                click(window_width + 16, 110)  # +
                 navigate("/mouse-third")
                 click(222, 110)  # Close the inactive first tab.
                 typed("third", "third")
@@ -124,7 +129,31 @@ def main():
                 keys("-M", "ctrl", "-M", "shift", "-k", "Tab", "-m", "shift", "-m", "ctrl")
                 for _ in range(6):
                     keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
+                assert f"/viewport?w={window_width}&h={window_height}" not in Handler.events, "A página recebeu a altura do cabeçalho ao alternar abas"
+                click(75, 80 + window_height - 10)
+                wait_for(lambda: "/bottom-click" in Handler.events, processes, "rodapé da página visível")
                 keys("-M", "logo", "-k", "Up", "-m", "logo")
+                wait_for(lambda: "Janela maximizada:" in log(), processes, "maximização")
+                maximized = re.search(r"Janela maximizada:.*\((\d+)x(\d+) em (\d+),(\d+)", log())
+                width, height, x, y = map(int, maximized.groups())
+                wait_for(lambda: f"/viewport?w={width}&h={height - 148}" in Handler.events,
+                         processes, "viewport maximizado desconta o cabeçalho")
+                before = Handler.events.count("/page-click")
+                click(x + 35, y + 158)
+                wait_for(lambda: Handler.events.count("/page-click") > before, processes, "topo após maximizar")
+                before = Handler.events.count("/bottom-click")
+                click(x + 35, y + height - 10)
+                wait_for(lambda: Handler.events.count("/bottom-click") > before, processes, "rodapé após maximizar")
+                click(x + width - 24, y + 18)  # Header still handles input at its new position.
+                keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
+                before = Handler.events.count(f"/viewport?w={window_width}&h={window_height - 148}")
+                keys("-M", "logo", "-k", "Down", "-m", "logo")
+                wait_for(lambda: Handler.events.count(f"/viewport?w={window_width}&h={window_height - 148}") > before,
+                         processes, "restaurar viewport")
+                click(40 + window_width + 2, 80 + window_height + 2,
+                      40 + window_width + 66, 80 + window_height - 78)
+                wait_for(lambda: f"/viewport?w={window_width + 64}&h={window_height - 80 - 148}" in Handler.events,
+                         processes, "viewport após redimensionar pela borda")
                 keys("-M", "ctrl", "-k", "l", "-m", "ctrl", "-k", "Escape")
                 keys("-M", "ctrl", "-k", "q", "-m", "ctrl")
                 assert client.wait(timeout=5) == 0, log()
@@ -145,7 +174,7 @@ def main():
                 assert server.poll() is None, log()
                 stop(server)
                 assert server.returncode == 0, log()
-            print("Wayland: navegação, abas por teclado/mouse, histórico e estado independentes, 7 abas, fechar ativa/inativa/última, maximização e saída passaram.")
+            print("Wayland: navegação, abas por teclado/mouse, histórico e estado independentes, 7 abas, fechar ativa/inativa/última, viewport abaixo do cabeçalho, topo/rodapé clicáveis, maximização/restauração/resize e saída passaram.")
         except Exception:
             print(log(), file=sys.stderr)
             print(Handler.events[-30:], file=sys.stderr)

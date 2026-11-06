@@ -25,11 +25,21 @@ Instalar `wpewebkit` do Arch e as dependências de desenvolvimento do README. Co
 | Recarregar | Ctrl+R, F5 ou ↻ |
 | Fechar | Ctrl+Q ou fechamento xdg pelo compositor |
 
-A barra provisória é uma subsuperfície de 148 px (36 px para abas), sempre visível sobre o site, inclusive após carregar, navegar e pressionar Esc; não reduz nem recorta o viewport do motor. Quando as abas não cabem, a fileira mostra o grupo que contém a aba ativa; as setas e os atalhos percorrem todas, com retorno da última à primeira. Não há limite artificial de quantidade, mas cada aba consome recursos. Usa Cairo/Pango e material compartilhado em `effects/`, com no máximo dois buffers SHM em voo e redesenho por mudanças. Não há timer de animação ou captura contínua da página. Não implementa blur/refração sobre sites. `JLINUX_GLASS_TINT`/`REFLECTION` afetam o material; BLUR não cria um passe sem backdrop. O conteúdo web permanece sob controle do motor, sem retematizar sites.
+A barra provisória é uma subsuperfície de 148 px (36 px para abas), sempre visível acima do site, inclusive após carregar, navegar e pressionar Esc. O viewport do motor recebe a altura da janela menos os 148 px do cabeçalho, sem recortar conteúdo. Quando as abas não cabem, a fileira mostra o grupo que contém a aba ativa; as setas e os atalhos percorrem todas, com retorno da última à primeira. Não há limite artificial de quantidade, mas cada aba consome recursos. Usa Cairo/Pango e material compartilhado em `effects/`, com no máximo dois buffers SHM em voo e redesenho por mudanças. Não há timer de animação ou captura contínua da página. Não implementa blur/refração sobre sites. `JLINUX_GLASS_TINT`/`REFLECTION` afetam o material; BLUR não cria um passe sem backdrop. O conteúdo web permanece sob controle do motor, sem retematizar sites.
 
 Abrir/alternar não recarrega páginas: texto em formulários e histórico da aba permanecem. Fechar uma aba libera sua WebView; a vizinha ocupa o lugar da ativa. Fechar uma aba inativa preserva a seleção atual. Erros de carregamento/política são associados à aba de origem; avisos de uma aba oculta não substituem os avisos da página ativa. Endereço ainda não enviado na barra é descartado ao alternar; não há restauração de abas fechadas nem confirmação implementada de formulários antes de fechar.
 
 O campo inicial permite substituir tudo ou acrescentar/remover texto no fim. Edição com cursor, seleção por trecho, IME, acessibilidade e escalas precisam de implementação/validação. A prévia de componente em `docs/design/` não é uma janela completa, visual definitivo aprovado ou prova de equivalência com as fotos.
+
+## Página abaixo do cabeçalho — fix/browser-content-layout
+
+O cabeçalho ocupa a largura da janela em uma subsuperfície em `(0, -148)`, acima da origem da página. A geometria automática xdg inclui as duas superfícies; o motor recebe somente a altura útil abaixo do cabeçalho. O tamanho da view é ajustado nas notificações de largura/altura, antes de WPE emitir `resized` para WebKit, evitando enviar temporariamente o tamanho da janela inteira durante troca de abas ou foco. Não há cópia dos quadros web, mudança de motor ou alteração de CSS dos sites.
+
+O cabeçalho trata seus próprios eventos de ponteiro Wayland e cursor; coordenadas de cliques no site continuam locais à página. A implementação usa `wayland-cursor`, já usado pelo shell e fornecido pelo pacote Wayland existente. O perfil efêmero, pesquisa Google, sandbox e políticas de navegação permanecem os mesmos.
+
+O teste headless verifica `innerHeight = altura da janela - 148`, ausência de viewport intermediário com altura inteira ao alternar abas, cliques reais em botões fixos no topo e rodapé do site, nova aba pelo cabeçalho maximizado, maximizar/restaurar e redimensionar pela borda. Não equivale a uma captura visual nem a teste físico com GPU/HiDPI. Nenhum compositor paralelo foi iniciado no TTY ativo. Passaram os 16 testes locais release e os quatro testes do navegador com ASan/UBSan (`detect_leaks=0`); LeakSanitizer permanece pendente.
+
+Instalado em 06/11/2026: `jlinux-browser-git 0.1.0.r48.gfdcdfdf-1`, código `fdcdfdf`, após os oito checks do pacote. O teste Wayland de layout/entrada também passou usando `/usr/bin/jlinux-browser` já instalado. Janelas existentes foram preservadas e só adotam o layout novo ao reabrir. Correção enviada no PR #48; uma execução da CI passou e outra seguia em execução no momento do registro, antes desta atualização documental.
 
 ## Barra persistente e Google — feature/browser-search-bar
 
@@ -37,7 +47,7 @@ Exibição da barra e foco de edição são estados separados. Ctrl+L ou clique 
 
 Termos como `jlinux` e `navegador leve` abrem `https://www.google.com/search?q=…`, com codificação UTF-8 e percent-encoding dos parâmetros. Domínios, localhost, IPs e URLs continuam abrindo diretamente; esquemas explícitos não permitidos e credenciais continuam recusados. Não há sugestões, chamadas a uma API de busca, chave ou requisições a cada tecla: a consulta é enviada ao Google somente ao confirmar Enter. A URL final continua limitada a 4096 bytes.
 
-Limite do protótipo: a subsuperfície permanece sobre os 148 px superiores da página, sem reservar espaço no viewport. Conteúdo sob a barra pode ficar encoberto; uma incorporação WPE com área própria para o conteúdo ainda precisa ser implementada. Não foram injetados CSS ou scripts para modificar o layout dos sites.
+A sobreposição existente nesta primeira entrega foi corrigida em `fix/browser-content-layout`, descrita abaixo. Não são injetados CSS ou scripts para modificar o layout dos sites.
 
 Validação local: suíte release com 16 testes, incluindo busca/codificação/recusa de entradas inseguras, cliques na barra depois da navegação e Esc, primeiro clique no conteúdo, abas e reprodução de vídeo. Os quatro testes do navegador também passaram com ASan/UBSan (`detect_leaks=0`); LeakSanitizer segue pendente. Testes automatizados usam compositor isolado headless/Pixman; não comprovam aparência ou desempenho em GPU física.
 
@@ -59,7 +69,7 @@ Nesta máquina foram instalados PipeWire-Pulse, PipeWire-Audio e WirePlumber par
 
 ## Instalação persistente e dock
 
-`packaging/arch/browser/PKGBUILD` gera `jlinux-browser-git`, instalado separadamente de `jlinux-desktop-git`. A receita compila/testa a branch `feature/browser-search-bar` e empacota apenas `/usr/bin/jlinux-browser` e `org.jlinux.Browser.desktop`. Não executa `meson install` sobre o desktop instalado. O antigo diretório `/tmp/jlinux-web-browser` desapareceu no reboot; a nova worktree de desenvolvimento fica em `~/.local/src/jlinux-browser`, mas a abertura instalada usa `/usr/bin` e não depende dessa worktree.
+`packaging/arch/browser/PKGBUILD` gera `jlinux-browser-git`, instalado separadamente de `jlinux-desktop-git`. A receita compila/testa a branch `fix/browser-content-layout` e empacota apenas `/usr/bin/jlinux-browser` e `org.jlinux.Browser.desktop`. Não executa `meson install` sobre o desktop instalado. O antigo diretório `/tmp/jlinux-web-browser` desapareceu no reboot; a nova worktree de desenvolvimento fica em `~/.local/src/jlinux-browser`, mas a abertura instalada usa `/usr/bin` e não depende dessa worktree.
 
 No dock configurável já instalado, fixar `org.jlinux.Browser.desktop` em `~/.config/jlinux/dock.ini`, preservando os demais IDs, usa a infraestrutura existente e não requer um quarto botão fixo no código. O shell recarrega a configuração ao abrir “+”; role o dock para chegar ao atalho adicional. O catálogo de entradas `.desktop` pode precisar de novo shell/login para reconhecer uma instalação nova. Não reiniciar o compositor para isso. O botão “+” permite remover o atalho posteriormente.
 
