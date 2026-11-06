@@ -21,6 +21,16 @@
 #include <xkbcommon/xkbcommon.h>
 #include "xdg-shell-client.h"
 extern char **environ;
+enum { SIDEBAR_WIDTH = 180, CONTENT_X = 208 };
+static const char *place_names[] = {"Pessoal", "Downloads", "Documentos", "Imagens", "Vídeos"};
+static char *place_path(size_t index) {
+    if (!index) { return g_strdup(g_get_home_dir()); }
+    const GUserDirectory types[] = {G_USER_DIRECTORY_DOWNLOAD, G_USER_DIRECTORY_DOCUMENTS,
+        G_USER_DIRECTORY_PICTURES, G_USER_DIRECTORY_VIDEOS};
+    const char *defaults[] = {"Downloads", "Documents", "Pictures", "Videos"};
+    const char *configured = g_get_user_special_dir(types[index - 1]);
+    return configured ? g_strdup(configured) : g_build_filename(g_get_home_dir(), defaults[index - 1], NULL);
+}
 struct app;
 struct buffer { struct app *app; struct wl_buffer *wl; void *data; size_t size; struct wl_list link; };
 struct app {
@@ -109,27 +119,45 @@ static void paint(struct app *app, cairo_t *cr) {
     char *display = g_filename_display_name(app->browser.path);
     cairo_save(cr); cairo_rectangle(cr, 152, 18, app->width - 180, 38); cairo_clip(cr);
     ui_text(cr, display, 156, 27, 15, true, 0xe0e9ff); cairo_restore(cr); g_free(display);
-    ui_text(cr, "Nome", 48, 77, 13, true, 0x9eadc7);
-    ui_text(cr, "Tipo / tamanho", app->width - 172, 77, 13, true, 0x9eadc7);
+    struct ui_rect sidebar = {12, 74, SIDEBAR_WIDTH, app->height - 112};
+    jlinux_glass_paint(cr, sidebar, 6, NULL, 0, 0, material);
+    ui_text(cr, "LOCAIS", 26, 84, 11, true, 0xa9b7d0);
+    for (size_t i = 0; i < 5; i++) {
+        double y = 108 + i * 40;
+        char *path = place_path(i);
+        char *canonical = realpath(path, NULL);
+        bool active = canonical && !strcmp(canonical, app->browser.path);
+        bool available = g_file_test(path, G_FILE_TEST_IS_DIR);
+        if (active) {
+            cairo_set_source_rgba(cr, .35, .47, .78, .30);
+            cairo_rectangle(cr, 20, y, SIDEBAR_WIDTH - 16, 36); cairo_fill(cr);
+        }
+        ui_icon(cr, i ? UI_FOLDER : UI_HOME, 28, y + 8, 20, available ? 0x94bafa : 0x76849e);
+        ui_text(cr, place_names[i], 58, y + 10, 13, active, available ? 0xe0e6f5 : 0x94a0b7);
+        free(canonical); g_free(path);
+    }
+    bool details = app->width >= 760;
+    ui_text(cr, "Nome", CONTENT_X + 34, 77, 13, true, 0x9eadc7);
+    if (details) { ui_text(cr, "Tipo / tamanho", app->width - 172, 77, 13, true, 0x9eadc7); }
     size_t visible = rows(app);
     for (size_t row = 0; row < visible && row + app->scroll < app->browser.count; row++) {
         size_t index = row + app->scroll; double y = 100 + row * 38;
         struct file_entry *entry = &app->browser.entries[index];
         if (index == app->selected) {
-            cairo_set_source_rgba(cr, .26, .34, .58, .34); cairo_rectangle(cr, 14, y, app->width - 28, 36); cairo_fill(cr);
+            cairo_set_source_rgba(cr, .26, .34, .58, .34); cairo_rectangle(cr, CONTENT_X, y, app->width - CONTENT_X - 14, 36); cairo_fill(cr);
         }
-        ui_icon(cr, entry->directory ? UI_FOLDER : UI_FILE, 25, y + 7, 22, entry->directory ? 0x87b8f5 : 0xa9b7d0);
-        cairo_save(cr); cairo_rectangle(cr, 58, y + 2, app->width - 254, 34); cairo_clip(cr);
-        ui_text(cr, entry->label, 58, y + 9, 14, false, 0xe0e6f5); cairo_restore(cr);
+        ui_icon(cr, entry->directory ? UI_FOLDER : UI_FILE, CONTENT_X + 11, y + 7, 22, entry->directory ? 0x87b8f5 : 0xa9b7d0);
+        cairo_save(cr); cairo_rectangle(cr, CONTENT_X + 44, y + 2, app->width - CONTENT_X - 60 - (details ? 180 : 0), 34); cairo_clip(cr);
+        ui_text(cr, entry->label, CONTENT_X + 44, y + 9, 14, false, 0xe0e6f5); cairo_restore(cr);
         char detail[64];
         if (entry->directory) { snprintf(detail, sizeof(detail), "%s", entry->symlink ? "Pasta (atalho)" : "Pasta"); }
         else if (entry->symlink) { snprintf(detail, sizeof(detail), "Atalho"); }
         else if (entry->size >= 1048576) { snprintf(detail, sizeof(detail), "%.1f MiB", entry->size / 1048576.0); }
         else if (entry->size >= 1024) { snprintf(detail, sizeof(detail), "%.1f KiB", entry->size / 1024.0); }
         else { snprintf(detail, sizeof(detail), "%lld B", (long long)entry->size); }
-        ui_text(cr, detail, app->width - 172, y + 9, 12, false, 0x9eadc7);
+        if (details) { ui_text(cr, detail, app->width - 172, y + 9, 12, false, 0x9eadc7); }
     }
-    if (!app->browser.count) { ui_text(cr, "Esta pasta está vazia.", 26, 117, 15, false, 0xa9b7d0); }
+    if (!app->browser.count) { ui_text(cr, "Esta pasta está vazia.", CONTENT_X + 12, 117, 15, false, 0xa9b7d0); }
     char status[128]; snprintf(status, sizeof(status), "%zu itens • F5 atualizar • Ctrl+H ocultos", app->browser.count);
     cairo_save(cr); cairo_rectangle(cr, 16, app->height - 26, app->width - 32, 25); cairo_clip(cr);
     ui_text(cr, app->message[0] ? app->message : status, 20, app->height - 23, 12, false, 0xafbdd6); cairo_restore(cr);
@@ -142,7 +170,7 @@ static void released(void *data, struct wl_buffer *wl) { (void)wl; destroy_buffe
 static const struct wl_buffer_listener buffer_listener = {.release = released};
 static bool draw(struct app *app) {
     if (!app->configured || !app->dirty || app->in_flight >= 2) { return true; }
-    if (app->width < 360 || app->height < 220 || app->width > 8192 || app->height > 8192 || (size_t)app->width * app->height > 16777216) { return false; }
+    if (app->width < 540 || app->height < 360 || app->width > 8192 || app->height > 8192 || (size_t)app->width * app->height > 16777216) { return false; }
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, app->width);
     size_t size = (size_t)stride * app->height;
     struct buffer *buffer = calloc(1, sizeof(*buffer));
@@ -187,7 +215,9 @@ static void key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint3
     (void)keyboard; (void)serial; (void)time; struct app *app = data;
     if (state != WL_KEYBOARD_KEY_STATE_PRESSED || !app->keys) { return; }
     xkb_keysym_t symbol = xkb_state_key_get_one_sym(app->keys, code + 8);
-    if (symbol == XKB_KEY_Return || symbol == XKB_KEY_KP_Enter) { activate(app); }
+    if (symbol >= XKB_KEY_1 && symbol <= XKB_KEY_5 && xkb_state_mod_name_is_active(app->keys, XKB_MOD_NAME_ALT, XKB_STATE_MODS_EFFECTIVE) > 0) {
+        char *path = place_path(symbol - XKB_KEY_1); navigate(app, path); g_free(path);
+    } else if (symbol == XKB_KEY_Return || symbol == XKB_KEY_KP_Enter) { activate(app); }
     else if (symbol == XKB_KEY_BackSpace || (symbol == XKB_KEY_Up && xkb_state_mod_name_is_active(app->keys, XKB_MOD_NAME_ALT, XKB_STATE_MODS_EFFECTIVE) > 0)) { parent_folder(app); }
     else if (symbol == XKB_KEY_F5) { navigate(app, app->browser.path); }
     else if ((symbol == XKB_KEY_h || symbol == XKB_KEY_H) && xkb_state_mod_name_is_active(app->keys, XKB_MOD_NAME_CTRL, XKB_STATE_MODS_EFFECTIVE) > 0) {
@@ -220,7 +250,10 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
         if (app->mouse_x >= 20 && app->mouse_x < 60) { navigate(app, g_get_home_dir()); }
         else if (app->mouse_x >= 62 && app->mouse_x < 102) { parent_folder(app); }
         else if (app->mouse_x >= 104 && app->mouse_x < 144) { navigate(app, app->browser.path); }
-    } else if (app->mouse_y >= 100 && app->mouse_y < app->height - 30) {
+    } else if (app->mouse_x >= 20 && app->mouse_x < 12 + SIDEBAR_WIDTH && app->mouse_y >= 108 && app->mouse_y < 308) {
+        size_t index = (size_t)((app->mouse_y - 108) / 40);
+        char *path = place_path(index); navigate(app, path); g_free(path);
+    } else if (app->mouse_x >= CONTENT_X && app->mouse_y >= 100 && app->mouse_y < app->height - 30) {
         size_t index = app->scroll + (size_t)((app->mouse_y - 100) / 38);
         if (index < app->browser.count) {
             app->selected = index;
@@ -232,7 +265,7 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
 }
 static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
     (void)pointer; (void)time; struct app *app = data;
-    if (axis != WL_POINTER_AXIS_VERTICAL_SCROLL) { return; }
+    if (app->mouse_x < CONTENT_X || axis != WL_POINTER_AXIS_VERTICAL_SCROLL) { return; }
     if (value > 0) { app->scroll += 3; } else { app->scroll = app->scroll > 3 ? app->scroll - 3 : 0; }
     clamp_scroll(app); app->dirty = true;
 }
@@ -265,7 +298,7 @@ static void configured(void *data, struct xdg_surface *surface, uint32_t serial)
     app->configured = true; app->dirty = true;
 }
 static const struct xdg_surface_listener surface_listener = {.configure = configured};
-static void resized(void *data, struct xdg_toplevel *toplevel, int32_t width, int32_t height, struct wl_array *states) { (void)toplevel; (void)states; struct app *app = data; if (width > 0 && height > 0) { app->width = width < 360 ? 360 : width; app->height = height < 220 ? 220 : height; clamp_scroll(app); } }
+static void resized(void *data, struct xdg_toplevel *toplevel, int32_t width, int32_t height, struct wl_array *states) { (void)toplevel; (void)states; struct app *app = data; if (width > 0 && height > 0) { app->width = width < 540 ? 540 : width; app->height = height < 360 ? 360 : height; clamp_scroll(app); } }
 static void closed(void *data, struct xdg_toplevel *toplevel) { (void)toplevel; struct app *app = data; app->running = false; }
 static const struct xdg_toplevel_listener toplevel_listener = {.configure = resized, .close = closed};
 static int preview(const char *path, const char *directory) {
@@ -299,7 +332,7 @@ int main(int argc, char **argv) {
     if (!app.surface || !app.cursor_surface) { goto cleanup; }
     app.xdg = xdg_wm_base_get_xdg_surface(app.wm, app.surface); xdg_surface_add_listener(app.xdg, &surface_listener, &app);
     app.toplevel = xdg_surface_get_toplevel(app.xdg); xdg_toplevel_add_listener(app.toplevel, &toplevel_listener, &app);
-    xdg_toplevel_set_title(app.toplevel, "Arquivos"); xdg_toplevel_set_app_id(app.toplevel, "org.jlinux.Files"); xdg_toplevel_set_min_size(app.toplevel, 360, 220);
+    xdg_toplevel_set_title(app.toplevel, "Arquivos"); xdg_toplevel_set_app_id(app.toplevel, "org.jlinux.Files"); xdg_toplevel_set_min_size(app.toplevel, 540, 360);
     wl_surface_commit(app.surface);
     while (app.running) {
         if (wl_display_dispatch_pending(app.display) < 0 || !draw(&app)) { goto cleanup; }

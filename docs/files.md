@@ -15,3 +15,9 @@ Esta versão não copia, move, renomeia ou exclui arquivos. Não monitora altera
 A prévia em design/native-files-preview.png usa arquivos fictícios e o mesmo desenho do aplicativo; não é captura da pasta pessoal ou da sessão real. Testes headless cobrem navegação, teclado, clique, abertura por associação com nomes especiais e lançamento pelo dock. Teste de modelo cobre links, ocultos, nomes inválidos em UTF-8 e preservação após erro.
 
 O fundo atual é um gradiente opaco azul-ardósia, sem preto predominante; barra interna usa contorno contínuo azul/violeta sem pontos focais. Transparência e blur do conteúdo continuam pendentes.
+
+## Barra lateral de locais
+
+Atalhos fixos à esquerda: Pessoal, Downloads, Documentos, Imagens e Vídeos. Um clique navega; Alt+1…5 segue a mesma ordem. A pasta atual recebe destaque. Caminhos seguem user-dirs.dirs via GLib, incluindo pastas personalizadas fora da home; sem configuração, usam nomes padrão Downloads/Documents/Pictures/Videos dentro da home. Pastas ausentes ficam esmaecidas; a tentativa mostra erro e preserva a pasta atual. Nenhuma pasta é criada automaticamente.
+
+Lista e área de clique ficam à direita da barra lateral; a roda sobre a barra não rola a lista. Tamanho mínimo passa a 540×360 para manter os cinco atalhos legíveis; abaixo de 760 px de largura a coluna de tamanho fica oculta. A prévia usa apenas arquivos fictícios.
