@@ -50,8 +50,12 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
         int material_height = i == 0 ? header + JLINUX_FRAME_RADIUS : full_height;
         struct jlinux_glass material = effects;
         material.reflection = false; /* Window rims have their own continuous finish. */
-        jlinux_glass_paint(cr, (struct ui_rect){.5, .5, full_width - 1, material_height - 1},
-            JLINUX_FRAME_RADIUS, NULL, 0, 0, material);
+        struct ui_rect material_rect = {.5, .5, full_width - 1, material_height - 1};
+        if (i == 0 && effects.tint) {
+            jlinux_glass_window_tint(cr, material_rect, JLINUX_FRAME_RADIUS);
+        } else {
+            jlinux_glass_paint(cr, material_rect, JLINUX_FRAME_RADIUS, NULL, 0, 0, material);
+        }
         if (effects.shadow) {
             jlinux_glass_window_shading(cr,
                 (struct ui_rect){.5, .5, full_width - 1, full_height - 1}, JLINUX_FRAME_RADIUS);

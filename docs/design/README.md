@@ -77,3 +77,7 @@ As prévias de moldura e Arquivos foram atualizadas com azul/ciano e violeta mai
 ### Barra encaixada — pedido posterior às referências
 
 A prévia `native-glass-preview.png` agora mostra a barra reta, em toda a largura e sem margem superior. A base termina em transparência gradual, sem contorno inferior. Essa geometria atende ao pedido mais recente do usuário, substituindo a cápsula das fotos; o material de vidro permanece. A imagem é uma prévia nativa a 1672×941, não captura da sessão instalada.
+
+### Cabeçalho preto e contorno nítido
+
+As prévias nativas de moldura e Arquivos foram atualizadas novamente: cabeçalho da moldura quase preto, reflexos internos discretos e contorno ciano/azul/violeta mais definido. São componentes renderizados para inspeção, não capturas do desktop instalado. A geometria da barra superior reta com degradê continua preservada.
