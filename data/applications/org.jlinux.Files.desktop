@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Arquivos JLinux
+Comment=Navegar pelas pastas e arquivos
+Exec=jlinux-files %f
+TryExec=jlinux-files
+Icon=system-file-manager
+Terminal=false
+Type=Application
+Categories=System;FileTools;FileManager;
+MimeType=inode/directory;

@@ -33,6 +33,20 @@ void ui_icon(cairo_t *cr, enum ui_icon icon, double x, double y, double size, un
     color(cr, value, 1); cairo_set_line_width(cr, 1.7); cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     switch (icon) {
+    case UI_FOLDER:
+        cairo_move_to(cr, 2, 7); cairo_line_to(cr, 2, 4); cairo_line_to(cr, 9, 4);
+        cairo_line_to(cr, 12, 7); cairo_line_to(cr, 22, 7); cairo_line_to(cr, 22, 20);
+        cairo_line_to(cr, 2, 20); cairo_close_path(cr); break;
+    case UI_FILE:
+        cairo_move_to(cr, 5, 2); cairo_line_to(cr, 14, 2); cairo_line_to(cr, 20, 8);
+        cairo_line_to(cr, 20, 22); cairo_line_to(cr, 5, 22); cairo_close_path(cr);
+        cairo_move_to(cr, 14, 2); cairo_line_to(cr, 14, 8); cairo_line_to(cr, 20, 8); break;
+    case UI_UP:
+        cairo_move_to(cr, 5, 11); cairo_line_to(cr, 12, 4); cairo_line_to(cr, 19, 11);
+        cairo_move_to(cr, 12, 4); cairo_line_to(cr, 12, 21); break;
+    case UI_REFRESH:
+        cairo_arc(cr, 12, 12, 8, .4, 5.6); cairo_move_to(cr, 20, 3);
+        cairo_line_to(cr, 20, 9); cairo_line_to(cr, 14, 9); break;
     case UI_HOME:
         cairo_move_to(cr, 3, 11); cairo_line_to(cr, 12, 3); cairo_line_to(cr, 21, 11);
         cairo_move_to(cr, 6, 10); cairo_line_to(cr, 6, 21); cairo_line_to(cr, 10, 21);

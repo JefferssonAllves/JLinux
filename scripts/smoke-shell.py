@@ -40,7 +40,7 @@ def main():
         os.chmod(runtime, 0o700)
         env = dict(os.environ, XDG_RUNTIME_DIR=directory, WLR_BACKENDS="headless",
                    WLR_RENDERER="pixman", WLR_HEADLESS_OUTPUTS="1",
-                   JLINUX_TEST_INPUT="1")
+                   JLINUX_TEST_INPUT="1", PATH=str(Path(shell).parent) + os.pathsep + os.environ["PATH"])
         server_log = runtime / "compositor.log"
         shell_log = runtime / "shell.log"
         def log():
@@ -64,6 +64,9 @@ def main():
                     time.sleep(0.15)
                     assert client.poll() is None, "Shell encerrou após mapear"
                     if pointer_client:
+                        subprocess.run([pointer_client, "34", "310"], env=env, check=True, timeout=3)
+                        wait_for(lambda: log().count("Janela mapeada: Arquivos") > iteration,
+                                 [server, client], "dock abriu arquivos")
                         subprocess.run([pointer_client, "34", "377"], env=env, check=True, timeout=3)
                         wait_for(lambda: log().count("Janela mapeada: JLinux Terminal") > iteration,
                                  [server, client], "dock abriu terminal")

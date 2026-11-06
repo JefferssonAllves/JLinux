@@ -38,6 +38,13 @@ if get_option('shell')
   client_xdg_header = custom_target('xdg-client-header',
     input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-client.h',
     command: [scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
+  glib = dependency('glib-2.0')
+  files = executable('jlinux-files', 'src/files/main.c', 'src/files/browser.c', 'src/session/locale.c',
+    'src/toolkit/painter.c', 'src/effects/glass.c', client_xdg_header, client_xdg_code,
+    dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, glib], install: true)
+  browser_test = executable('jlinux-test-browser', 'tests/browser.c', 'src/files/browser.c', dependencies: glib)
+  test('files-browser', find_program('scripts/smoke-browser.py'), args: [browser_test], timeout: 15)
+  install_data('data/applications/org.jlinux.Files.desktop', install_dir: get_option('datadir') / 'applications')
   greeter = executable('jlinux-greeter', 'src/greeter/main.c', 'src/greeter/auth.c',
     'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_xdg_header, client_xdg_code,
     dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, json], install: true)
@@ -74,6 +81,7 @@ if foot.found() and wtype.found()
   pointer_test = executable('jlinux-test-pointer', 'tests/pointer-client.c', pointer_header, pointer_code,
     dependencies: client_dep)
   if get_option('shell')
+    test('files-headless', find_program('scripts/smoke-files.py'), args: [compositor, files, pointer_test, wtype], timeout: 30)
     test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
     test('shell-headless', shell_smoke, args: [compositor, shell, pointer_test], timeout: 20)
   endif
@@ -83,6 +91,7 @@ if foot.found() and wtype.found()
 else
   warning('Teste de terminal/entrada indisponível: instale foot e wtype')
   if get_option('shell')
+    test('files-headless', find_program('scripts/smoke-files.py'), args: [compositor, files, pointer_test, wtype], timeout: 30)
     test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
     test('shell-headless', shell_smoke, args: [compositor, shell], timeout: 15)
   endif
