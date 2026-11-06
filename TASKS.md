@@ -319,3 +319,6 @@ WM-SNAP substitui WM-AUTO por decisão do usuário. Removidos algoritmo de divis
 ## Barra superior sem menus à esquerda — fix/remove-panel-menus
 
 Aplicativos, Arquivos e Configurações removidos da barra superior por pedido do usuário. Cliques na área vazia não mostram mais o aviso de menus pendentes. Relógio, Som, Wi-Fi, Bluetooth, energia e dock preservados. Base feature/window-side-snap (#44), que corresponde à instalação atual; sem alteração no comportamento das janelas. Validação e instalação registradas após conclusão.
+
+
+**Menus da barra · instalado:** pacote `0.5.0.r64.gda44b00-1`, fonte da44b00, instalado após 21 testes do makepkg aprovados. Build/testes locais de shell e material passaram; prévia nativa inspecionada. Primeira tentativa de empacotamento interrompida por HUP; repetição concluída. Arquivo do pacote e binário instalado conferidos como root:root 0755. Nenhum logout/reinício de shell/compositor realizado por esta entrega: remoção visível no próximo login. PR #55, base feature/window-side-snap, sem merge. Sem novos sanitizers, benchmark ou teste de VT.
