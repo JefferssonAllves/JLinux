@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Exercise native address input and WPE page input on isolated JLinux Wayland."""
+import base64
 import http.server
 import os
 from pathlib import Path
@@ -11,6 +12,9 @@ import tempfile
 import threading
 helpers = runpy.run_path(str(Path(__file__).with_name('smoke-terminal.py')))
 stop, wait_for = helpers['stop'], helpers['wait_for']
+
+
+PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jK1sAAAAASUVORK5CYII="
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -31,6 +35,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             body, mime = b"window.adLoaded = true;", "application/javascript"
         if self.path in ("/download", "/download-broken"):
             body, mime = b"JLinux download fixture\n", "application/octet-stream"
+        if self.path == "/image-downloads":
+            body = b"""<!doctype html><title>Image downloads</title>
+            <button style='position:fixed;left:8px;top:0' onclick="fetch('/blob-click'); try { const a=document.createElement('a'); a.href=window.URL.createObjectURL(new Blob([Uint8Array.from(atob('PNG_BASE64'), c=>c.charCodeAt(0))],{type:'image/png'})); a.download='generated.png'; a.click(); fetch('/blob-dispatched'); } catch(e) {fetch('/blob-error?'+encodeURIComponent(e.message));}">Blob image</button>
+            <script>addEventListener('pageshow',()=>fetch('/shown?path='+location.pathname));</script>""".replace(b"PNG_BASE64", PNG_BASE64.encode())
         self.send_response(200)
         if self.path in ("/download", "/download-broken"):
             self.send_header("Content-Disposition", 'attachment; filename="' + ("x" * 300 if self.path == "/download-broken" else "fixture.bin") + '"')
@@ -113,6 +121,13 @@ def main():
                 keys("-M", "ctrl", "-k", "j", "-m", "ctrl")
                 wait_for(marker.exists, processes, "abrir Downloads pelo aplicativo padrão")
                 assert marker.read_text() == str(downloads), marker.read_text()
+                navigate("/image-downloads")
+                click(75, 190)
+                wait_for(lambda: "/blob-click" in Handler.events, processes, "clicar para gerar imagem")
+                wait_for(lambda: (downloads / "generated.png").exists(), processes, "imagem gerada via Blob")
+                wait_for(lambda: log().count("Download concluído:") == 3, processes, "conclusão de imagem Blob")
+                assert (downloads / "generated.png").read_bytes() == base64.b64decode(PNG_BASE64)
+                navigate("/first")
                 before = Handler.events.count("/shown?path=/first")
                 keys("-M", "ctrl", "-M", "shift", "-k", "b", "-m", "shift", "-m", "ctrl")
                 wait_for(lambda: Handler.events.count("/shown?path=/first") > before,

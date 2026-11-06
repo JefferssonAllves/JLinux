@@ -16,7 +16,7 @@ int main(void) {
         char *expected = g_strconcat("https://www.google.com/search?q=", queries[i][1], NULL);
         uri = browser_address_uri(queries[i][0]); g_assert_cmpstr(uri, ==, expected); g_free(uri); g_free(expected);
     }
-    const char *bad_input[] = {"", "   ", "\xff", "foo\nbar", "foo\tbar", "https://user:secret@example.org", "file:///etc/passwd", "data:text/html,hi"};
+    const char *bad_input[] = {"", "   ", "\xff", "foo\nbar", "foo\tbar", "https://user:secret@example.org", "file:///etc/passwd", "data:text/html,hi", "blob:https://example.org/abc", "blob:file:///etc/passwd"};
     for (size_t i = 0; i < G_N_ELEMENTS(bad_input); i++) { g_assert_null(browser_address_uri(bad_input[i])); }
     g_assert_null(browser_address_uri(NULL));
     char long_uri[BROWSER_ADDRESS_LIMIT + 2]; memset(long_uri, 'a', sizeof(long_uri) - 1); long_uri[sizeof(long_uri) - 1] = 0;

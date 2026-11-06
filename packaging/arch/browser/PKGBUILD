@@ -9,7 +9,7 @@ depends=('wpewebkit>=2.54' 'wayland' 'libxkbcommon' 'cairo' 'pango' 'fontconfig'
 makedepends=('git' 'base-devel' 'meson' 'ninja' 'pkgconf' 'wayland-protocols' 'wlroots0.20')
 checkdepends=('python' 'wtype' 'foot' 'openssl' 'ffmpeg')
 optdepends=('pipewire-pulse: servidor de áudio' 'wireplumber: seleção de dispositivos de áudio' 'gst-plugins-bad: formatos de mídia adicionais')
-source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/browser-downloads')
+source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=fix/browser-image-downloads')
 sha256sums=('SKIP')
 
 pkgver() {

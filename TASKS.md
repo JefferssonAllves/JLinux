@@ -271,3 +271,8 @@ Nome e símbolo JLinux removidos da barra superior; menus começam a 24 px da ma
 ### BROWSER-DOWNLOADS — instalado
 
 Downloads nativos WPE em Downloads, sem sobrescrita, progresso e acesso à pasta pelo padrão XDG. Testes locais web-browser-wayland (bytes, duplicatas, erro de destino e abertura via padrão), web-browser-media e web-browser-blocker passaram. Pacote instalado 0.1.0.r55.g5a9a774-1; reabrir navegador para ativar. Sem benchmark de memória novo nem suporte a pausa/retomada/histórico.
+
+
+### BROWSER-IMAGE-DOWNLOADS
+
+Correção da política de navegação para imagens geradas pela página via Blob HTTP/HTTPS. Entrada manual continua restrita. Regressão reproduzida na versão anterior 5a9a774; download Blob passou com a correção. Teste PNG confere bytes, sem validar a conta real do ChatGPT.
