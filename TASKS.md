@@ -249,3 +249,14 @@ FILES-02 implementado: barra lateral Pessoal/Downloads/Documentos/Imagens/Vídeo
 Quatorze testes locais release e ASan/UBSan passaram. Teste headless ampliado abre os cinco locais com HOME/configuração isolados, nomes personalizados com espaços/acentos, verifica argumentos do aplicativo associado e tentativa de pasta ausente. Prévia com arquivos fictícios inspecionada. Sem benchmark, teste de VT ou confirmação visual física. Empacotamento/ativação pendentes neste registro. Alteração local concorrente em src/shell/main.c preservada fora desta entrega.
 
 **FILES-02 · instalado:** pacote `0.5.0.r47.g0578b80-1`, fonte 0578b80, compilado do GitHub com 14 testes aprovados no makepkg e instalado via pacman. Gerenciador instalado reaberto com sidebar na sessão existente e permaneceu ativo. Esta entrega não reiniciou compositor/shell nem realizou troca de VT. PR #33, base temporária feature/window-neon-rim, sem merge. CI e avaliação visual pelo usuário pendentes neste registro. Alterações concorrentes de shell/empacotamento preservadas fora dos commits desta entrega.
+
+
+## Energia na barra superior — feature/power-menu
+
+- **SHELL-POWER · implementado:** botão de energia abre Sair da sessão, Reiniciar e Desligar, com confirmação e cancelamento. Logout direciona XDG_SESSION_ID validado; reiniciar/desligar usam systemctl sem solicitar senha e respeitando inibidores. Erros de execução/recusa são mostrados no menu e registrados. Sem sudo, força ou mudanças PAM/PolicyKit.
+- Menu C/Wayland separado em layer overlay, sem alterar a área útil de janelas. Modo transitório --power-panel disponibiliza apenas o botão e menu sobre a sessão antiga; shell normal já inclui as ações no próximo login. Demais funcionalidades da branch top-panel (#29) não fazem parte desta branch.
+- Prévia nativa do componente inspecionada. Teste headless usa PATH restrito a loginctl/systemctl simulados: verifica argumentos das três ações, confirmação, cancelamento e recusa, tanto no shell completo quanto no modo transitório. Nenhuma ação real de logout/reinício/desligamento foi executada durante o desenvolvimento.
+- Build release e 15 testes locais passaram; 15 testes ASan/UBSan também passaram. Instalação registrada abaixo após conclusão. Consulta read-only ao logind retornou CanPowerOff=yes e CanReboot=yes nesta máquina. Isso não substitui validação física das ações pelo usuário.
+
+
+**SHELL-POWER · instalado/ativado:** pacote `0.5.0.r50.g023034a-1`, fonte 023034a, com 15 testes de pacote aprovados, instalado pelo pacman. Botão transitório C/Wayland mapeado na sessão greetd ativa, sem encerrar o shell supervisionado, compositor ou aplicativos. Próximo login usa o menu integrado. Nenhuma ação real de energia/logout nem teste VT executado; confirmação física pelo usuário pendente. PR #34 para feature/files-sidebar (#33), sem merge. Log de ativação em docs/arch-installation.md.

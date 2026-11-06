@@ -5,12 +5,12 @@ pkgdesc='Compositor, shell e login Wayland nativos do JLinux'
 arch=('x86_64')
 url='https://github.com/JefferssonAllves/JLinux'
 license=('custom')
-depends=('wlroots0.20' 'wayland' 'libxkbcommon' 'cairo' 'pango' 'fontconfig' 'json-c' 'glib2' 'foot' 'ttf-dejavu' 'dbus')
+depends=('wlroots0.20' 'wayland' 'libxkbcommon' 'cairo' 'pango' 'fontconfig' 'json-c' 'glib2' 'foot' 'ttf-dejavu' 'dbus' 'systemd')
 makedepends=('git' 'meson' 'ninja' 'pkgconf' 'wayland-protocols' 'python')
 checkdepends=('wtype')
 optdepends=('greetd: login na inicialização' 'cage: compositor isolado da tela de login')
 provides=('jlinux-desktop')
-source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/files-sidebar')
+source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/power-menu')
 sha256sums=('SKIP')
 
 pkgver() {

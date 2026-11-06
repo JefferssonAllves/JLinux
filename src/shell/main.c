@@ -51,11 +51,14 @@ struct app {
     struct wl_pointer *pointer;
     struct wl_cursor_theme *cursor_theme;
     struct wl_surface *cursor_surface;
-    struct surface wallpaper, panel, dock;
+    struct surface wallpaper, panel, dock, power;
     struct surface *pointer_surface;
     struct wl_list buffers;
     double pointer_x, pointer_y;
-    bool running, info;
+    bool running, info, power_panel;
+    int power_action;
+    pid_t power_pid;
+    bool power_error;
     int timer, signals;
     char notice[180];
     cairo_surface_t *backdrop;
@@ -67,11 +70,38 @@ static int dock_hit(double x, double y) {
     for (int i = 0; i < 3; i++) { if (ui_contains(dock_button(i), x, y)) { return i; } }
     return -1;
 }
+static const char *power_labels[] = {"Sair da sessão", "Reiniciar", "Desligar"};
+static void paint_power(struct app *app, cairo_t *cr) {
+    cairo_set_source_rgba(cr, .025, .035, .075, .96); cairo_paint(cr);
+    jlinux_glass_paint(cr, (struct ui_rect){1, 1, 318, 258}, 12, NULL, 0, 0, app->glass);
+    ui_text(cr, "Sessão e energia", 18, 14, 17, true, 0xf1f2fc);
+    if (app->power_pid) {
+        ui_text(cr, "Solicitando ao sistema…", 18, 65, 14, false, 0xf1f2fc);
+    } else if (app->power_action >= 0) {
+        ui_text(cr, power_labels[app->power_action], 18, 60, 17, true, 0xf1f2fc);
+        ui_text(cr, "Os aplicativos serão encerrados.", 18, 96, 14, false, 0xd2d7eb);
+        ui_text(cr, "Salve seu trabalho antes de confirmar.", 18, 122, 14, false, 0xd2d7eb);
+        ui_text(cr, "Confirmar", 18, 168, 16, true, 0xf1f2fc);
+    } else {
+        for (int i = 0; i < 3; i++) {
+            ui_text(cr, power_labels[i], 18, 55 + i * 42, 16, false, 0xf1f2fc);
+        }
+    }
+    if (app->power_error) {
+        ui_text(cr, "Ação recusada ou indisponível.", 18, 180, 13, true, 0xffb8bd);
+        ui_text(cr, "Veja o log da sessão para detalhes.", 18, 200, 13, false, 0xd2d7eb);
+    }
+    ui_text(cr, app->power_pid ? "Fechar" : "Cancelar / Fechar", 18, 230, 14, false, 0xa3aec9);
+}
 static void paint(struct surface *surface, cairo_t *cr) {
     int width = surface->width, height = surface->height;
     cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE); cairo_set_source_rgba(cr, 0, 0, 0, 0); cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-    if (surface == &surface->app->wallpaper) {
+    if (surface == &surface->app->power) {
+        paint_power(surface->app, cr);
+    } else if (surface == &surface->app->panel && surface->app->power_panel) {
+        ui_icon(cr, UI_POWER, 0, 6, 23, 0xe9eafa);
+    } else if (surface == &surface->app->wallpaper) {
         ui_wallpaper(cr, width, height);
     } else if (surface == &surface->app->dock) {
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (width - 2) / 2.0,
@@ -198,6 +228,53 @@ static bool create_surface(struct app *app, struct surface *surface, const char 
 static void notice(struct app *app, const char *message) {
     snprintf(app->notice, sizeof(app->notice), "%s", message); app->info = true; app->panel.dirty = true;
 }
+static void close_power(struct app *app) {
+    if (app->pointer_surface == &app->power) { app->pointer_surface = NULL; }
+    if (app->power.layer) { zwlr_layer_surface_v1_destroy(app->power.layer); }
+    if (app->power.wl) { wl_surface_destroy(app->power.wl); }
+    app->power.layer = NULL; app->power.wl = NULL;
+    app->power.configured = false; app->power.dirty = false;
+    app->power_action = -1;
+}
+static void toggle_power(struct app *app) {
+    if (app->power.wl) { close_power(app); return; }
+    app->power_action = -1; app->power_error = false;
+    if (!create_surface(app, &app->power, "jlinux-power-menu", ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 320, 260, -1, PANEL_MARGIN)) {
+        close_power(app); notice(app, "Não foi possível abrir o menu de energia."); return;
+    }
+    zwlr_layer_surface_v1_set_margin(app->power.layer, PANEL_MARGIN + PANEL_HEIGHT + 6, PANEL_MARGIN, 0, 0);
+    wl_surface_commit(app->power.wl);
+}
+static void request_power(struct app *app) {
+    if (app->power_pid || app->power_action < 0 || app->power_action > 2) { return; }
+    char *session = getenv("XDG_SESSION_ID");
+    if (app->power_action == 0 && (!session || !*session ||
+        strspn(session, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") != strlen(session))) {
+        app->power_error = true;
+        app->power_action = -1; app->power.dirty = true;
+        fprintf(stderr, "Logout recusado: XDG_SESSION_ID ausente ou inválido.\n"); return;
+    }
+    char *logout[] = {"loginctl", "--no-ask-password", "terminate-session", session, NULL};
+    char *power[] = {"systemctl", "--no-ask-password", "--check-inhibitors=yes",
+        app->power_action == 1 ? "reboot" : "poweroff", NULL};
+    char **args = app->power_action == 0 ? logout : power;
+    posix_spawnattr_t attributes;
+    int error = posix_spawnattr_init(&attributes);
+    if (!error) {
+        sigset_t empty; sigemptyset(&empty);
+        error = posix_spawnattr_setsigmask(&attributes, &empty);
+        if (!error) { error = posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETSIGMASK); }
+        if (!error) { error = posix_spawnp(&app->power_pid, args[0], NULL, &attributes, args, environ); }
+        posix_spawnattr_destroy(&attributes);
+    }
+    if (error) {
+        app->power_pid = 0; app->power_action = -1;
+        app->power_error = true;
+        fprintf(stderr, "Ação de sessão falhou: %s\n", strerror(error));
+    }
+    app->power.dirty = true;
+}
 static void launch(struct app *app, int index) {
     char *plain[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL};
     char *assistant[] = {"foot", "--term=xterm-256color", "--title=JLinux Codex", "codex", NULL};
@@ -224,9 +301,9 @@ static void pointer_enter(void *data, struct wl_pointer *pointer, uint32_t seria
         wl_surface_damage(app->cursor_surface, 0, 0, (int)image->width, (int)image->height);
         wl_surface_commit(app->cursor_surface);
     }
-    struct surface *surfaces[] = {&app->panel, &app->dock};
+    struct surface *surfaces[] = {&app->panel, &app->dock, &app->power};
     app->pointer_surface = NULL;
-    for (size_t i = 0; i < 2; i++) { if (surfaces[i]->wl == wl) { app->pointer_surface = surfaces[i]; } }
+    for (size_t i = 0; i < 3; i++) { if (surfaces[i]->wl == wl) { app->pointer_surface = surfaces[i]; } }
     app->pointer_x = wl_fixed_to_double(x); app->pointer_y = wl_fixed_to_double(y);
 }
 static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *wl) {
@@ -247,13 +324,22 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
     (void)pointer; (void)serial; (void)time;
     struct app *app = data;
     if (button != BTN_LEFT || state != WL_POINTER_BUTTON_STATE_RELEASED) { return; }
-    if (app->pointer_surface == &app->dock) {
+    if (app->pointer_surface == &app->power) {
+        double y = app->pointer_y;
+        if (app->pointer_x < 8 || app->pointer_x > 312) { return; }
+        if (y >= 220) { close_power(app); }
+        else if (!app->power_pid && app->power_action >= 0 && y >= 158 && y < 202) { request_power(app); }
+        else if (!app->power_pid && app->power_action < 0 && y >= 48 && y < 174) {
+            app->power_action = (int)(y - 48) / 42;
+            app->power_error = false; app->power.dirty = true;
+        }
+    } else if (app->pointer_surface == &app->dock) {
         int hit = dock_hit(app->pointer_x, app->pointer_y);
         if (hit >= 0 && hit < 3) { launch(app, hit); }
     } else if (app->pointer_surface == &app->panel) {
         if (app->info) { app->info = false; app->panel.dirty = true; }
         else if (app->pointer_x > app->panel.width - 60) {
-            notice(app, "Super+Esc encerra a sessão. Suspender, reiniciar e desligar ainda não estão integrados.");
+            toggle_power(app);
         } else { notice(app, "Wi-Fi, Bluetooth e os menus de aplicativos serão conectados aos serviços do sistema."); }
     }
 }
@@ -304,10 +390,21 @@ static int preview(const char *path) {
     ui_finish();
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
+static int preview_power(const char *path) {
+    struct app app = {.power_action = -1};
+    if (!jlinux_glass_settings(&app.glass)) { return 1; }
+    cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 320, 260);
+    cairo_t *cr = cairo_create(image); paint_power(&app, cr);
+    cairo_status_t status = cairo_surface_write_to_png(image, path);
+    cairo_destroy(cr); cairo_surface_destroy(image); ui_finish();
+    return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
+}
 int main(int argc, char **argv) {
+    bool power_panel = argc == 2 && !strcmp(argv[1], "--power-panel");
+    if (argc == 3 && !strcmp(argv[1], "--preview-power")) { return preview_power(argv[2]); }
     if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2]); }
-    if (argc != 1) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png]\n"); return 1; }
-    struct app app = {.running = true, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
+    if (argc != 1 && !power_panel) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-power arquivo.png | --power-panel]\n"); return 1; }
+    struct app app = {.running = true, .power_panel = power_panel, .power_action = -1, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
     if (getenv("JLINUX_THEME")) { fprintf(stderr, "JLINUX_THEME/CSS não é suportado pelo shell nativo.\n"); return 1; }
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
     sigset_t signals; sigemptyset(&signals); sigaddset(&signals, SIGINT); sigaddset(&signals, SIGTERM); sigaddset(&signals, SIGCHLD);
@@ -323,16 +420,17 @@ int main(int argc, char **argv) {
     app.cursor_surface = wl_compositor_create_surface(app.compositor);
     uint32_t all = ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
-    if (!create_surface(&app, &app.wallpaper, "jlinux-wallpaper", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, all, 0, 0, -1, 0)) { goto cleanup; }
-    if (!create_surface(&app, &app.panel, "jlinux-panel", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
-        ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 0, PANEL_HEIGHT, PANEL_ZONE, PANEL_MARGIN)) { goto cleanup; }
-    if (!create_surface(&app, &app.dock, "jlinux-dock", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+    if (!power_panel && !create_surface(&app, &app.wallpaper, "jlinux-wallpaper", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, all, 0, 0, -1, 0)) { goto cleanup; }
+    if (!create_surface(&app, &app.panel, power_panel ? "jlinux-power-button" : "jlinux-panel", power_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT |
+        (power_panel ? 0 : ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT), power_panel ? 44 : 0, PANEL_HEIGHT, power_panel ? -1 : PANEL_ZONE, PANEL_MARGIN)) { goto cleanup; }
+    if (!power_panel && !create_surface(&app, &app.dock, "jlinux-dock", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT, DOCK_WIDTH, DOCK_HEIGHT, DOCK_ZONE, DOCK_MARGIN)) { goto cleanup; }
     struct itimerspec timer = {.it_value = {.tv_sec = 30}, .it_interval = {.tv_sec = 30}};
     if (timerfd_settime(app.timer, 0, &timer, NULL)) { goto cleanup; }
     while (app.running) {
         if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
-        if (!draw(&app.wallpaper) || !draw(&app.panel) || !draw(&app.dock)) { goto cleanup; }
+        if (!draw(&app.wallpaper) || !draw(&app.panel) || !draw(&app.dock) || !draw(&app.power)) { goto cleanup; }
         while (wl_display_prepare_read(app.display) != 0) {
             if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
         }
@@ -349,7 +447,19 @@ int main(int argc, char **argv) {
         if (fds[2].revents & POLLIN) {
             struct signalfd_siginfo event;
             while (read(app.signals, &event, sizeof(event)) == sizeof(event)) {
-                if (event.ssi_signo == SIGCHLD) { while (waitpid(-1, NULL, WNOHANG) > 0) { } }
+                if (event.ssi_signo == SIGCHLD) {
+                    int status; pid_t child;
+                    while ((child = waitpid(-1, &status, WNOHANG)) > 0) {
+                        if (child == app.power_pid) {
+                            app.power_pid = 0;
+                            if (!WIFEXITED(status) || WEXITSTATUS(status)) {
+                                app.power_error = true;
+                                fprintf(stderr, "Ação de sessão recusada (status %d).\n", status);
+                                app.power_action = -1; app.power.dirty = true;
+                            } else { close_power(&app); }
+                        }
+                    }
+                }
                 else { app.running = false; }
             }
         }
@@ -362,8 +472,8 @@ cleanup:
     if (app.seat) { wl_seat_destroy(app.seat); }
     if (app.cursor_surface) { wl_surface_destroy(app.cursor_surface); }
     if (app.cursor_theme) { wl_cursor_theme_destroy(app.cursor_theme); }
-    struct surface *surfaces[] = {&app.dock, &app.panel, &app.wallpaper};
-    for (size_t i = 0; i < 3; i++) {
+    struct surface *surfaces[] = {&app.dock, &app.panel, &app.wallpaper, &app.power};
+    for (size_t i = 0; i < 4; i++) {
         if (surfaces[i]->layer) { zwlr_layer_surface_v1_destroy(surfaces[i]->layer); }
         if (surfaces[i]->wl) { wl_surface_destroy(surfaces[i]->wl); }
     }
