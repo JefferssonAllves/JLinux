@@ -80,3 +80,15 @@ Referências de comportamento: [loginctl](https://www.freedesktop.org/software/s
 
 
 **Energia · instalação atualizada:** pacote `0.5.0.r50.g023034a-1`, fonte `023034a`, instalado após 15 testes do makepkg aprovados. No boot atual, a sessão greetd 7 preservou supervisor 23096, compositor 23097 e shell principal 23121; cliente transitório `/usr/bin/jlinux-shell --power-panel` PID 41128 foi iniciado com ambiente gráfico da sessão 7 e o compositor registrou `Interface mapeada: jlinux-power-button`. PIDs são evidência deste boot, não identificadores para futuras operações. Log transitório: `/tmp/jlinux-power-live-rfirgnvk/power-menu.log`. No próximo login o shell instalado fornece o menu integrado. Nenhum logout, reboot, desligamento ou teste de VT real foi feito nesta atualização; confirmação física das ações cabe ao usuário quando desejar encerrar a sessão.
+
+
+### Controle inicial de volume
+
+Clique em **Som**, imediatamente à esquerda do Wi-Fi na barra superior, para consultar o volume da saída padrão, diminuir/aumentar em 5% (limite de 100%) e silenciar/reativar. Clique no estado para consultar novamente; com o menu aberto também há atualização a cada 30 segundos. Durante uma solicitação, cliques adicionais de ajuste não são enfileirados. Fechar recolhe o menu sem alterar o áudio. Sem seleção de saída, microfone, volume por aplicativo ou navegação por teclado nesta primeira versão.
+
+O pacote requer WirePlumber e usa wpctl assíncrono, sem shell, com timeout de três segundos. Falha do comando/ausência de saída padrão aparece como áudio indisponível; o usuário pode tentar novamente. O filho wpctl recebe PIPEWIRE_RUNTIME_DIR=/run/user/UID para acessar o serviço de áudio do usuário, pois o Wayland da sessão usa runtime privado; PIPEWIRE_RUNTIME_DIR explícito é preservado. Não inicia/ativa serviços nem altera a configuração de áudio. Referência: [wpctl](https://pipewire.pages.freedesktop.org/wireplumber/man/wpctl.html).
+
+`jlinux-shell --volume-panel` fornece somente o botão e seu menu sobre uma sessão já aberta, sem novo compositor/dock/wallpaper nem reserva adicional de área útil. Esse modo deve herdar o ambiente Wayland da sessão gráfica; termina quando o compositor fecha. No próximo login o shell completo já incorpora o controle. `--preview-volume arquivo.png` desenha uma prévia com 40% fictícios, sem consultar/alterar o áudio real.
+
+
+**Volume · instalação ativa:** pacote `0.5.0.r61.g841643c-1` instalado após 21 testes do makepkg aprovados. Botão transitório mapeado na sessão gráfica atual sem reiniciar compositor/shell. O próximo login usa o botão integrado. O backend nativo foi validado por consulta read-only ao serviço real (40%, sem mute), com runtime privado; comandos de alteração foram testados com wpctl simulado. Sem teste auditivo, reboot, logout ou troca de VT nesta entrega.
