@@ -95,3 +95,5 @@ Atualização localizada das bordas rosadas: pacote `jlinux-desktop-git 0.5.0.r6
 ### Gerenciador de arquivos padrão
 
 O pacote instala uma associação de sistema em `/etc/xdg/mimeapps.list` para `inode/directory=org.jlinux.Files.desktop`. Preferências pessoais em `~/.config/mimeapps.list` têm precedência. Para selecionar Arquivos JLinux no usuário atual: `gio mime inode/directory org.jlinux.Files.desktop`. Verifique com `gio mime inode/directory` e `xdg-mime query default inode/directory`. A dependência `xdg-utils` fornece `xdg-open` para aplicativos que usam esse comando. Não substitui seletores internos nem implementa o serviço D-Bus `org.freedesktop.FileManager1`.
+
+Associação instalada em 06/11/2026 pelo pacote `jlinux-desktop-git 0.5.0.r69.g850294f-1`; `/etc/xdg/mimeapps.list` pertence ao pacote. O usuário atual também foi configurado. Consulta GIO/XDG e abertura real de Downloads confirmadas. Sem reinício de compositor ou sessão; compilação/empacotamento local validaram o arquivo de configuração. Não houve novos testes de execução do desktop porque os binários não foram alterados por esta configuração.
