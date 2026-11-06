@@ -313,6 +313,9 @@ WM-SNAP substitui WM-AUTO por decisão do usuário. Removidos algoritmo de divis
 
 21 testes locais release e ASan/UBSan passaram, incluindo ambos os lados com barra/dock, restauração, ausência de efeito no topo, ausência de rearranjo ao abrir/fechar e mínimo incompatível com meia tela. Teste de tiling removido/substituído; regressões de limites/transientes preservadas. Sem benchmark ou VT. Base instalada com volume/dock/tema preservada; pacote/ativação registrados na conclusão. Estado atual em docs/window-management.md prevalece sobre os registros históricos de WM-AUTO.
 
+### WINDOW-PINK-INSTALLED
+
+Aplicar contorno discretamente rosado sobre a base do pacote instalado 6df67d0, preservando encaixe lateral. Mudança restrita ao stop violeta do contorno. Sem recarregamento ao vivo: o processo existente não oferece essa função. Ativação no próximo login, sem encerrar a sessão atual.
 **WM-SNAP · instalado em 06/11/2026:** pacote `0.5.0.r62.g6df67d0-1`, fonte 6df67d0, compilado do GitHub com 21 testes aprovados no makepkg e instalado via pacman. 21 testes locais release e ASan/UBSan passaram. Instalação substitui o modo automático rejeitado e preserva volume, dock e tema. Compositor da sessão atual preservado: janelas livres e encaixe lateral passam a valer no próximo login. Sem reinício/logout/VT nesta entrega. PR #44, base feature/panel-volume, sem merge; CI e avaliação visual física pendentes neste registro.
 
 
@@ -329,3 +332,7 @@ Aplicativos, Arquivos e Configurações removidos da barra superior por pedido d
 - A barra superior, volume/energia, papel de parede, Super+Enter e inicialização do terminal permanecem. Arquivos/Codex podem ser abertos por comando. Maximização e encaixe lateral passam a usar toda a largura: headless 1280×720 confirma janela maximizada em x=3 com 1274 px de conteúdo e metades de 634 px. Testes verificam ausência da superfície e rejeição dos modos removidos.
 - 19 testes release e 19 ASan/UBSan passaram; `git diff --check` passou. Prévia nativa a 1672×941 inspecionada sem o dock. Os dois smokes exclusivos do componente foram retirados; regressões dos recursos mantidos continuam na suíte. Preferências antigas em diretórios pessoais não foram apagadas, mas o produto não as lê/escreve. Fotos e registros históricos foram preservados, com a nova direção registrada em AGENTS.md e na galeria.
 - Base temporária `fix/remove-panel-menus` (PR #55), que corresponde à instalação observada `0.5.0.r64.gda44b00-1`, preservando as janelas livres com encaixe lateral e a remoção dos rótulos da barra. Receita Arch aponta à branch desta entrega. Sem instalação, alteração da sessão ativa, VT/DRM ou benchmark; CI remoto e avaliação física pendentes no registro.
+
+### FILES-DEFAULT
+
+Associação de sistema para inode/directory em /etc/xdg/mimeapps.list, preservando precedência das preferências pessoais. xdg-utils passa a ser dependência do desktop. Usuário atual configurado com gio mime; xdg-mime confirmou org.jlinux.Files.desktop e xdg-open abriu Downloads em jlinux-files. Não substitui seletores internos nem oferece FileManager1 por D-Bus.

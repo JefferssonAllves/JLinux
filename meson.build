@@ -44,6 +44,7 @@ if get_option('shell')
     dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, glib], install: true)
   browser_test = executable('jlinux-test-browser', 'tests/browser.c', 'src/files/browser.c', dependencies: glib)
   test('files-browser', find_program('scripts/smoke-browser.py'), args: [browser_test], timeout: 15)
+  install_data('data/xdg/mimeapps.list', install_dir: get_option('sysconfdir') / 'xdg')
   install_data('data/applications/org.jlinux.Files.desktop', install_dir: get_option('datadir') / 'applications')
   greeter = executable('jlinux-greeter', 'src/greeter/main.c', 'src/greeter/auth.c',
     'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_xdg_header, client_xdg_code,
