@@ -25,7 +25,8 @@
 #include <wayland-cursor.h>
 #include "layer-shell-client.h"
 extern char **environ;
-enum { PANEL_HEIGHT = 36, PANEL_MARGIN = 6, PANEL_ZONE = 44,
+enum { PANEL_BODY_HEIGHT = 36, PANEL_FADE_HEIGHT = 16,
+    PANEL_HEIGHT = PANEL_BODY_HEIGHT + PANEL_FADE_HEIGHT, PANEL_MARGIN = 6, PANEL_ZONE = PANEL_HEIGHT,
     DOCK_WIDTH = 56, DOCK_SLOTS = 4, DOCK_HEIGHT = 28 + DOCK_SLOTS * 66, DOCK_MARGIN = 6, DOCK_ZONE = 64 };
 struct app;
 struct surface {
@@ -168,7 +169,7 @@ static void paint(struct surface *surface, cairo_t *cr) {
             cairo_close_path(cr); cairo_fill(cr);
         }
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (width - 2) / 2.0,
-            surface->app->backdrop, DOCK_MARGIN, (surface->app->wallpaper.height - height + PANEL_ZONE + PANEL_MARGIN) / 2.0, surface->app->glass);
+            surface->app->backdrop, DOCK_MARGIN, (surface->app->wallpaper.height - height + PANEL_ZONE) / 2.0, surface->app->glass);
         const enum ui_icon icons[] = {UI_FOLDER, UI_TERMINAL, UI_CODE};
         const unsigned int colors[] = {0x87b8f5, 0xe3e8f6, 0x78b8f3};
         for (int i = 0; i < DOCK_SLOTS; i++) {
@@ -189,9 +190,9 @@ static void paint(struct surface *surface, cairo_t *cr) {
         }
         ui_text(cr, "+", 20, DOCK_HEIGHT - 27, 20, true, 0xc3d5ff);
     } else {
-        jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (height - 2) / 2.0,
-            surface->app->backdrop, PANEL_MARGIN, PANEL_MARGIN, surface->app->glass);
-        cairo_save(cr); cairo_translate(cr, 0, (height - 54) / 2.0);
+        jlinux_glass_panel_paint(cr, width, PANEL_BODY_HEIGHT, PANEL_FADE_HEIGHT,
+            surface->app->backdrop, surface->app->glass);
+        cairo_save(cr); cairo_translate(cr, 0, (PANEL_BODY_HEIGHT - 54) / 2.0);
         if (width > 1000) { ui_text(cr, "Aplicativos     Arquivos     Configurações", 24, 18, 15, false, 0xd2d7eb); }
         time_t now = time(NULL); struct tm local;
         localtime_r(&now, &local);
@@ -297,6 +298,12 @@ static bool create_surface(struct app *app, struct surface *surface, const char 
     zwlr_layer_surface_v1_set_exclusive_zone(surface->layer, zone);
     zwlr_layer_surface_v1_set_margin(surface->layer, margin, margin, margin, margin);
     zwlr_layer_surface_v1_set_keyboard_interactivity(surface->layer, ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE);
+    if (surface == &app->panel && !app->power_panel && !app->volume_panel) {
+        struct wl_region *input = wl_compositor_create_region(app->compositor);
+        if (!input) { return false; }
+        wl_region_add(input, 0, 0, 8192, PANEL_BODY_HEIGHT);
+        wl_surface_set_input_region(surface->wl, input); wl_region_destroy(input);
+    }
     if (surface == &app->wallpaper) {
         struct wl_region *empty = wl_compositor_create_region(app->compositor);
         if (!empty) { return false; }
@@ -338,7 +345,7 @@ static void toggle_power(struct app *app) {
         ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 320, 260, -1, PANEL_MARGIN)) {
         close_power(app); notice(app, "Não foi possível abrir o menu de energia."); return;
     }
-    zwlr_layer_surface_v1_set_margin(app->power.layer, PANEL_MARGIN + PANEL_HEIGHT + 6, PANEL_MARGIN, 0, 0);
+    zwlr_layer_surface_v1_set_margin(app->power.layer, PANEL_MARGIN + PANEL_BODY_HEIGHT + 6, PANEL_MARGIN, 0, 0);
     wl_surface_commit(app->power.wl);
 }
 static void toggle_chooser(struct app *app) {
@@ -513,7 +520,7 @@ static void capabilities(void *data, struct wl_seat *seat, uint32_t capabilities
 static const struct wl_seat_listener seat_listener = {.capabilities = capabilities};
 static void position_live_dock(struct app *app) {
     if (!app->dock_panel || !app->dock.layer || app->output_height <= 0) { return; }
-    int top = (app->output_height / (app->output_scale > 0 ? app->output_scale : 1) - DOCK_HEIGHT + PANEL_ZONE + PANEL_MARGIN) / 2;
+    int top = (app->output_height / (app->output_scale > 0 ? app->output_scale : 1) - DOCK_HEIGHT + PANEL_ZONE) / 2;
     zwlr_layer_surface_v1_set_margin(app->dock.layer, top > 0 ? top : 0, 0, 0, DOCK_MARGIN);
     wl_surface_commit(app->dock.wl);
 }
@@ -549,14 +556,14 @@ static int preview(const char *path) {
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
     dock_apps_init(&app.apps);
     app.wallpaper = (struct surface){.app = &app, .width = 1672, .height = 941};
-    app.panel = (struct surface){.app = &app, .width = 1672 - 2 * PANEL_MARGIN, .height = PANEL_HEIGHT};
+    app.panel = (struct surface){.app = &app, .width = 1672, .height = PANEL_HEIGHT};
     app.dock = (struct surface){.app = &app, .width = DOCK_WIDTH, .height = DOCK_HEIGHT, .hover = -1};
     cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1672, 941);
     if (!prepare_backdrop(&app)) { cairo_surface_destroy(image); return 1; }
     cairo_t *cr = cairo_create(image); paint(&app.wallpaper, cr);
-    cairo_push_group(cr); cairo_translate(cr, PANEL_MARGIN, PANEL_MARGIN); paint(&app.panel, cr);
+    cairo_push_group(cr); paint(&app.panel, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr); cairo_identity_matrix(cr);
-    cairo_push_group(cr); cairo_translate(cr, DOCK_MARGIN, (941 - DOCK_HEIGHT + PANEL_ZONE + PANEL_MARGIN) / 2.0); paint(&app.dock, cr);
+    cairo_push_group(cr); cairo_translate(cr, DOCK_MARGIN, (941 - DOCK_HEIGHT + PANEL_ZONE) / 2.0); paint(&app.dock, cr);
     cairo_pop_group_to_source(cr); cairo_paint(cr);
     cairo_status_t status = cairo_surface_write_to_png(image, path);
     cairo_destroy(cr); cairo_surface_destroy(image);
@@ -606,7 +613,7 @@ int main(int argc, char **argv) {
     if (!power_panel && !dock_panel && !volume_panel && !create_surface(&app, &app.wallpaper, "jlinux-wallpaper", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, all, 0, 0, -1, 0)) { goto cleanup; }
     if (!dock_panel && !volume_panel && !create_surface(&app, &app.panel, power_panel ? "jlinux-power-button" : "jlinux-panel", power_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT |
-        (power_panel ? 0 : ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT), power_panel ? 44 : 0, PANEL_HEIGHT, power_panel ? -1 : PANEL_ZONE, PANEL_MARGIN)) { goto cleanup; }
+        (power_panel ? 0 : ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT), power_panel ? 44 : 0, power_panel ? PANEL_BODY_HEIGHT : PANEL_HEIGHT, power_panel ? -1 : PANEL_ZONE, power_panel ? PANEL_MARGIN : 0)) { goto cleanup; }
     if (!power_panel && !volume_panel && !create_surface(&app, &app.dock, "jlinux-dock", dock_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | (dock_panel ? ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP : 0), DOCK_WIDTH, DOCK_HEIGHT, dock_panel ? -1 : DOCK_ZONE, DOCK_MARGIN)) { goto cleanup; }
     if (dock_panel) {
@@ -614,7 +621,7 @@ int main(int argc, char **argv) {
     }
     if (volume_panel) {
         if (!create_surface(&app, &app.panel, "jlinux-volume-button", ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
-            ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 54, PANEL_HEIGHT, -1, PANEL_MARGIN)) { goto cleanup; }
+            ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT, 54, PANEL_BODY_HEIGHT, -1, PANEL_MARGIN)) { goto cleanup; }
         zwlr_layer_surface_v1_set_margin(app.panel.layer, PANEL_MARGIN, 278, 0, 0);
         wl_surface_commit(app.panel.wl);
     }

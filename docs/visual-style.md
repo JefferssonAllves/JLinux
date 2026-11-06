@@ -102,3 +102,11 @@ Nesta iteração, o cabeçalho ganha reflexo azul mais intenso no topo e violeta
 REFLECTION continua controlando esse realce independentemente de TINT, SHADOW e BLUR. São apenas valores de cor/opacidade: nenhum passe, buffer, timer ou animação adicional. Não é alteração das cores do conteúdo de aplicativos externos.
 
 Prévias nativas de moldura e Arquivos atualizadas e inspecionadas antes/depois. Uma prévia temporária de moldura também foi renderizada a 1670×941 para comparação com a primeira referência do usuário: contorno azul/violeta e fundo escuro preservados; materiais, composição e proporções da referência ainda não são reproduzidos integralmente. Não é captura da sessão ativa nem promessa de fidelidade exata.
+
+### Barra superior encaixada no topo
+
+O pedido mais recente substitui a cápsula flutuante da barra: largura total da saída, margem zero no topo/laterais e cantos retos. Os controles continuam em 36 px; uma faixa adicional de 16 px reduz progressivamente a opacidade do material até zero. O material é desenhado com seu contorno fora da área visível, sem linha inferior. O degradê mistura a base ao wallpaper mantendo o vidro azul-preto e reflexos estáticos.
+
+A superfície e a reserva de área útil passam a 52 px. Só os 36 px de controles recebem entrada; a faixa de transição não captura cliques. Dock permanece com sua forma e material, centralizado na área abaixo dessa nova reserva. Menus de energia/volume e botões transitórios mantêm suas posições anteriores.
+
+BLUR, TINT e REFLECTION continuam independentes. O fundo de vidro ainda amostra somente o wallpaper em cache, não janelas. A máscara usa um grupo Cairo temporário restrito à barra quando há redesenho; não adiciona timer ou animação. Não há medição de desempenho nesta mudança.
