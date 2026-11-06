@@ -1,0 +1,654 @@
+{
+  "checked_on": "2026-11-06",
+  "scope": "Read-only discovery, documentation/license review; no installation, execution of downloaded tools, or token-saving benchmark",
+  "github_api_lookups": 40,
+  "resolved_repositories": 37,
+  "repositories": [
+    {
+      "repo": "rtk-ai/rtk",
+      "url": "https://github.com/rtk-ai/rtk",
+      "stars": 85717,
+      "pushed_at": "2026-11-06T13:05:28Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "develop",
+      "description": "CLI proxy that reduces LLM token consumption by 60-90% on common dev commands. Single Rust binary, zero dependencies"
+    },
+    {
+      "repo": "mksglu/context-mode",
+      "url": "https://github.com/mksglu/context-mode",
+      "stars": 33587,
+      "pushed_at": "2026-11-06T13:11:13Z",
+      "archived": false,
+      "license": "NOASSERTION",
+      "branch": "main",
+      "description": "Free, local plugin that keeps tool output out of your coding agent's context window. Sandbox and SQLite FTS5 search, 99% fewer bytes in context. Works with Claude Code, Codex, Pi, OpenCode, Gemini CLI, Copilot CLI and 4 more agents. Zero telemetry."
+    },
+    {
+      "repo": "oraios/serena",
+      "url": "https://github.com/oraios/serena",
+      "stars": 31146,
+      "pushed_at": "2026-10-28T10:45:55Z",
+      "archived": false,
+      "license": "NOASSERTION",
+      "branch": "main",
+      "description": "A powerful MCP toolkit for coding, providing semantic retrieval and editing capabilities  - the IDE for your agent"
+    },
+    {
+      "repo": "upstash/context7",
+      "url": "https://github.com/upstash/context7",
+      "stars": 64275,
+      "pushed_at": "2026-11-06T14:04:24Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "master",
+      "description": "Context7 Platform -- Up-to-date docs for AI agents"
+    },
+    {
+      "repo": "thedotmack/claude-mem",
+      "url": "https://github.com/thedotmack/claude-mem",
+      "stars": 113812,
+      "pushed_at": "2026-11-06T11:52:18Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "description": "Persistent Context Across Sessions for Every Agent –  Captures everything your agent does during sessions, compresses it with AI, and injects relevant context back into future sessions. Works with Claude Code, OpenClaw, Codex, Gemini, Hermes, Copilot, OpenCode + More"
+    },
+    {
+      "repo": "obra/superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "stars": 313372,
+      "pushed_at": "2026-11-03T23:24:58Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "An agentic skills framework & software development methodology that works."
+    },
+    {
+      "repo": "anthropics/skills",
+      "url": "https://github.com/anthropics/skills",
+      "stars": 188022,
+      "pushed_at": "2026-10-28T19:20:39Z",
+      "archived": false,
+      "license": null,
+      "branch": "main",
+      "description": "Public repository for Agent Skills"
+    },
+    {
+      "repo": "openai/skills",
+      "url": "https://github.com/openai/skills",
+      "stars": 28547,
+      "pushed_at": "2026-10-28T17:31:41Z",
+      "archived": false,
+      "license": null,
+      "branch": "main",
+      "description": "Skills Catalog for Codex"
+    },
+    {
+      "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+      "stars": 146003,
+      "pushed_at": "2026-11-05T07:07:39Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "An AI skill that provides design intelligence for building professional UI/UX across multiple platforms."
+    },
+    {
+      "repo": "julianoczkowski/designer-skills",
+      "url": "https://github.com/julianoczkowski/designer-skills",
+      "stars": 600,
+      "pushed_at": "2026-07-06T14:49:09Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "description": "A collection of agent skills for designers who prototype and build with AI coding tools. These skills encode design process so AI follows a structured path instead of producing random output."
+    },
+    {
+      "repo": "figma/mcp-server-guide",
+      "url": "https://github.com/figma/mcp-server-guide",
+      "stars": 2156,
+      "pushed_at": "2026-11-03T06:28:45Z",
+      "archived": false,
+      "license": null,
+      "branch": "main",
+      "description": "A guide on how to use the Figma MCP server"
+    },
+    {
+      "repo": "microsoft/playwright-mcp",
+      "url": "https://github.com/microsoft/playwright-mcp",
+      "stars": 39259,
+      "pushed_at": "2026-11-05T18:38:45Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "description": "Playwright MCP server"
+    },
+    {
+      "repo": "microsoft/playwright-cli",
+      "url": "https://github.com/microsoft/playwright-cli",
+      "stars": 15004,
+      "pushed_at": "2026-11-05T23:09:34Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "description": "CLI for common Playwright actions. Record and generate Playwright code, inspect selectors and take screenshots."
+    },
+    {
+      "repo": "googlechrome/chrome-devtools-mcp",
+      "error": "gh: Not Found (HTTP 404)\n"
+    },
+    {
+      "repo": "code-yeongyu/oh-my-opencode",
+      "url": "https://github.com/code-yeongyu/oh-my-openagent",
+      "stars": 70744,
+      "pushed_at": "2026-11-06T14:09:11Z",
+      "archived": false,
+      "license": "NOASSERTION",
+      "branch": "dev",
+      "description": "OmO: Just type \"mass ulw\" keyword with your prompt. Now you are the master of graph engineering."
+    },
+    {
+      "repo": "affaan-m/everything-claude-code",
+      "url": "https://github.com/affaan-m/ECC",
+      "stars": 298285,
+      "pushed_at": "2026-11-06T05:29:44Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond."
+    },
+    {
+      "repo": "trailofbits/skills",
+      "url": "https://github.com/trailofbits/skills",
+      "stars": 8042,
+      "pushed_at": "2026-11-06T13:24:31Z",
+      "archived": false,
+      "license": "CC-BY-SA-4.0",
+      "branch": "main",
+      "description": "Trail of Bits skills for security research, vulnerability detection, and audit workflows"
+    },
+    {
+      "repo": "21st-dev/magic-mcp",
+      "url": "https://github.com/21st-dev/magic-mcp",
+      "stars": 6396,
+      "pushed_at": "2026-09-09T20:38:22Z",
+      "archived": false,
+      "license": "ISC",
+      "branch": "main",
+      "description": "It's like v0, but in your Cursor / Claude Code / Windsurf: search 10,000+ React/Tailwind components, generate new UI with AI, and publish your own — right from your editor. Magic MCP is now the 21st MCP; this package keeps old configs working. Setup: 21st.dev/mcp"
+    },
+    {
+      "repo": "tobi/qmd",
+      "url": "https://github.com/tobi/qmd",
+      "stars": 30917,
+      "pushed_at": "2026-10-15T03:04:06Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "mini cli search engine for your docs, knowledge bases, meeting notes, whatever. Tracking current sota approaches while being all local"
+    },
+    {
+      "repo": "AbanteAI/sidequest",
+      "error": "gh: Not Found (HTTP 404)\n"
+    },
+    {
+      "repo": "Fission-AI/OpenSpec",
+      "url": "https://github.com/Fission-AI/OpenSpec",
+      "stars": 74138,
+      "pushed_at": "2026-11-05T19:13:39Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "Spec-driven development (SDD) for AI coding assistants."
+    },
+    {
+      "repo": "github/spec-kit",
+      "url": "https://github.com/github/spec-kit",
+      "stars": 148098,
+      "pushed_at": "2026-11-06T13:57:00Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "💫 Toolkit to help you get started with SDD or any other process!"
+    },
+    {
+      "repo": "jlowin/fastmcp",
+      "url": "https://github.com/PrefectHQ/fastmcp",
+      "stars": 28328,
+      "pushed_at": "2026-11-06T13:42:35Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "description": "🚀 The fast, Pythonic way to build MCP servers and clients."
+    },
+    {
+      "repo": "benjitaylor/agentation",
+      "url": "https://github.com/benjitaylor/agentation",
+      "stars": 5296,
+      "pushed_at": "2026-09-22T02:43:16Z",
+      "archived": false,
+      "license": "NOASSERTION",
+      "branch": "main",
+      "description": "The visual feedback tool for agents."
+    },
+    {
+      "repo": "pbakaus/impeccable",
+      "url": "https://github.com/pbakaus/impeccable",
+      "stars": 104445,
+      "pushed_at": "2026-11-05T22:22:37Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "description": "The design vocabulary for your coding agent. Steer with polish and bolder, review with critique and audit, catch AI slop before it ships."
+    },
+    {
+      "repo": "github/github-mcp-server",
+      "url": "https://github.com/github/github-mcp-server",
+      "stars": 34281,
+      "pushed_at": "2026-11-06T11:23:57Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "GitHub's official MCP Server"
+    },
+    {
+      "repo": "modelcontextprotocol/servers",
+      "url": "https://github.com/modelcontextprotocol/servers",
+      "stars": 91825,
+      "pushed_at": "2026-11-05T06:26:00Z",
+      "archived": false,
+      "license": "NOASSERTION",
+      "branch": "main",
+      "description": "Model Context Protocol Reference Servers"
+    },
+    {
+      "repo": "ChromeDevTools/chrome-devtools-mcp",
+      "url": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+      "stars": 54870,
+      "pushed_at": "2026-11-06T14:08:46Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "description": "Chrome DevTools for coding agents"
+    },
+    {
+      "repo": "karpathy/autoresearch",
+      "url": "https://github.com/karpathy/autoresearch",
+      "stars": 99361,
+      "pushed_at": "2026-03-26T00:07:37Z",
+      "archived": false,
+      "license": null,
+      "branch": "master",
+      "description": "AI agents running research on single-GPU nanochat training automatically"
+    },
+    {
+      "repo": "Aider-AI/aider",
+      "url": "https://github.com/Aider-AI/aider",
+      "stars": 49980,
+      "pushed_at": "2026-05-22T14:02:20Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "description": "aider is AI pair programming in your terminal"
+    },
+    {
+      "repo": "msitarzewski/agency-agents",
+      "url": "https://github.com/msitarzewski/agency-agents",
+      "stars": 166863,
+      "pushed_at": "2026-11-06T01:58:56Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables."
+    },
+    {
+      "repo": "quantgeekdev/lean-spec",
+      "error": "gh: Not Found (HTTP 404)\n"
+    },
+    {
+      "repo": "EftikharAzim/youtube-to-skill",
+      "url": "https://github.com/EftikharAzim/youtube-to-skill",
+      "stars": 0,
+      "pushed_at": "2026-09-18T03:21:03Z",
+      "archived": false,
+      "license": "NOASSERTION",
+      "branch": "main",
+      "description": "Claude Code skill: turn YouTube videos and playlists into structured agent skills (yt-dlp transcripts + optional ffmpeg visual pass)"
+    },
+    {
+      "repo": "anthropics/claude-code",
+      "url": "https://github.com/anthropics/claude-code",
+      "stars": 154758,
+      "pushed_at": "2026-11-06T00:00:34Z",
+      "archived": false,
+      "license": null,
+      "branch": "main",
+      "description": "Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows - all through natural language commands."
+    },
+    {
+      "repo": "TimLai666/wayhand-mcp",
+      "url": "https://github.com/TimLai666/wayhand-mcp",
+      "stars": 1,
+      "pushed_at": "2026-09-05T13:51:50Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "MCP server that lets Claude Code and Codex see and operate a GNOME Wayland desktop: screenshot, click, type, drag by pixel coordinates. Headless sandbox by default so your mouse and keyboard stay free; real-desktop mode via uinput."
+    },
+    {
+      "repo": "kurojs/wayland-mcp",
+      "url": "https://github.com/kurojs/wayland-mcp",
+      "stars": 15,
+      "pushed_at": "2026-10-19T02:44:18Z",
+      "archived": false,
+      "license": "GPL-3.0",
+      "branch": "main",
+      "description": "MCP server for Wayland desktop automation. Screenshot capture with VLM analysis, pointer and keyboard control, and action chaining for any MCP client."
+    },
+    {
+      "repo": "Zetakai/desktop-mcp",
+      "url": "https://github.com/Zetakai/desktop-mcp",
+      "stars": 0,
+      "pushed_at": "2026-08-21T19:59:15Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "Desktop vision and control for LLMs over MCP — for Linux and Wayland, where Claude's built-in computer use isn't available. Absolute-uinput input, pixel-exact on COSMIC."
+    },
+    {
+      "repo": "tokens-studio/figma-plugin",
+      "url": "https://github.com/tokens-studio/figma-plugin",
+      "stars": 1629,
+      "pushed_at": "2026-11-05T19:34:48Z",
+      "archived": false,
+      "license": "MIT",
+      "branch": "main",
+      "description": "Official repository of the plugin 'Tokens Studio for Figma' (Figma Tokens)"
+    },
+    {
+      "repo": "amzn/style-dictionary",
+      "url": "https://github.com/style-dictionary/style-dictionary",
+      "stars": 4878,
+      "pushed_at": "2026-11-03T21:21:01Z",
+      "archived": false,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "description": "A build system for creating cross-platform styles."
+    },
+    {
+      "repo": "pbakaus/impeccable-talks",
+      "url": "https://github.com/pbakaus/impeccable-talks",
+      "stars": 52,
+      "pushed_at": "2026-07-01T20:04:23Z",
+      "archived": false,
+      "license": "NOASSERTION",
+      "branch": "main",
+      "description": "Talks for the Impeccable project."
+    }
+  ],
+  "readme_reviews": [
+    {
+      "repository": "21st-dev/magic-mcp",
+      "readme_sha256": "3525241fe094188862f3bea44471d1581813cbef2edccce4a1051c0fcf7bc76f",
+      "readme_bytes": 5261,
+      "license_file_reviewed": true,
+      "license_sha256": "e9412a67f017b2651af15c086fa9af56f7fcb03849d220ad037dd626dc9729f2"
+    },
+    {
+      "repository": "EftikharAzim/youtube-to-skill",
+      "readme_sha256": "388c1cbf112dc7ddb6f8e42030779a3f32110540928dfcdfc0040a01876c3a29",
+      "readme_bytes": 8647,
+      "license_file_reviewed": true,
+      "license_sha256": "84bc766a167d3a48d354b73045eb5496b5550627a3ef604aec04658c4c2af5dd"
+    },
+    {
+      "repository": "TimLai666/wayhand-mcp",
+      "readme_sha256": "ad21e15d097fc52a77307c8d718c9005de6b554ad314ea2de31b325e27ee5c0b",
+      "readme_bytes": 9414,
+      "license_file_reviewed": true,
+      "license_sha256": "b629828b39d332eecea2507af99addac6575de889d7f87d51640c15bc2de7e93"
+    },
+    {
+      "repository": "Zetakai/desktop-mcp",
+      "readme_sha256": "b15a61179dbfa790222a9c60a029149644c8359ade4e50b762602f83ce82889e",
+      "readme_bytes": 7829,
+      "license_file_reviewed": true,
+      "license_sha256": "1c8ac1a633d18897b1dc9d7e947a883f0a56405aa0b51e569ede4bd2c9631967"
+    },
+    {
+      "repository": "amzn/style-dictionary",
+      "readme_sha256": "94964b8bd5c0ff2aae02b3674ed8ab76deefd3f0d31cc9c9a09676bd47c2d6ea",
+      "readme_bytes": 16345,
+      "license_file_reviewed": true,
+      "license_sha256": "46ae5f0dc2e06a18cde8b06bdb45abea0b6e28d169e6eff2069536780304cf6e"
+    },
+    {
+      "repository": "benjitaylor/agentation",
+      "readme_sha256": "213fcef0252d08643624b2ad1aace38783d0855bf48427cd5fff7c9e9c15e56e",
+      "readme_bytes": 2932,
+      "license_file_reviewed": true,
+      "license_sha256": "29eb64b5c188e2d6f739a8beadf09bcbb3a386bf78ae44e07343975331fd9775"
+    },
+    {
+      "repository": "julianoczkowski/designer-skills",
+      "readme_sha256": "04ce493ea53128a50a5b88f2e2aeee1e85acd008f98052db84b0b376f4d81582",
+      "readme_bytes": 8700,
+      "license_file_reviewed": true,
+      "license_sha256": "639a9026a236576de100ee30fb416c45d61641da8bab00a3df8744c3e0de31c7"
+    },
+    {
+      "repository": "kurojs/wayland-mcp",
+      "readme_sha256": "5a708ce8643114a9b8f9c52b79c051b4ebef7033aad8436098b2db1d43071110",
+      "readme_bytes": 23402,
+      "license_file_reviewed": true,
+      "license_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "repository": "microsoft/playwright-cli",
+      "readme_sha256": "96078c5413ff4c308482cb3abfeb9ae883c5c83c3c9a4ffd6fa30871cf2513d5",
+      "readme_bytes": 26713,
+      "license_file_reviewed": true,
+      "license_sha256": "9a7110fc2d2f964038e5dc49128f908f29f47a574c961cba16085914e879cbda"
+    },
+    {
+      "repository": "mksglu/context-mode",
+      "readme_sha256": "86536d35bbe970b9a420fc7568eb85c430de3c01b0944e3c1d84b6a73578722a",
+      "readme_bytes": 49231,
+      "license_file_reviewed": true,
+      "license_sha256": "92f11a867c41c9e575ccb978ff205ae2011c244a14aa3c576e914e537105caa0"
+    },
+    {
+      "repository": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "readme_sha256": "86c60796b67ca7a6b6c5df1b2cf60876de0dc718804c6a58d134a7be5d81980b",
+      "readme_bytes": 41571,
+      "license_file_reviewed": true,
+      "license_sha256": "738f69dfa83db5c347c678fb9d90e560877059f0de93a327c39001bff92dc014"
+    },
+    {
+      "repository": "obra/superpowers",
+      "readme_sha256": "79f29f50c735862d2e304ea547b4c9aa67d9db6909ff6fb7b5ea922d7bcbc3e7",
+      "readme_bytes": 14847,
+      "license_file_reviewed": true,
+      "license_sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400"
+    },
+    {
+      "repository": "oraios/serena",
+      "readme_sha256": "26c1db5a91658c4fb2d3bd43c4da5aa90fa0efb172a9175a959643c177a14823",
+      "readme_bytes": 15329,
+      "license_file_reviewed": true,
+      "license_sha256": "6239f4be78ccff409aedfbce88ac89b26f488f76aac7ab199fb6876dc7fdeb4c"
+    },
+    {
+      "repository": "pbakaus/impeccable",
+      "readme_sha256": "6c4a86424a12eac2a568e4cc3afa411d9f2acb08fce3e97b41c9d6e951ba8bdf",
+      "readme_bytes": 16573,
+      "license_file_reviewed": true,
+      "license_sha256": "02bb8c3b4e70190e3986c0404ad2fd8d639b4f534252d82379cc1b502b6d1812"
+    },
+    {
+      "repository": "pbakaus/impeccable-talks",
+      "readme_sha256": "7552f579b6cba45c94a5996fcf94ff990830d14db3309fdf73ee663717e10a09",
+      "readme_bytes": 2335,
+      "license_file_reviewed": true,
+      "license_sha256": "8060f970882805a6eb452835a78951147f6bc63fd2395883ab7184736d870259"
+    },
+    {
+      "repository": "rtk-ai/rtk",
+      "readme_sha256": "4c6188e653a40ea0bd35381e2f8d0f3ac3c7bb9490625db5f241e2671302a53e",
+      "readme_bytes": 22678,
+      "license_file_reviewed": true,
+      "license_sha256": "33f694a31d9f9df3e292a9413a3cdb0113fa72698e2c719f657ff6b53165dcc4"
+    },
+    {
+      "repository": "thedotmack/claude-mem",
+      "readme_sha256": "3224bc5223b28eb02582f6749b0ee143c82ebac8fb85ae056f75cc2dd78386b3",
+      "readme_bytes": 22080,
+      "license_file_reviewed": true,
+      "license_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "repository": "tobi/qmd",
+      "readme_sha256": "af5f41ebeea04e0928fccd38ba5f47d90749b8f0417b84a99f89a677fefae76a",
+      "readme_bytes": 66389,
+      "license_file_reviewed": true,
+      "license_sha256": "24c446836e7e2cdea13a914de10c88c553e6297366061ba24013b8ce73c8f7fa"
+    },
+    {
+      "repository": "tokens-studio/figma-plugin",
+      "readme_sha256": "021ca3f8896e9c4eadb20ec72e038070a420fc02afedff5694829e7c12ace882",
+      "readme_bytes": 4642,
+      "license_file_reviewed": true,
+      "license_sha256": "ffc60214a4c39761335d7eabcbbf9bd50e78142816ae4a0a9e865bc92bad7e42"
+    },
+    {
+      "repository": "upstash/context7",
+      "readme_sha256": "a23306f5d9a04eb8588b619071a418d901f27549ace077ecbb28f21161a46912",
+      "readme_bytes": 13039,
+      "license_file_reviewed": true,
+      "license_sha256": "85cfb556dc2b22b55d2565674fcdaac82f3f2f6b7a928d27003132721bb6736c"
+    }
+  ],
+  "pinned_files_inspected": [
+    {
+      "repo": "pbakaus/impeccable",
+      "path": ".agents/skills/impeccable/SKILL.md",
+      "ref": "c3bb418ee38ee49a6b999b7752c1368f3123a2bd",
+      "blob_sha": "c0dd2530c9968963b1f63bf50b227c4a33996e3b",
+      "bytes": 11762,
+      "sha256": "fab04b31f946573b00a8559db1fc070f8ea5825254d491c2b13156e5661a86d7"
+    },
+    {
+      "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "path": ".claude/skills/ui-ux-pro-max/SKILL.md",
+      "ref": "b7d5353e0130feb8c5574ef1251f8a1db1873ccb",
+      "blob_sha": "23cdf0466e10ed460627ca9c0a68984b1a6bf98b",
+      "bytes": 16646,
+      "sha256": "9aa50bd44076db28624ea976056d915905ab9357748f90263a004fa0ef087147"
+    },
+    {
+      "repo": "julianoczkowski/designer-skills",
+      "path": "design-tokens/SKILL.md",
+      "ref": "c259656c76d9758d7ead46b0d2f125cbe84f8665",
+      "blob_sha": "9dce75078f350e0c1b0372c470d4f9ef61d53962",
+      "bytes": 7067,
+      "sha256": "951eb7680b1c096ebdff7cb9f1a3906ea08890afd01865512a2526b95b15da94"
+    },
+    {
+      "repo": "julianoczkowski/designer-skills",
+      "path": "design-review/SKILL.md",
+      "ref": "c259656c76d9758d7ead46b0d2f125cbe84f8665",
+      "blob_sha": "de22f344801a504df3a472fcbc5a3c203f27c0b6",
+      "bytes": 13651,
+      "sha256": "009a4312e410d76d35c01ce61996ca2ac3908434d5bed85ae7333be8c0dd7589"
+    },
+    {
+      "repo": "microsoft/playwright-cli",
+      "path": "skills/playwright-cli/SKILL.md",
+      "ref": "4bc00fb7fa5b4329f2fb53ac4743a066c2c664e8",
+      "blob_sha": "aa8dea4bba35a00b362fa925b25b8058b9a28fa6",
+      "bytes": 15702,
+      "sha256": "b07a6cbe4e5b638046fe0b9df0e84783cb9899f0aed3db1eef915601c3260a64"
+    },
+    {
+      "repo": "mksglu/context-mode",
+      "path": "docs/install/codex.md",
+      "ref": "281bbd960bf1a14e7a60cbf4c3e3c6b487f7f7e0",
+      "blob_sha": "6dc2d41dc4240653a89a67487ca3d9dd101140b3",
+      "bytes": 5348,
+      "sha256": "c9700b4d9bdde60b5a8f6c22669cc97149147358972adcdc1f252044d9a8cc00"
+    },
+    {
+      "repo": "rtk-ai/rtk",
+      "path": "hooks/codex/README.md",
+      "ref": "1cf7bc703efa5cd0530222746ce40bd5d9b38336",
+      "blob_sha": "8deb10cb1768361685a404f691fa1b5be1cb43c9",
+      "bytes": 2384,
+      "sha256": "c1f3d2183c294926ffee4c18d346f51b27bb8c88ad4db4e1adb5fc57ff0489ca"
+    }
+  ],
+  "manual_license_observations": {
+    "rtk-ai/rtk": "README distinguishes rtk-oss Apache-2.0 from full rtk Apache-2.0 + BUSL-1.1; API root metadata alone is incomplete",
+    "mksglu/context-mode": "Elastic License 2.0; source-available, not MIT",
+    "oraios/serena": "Application GPL-3.0-or-later; SolidLSP MIT",
+    "benjitaylor/agentation": "PolyForm Shield 1.0.0; not MIT",
+    "EftikharAzim/youtube-to-skill": "MIT in downloaded LICENSE; GitHub API reports NOASSERTION",
+    "pbakaus/impeccable-talks": "LICENSE reserves rights to the author; linked for research, no decks or transcripts redistributed"
+  },
+  "videos": [
+    {
+      "url": "https://www.youtube.com/watch?v=SQMCtZX3trg",
+      "title": "The Dark Arts of Skill Engineering — Paul Bakaus",
+      "review": "Excerpts of publisher transcript and editorial chapters examined, not full playback",
+      "publisher": "https://ai.engineer/talks/SQMCtZX3trg-dark-arts-skill-engineering-paul-bakaus"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=v42opQpCy60",
+      "title": "Design at the Speed of Adjectives — Paul Bakaus",
+      "review": "Author deck repository and published description examined; no full playback",
+      "publisher": "https://github.com/pbakaus/impeccable-talks"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=1pV7bvbaCFg",
+      "title": "Claude Code Skills for Designers — AI for Work",
+      "review": "Published description/chapters and linked author repository examined"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=ZQBcUBsN2k8",
+      "title": "These are the skills I use in ALL my projects with Claude Code — Hora de Codar",
+      "review": "Published description/chapters examined; claims checked against upstream repositories"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=5p0f2p9Gn0o",
+      "title": "RTK: Up To 90% Token Savings For Claude Code And Codex",
+      "review": "Indexed video description; percentage not reproduced or validated"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=5QN7gN1KYLA",
+      "title": "Introduction to Serena in 5 Minutes",
+      "review": "Video linked by official repository; no transcript/full playback obtained"
+    }
+  ],
+  "video_access_limit": "Direct YouTube fetches throttled. Publisher transcript excerpts were available through web browsing; direct transcript JSON fetch returned 403. No claim of watching all videos.",
+  "local_inventory": {
+    "project_skill_bytes": {
+      "jlinux-compositor": 1193,
+      "jlinux-performance": 1300,
+      "jlinux-visual": 1150
+    },
+    "selected_user_skill_bytes": {
+      "graphify": 49528,
+      "libfuzzer": 24234,
+      "frontend-design": 9390
+    },
+    "units": "UTF-8 file bytes, not model tokens; bodies load only when invoked; includes symlink aliases without assuming duplicate loading"
+  },
+  "plugin_catalog_snapshot": {
+    "GitHub": "available, installed=false; gh CLI already usable",
+    "Figma": "available, installed=false",
+    "Context7": "available, installed=false",
+    "21st": "already supplied in session",
+    "changes_made": "none"
+  },
+  "readme_review_scope": "Selected README excerpts and license headers/conditions, not complete source/security audits"
+}
