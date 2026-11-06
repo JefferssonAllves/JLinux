@@ -41,6 +41,8 @@ Limite do protótipo: a subsuperfície permanece sobre os 148 px superiores da p
 
 Validação local: suíte release com 16 testes, incluindo busca/codificação/recusa de entradas inseguras, cliques na barra depois da navegação e Esc, primeiro clique no conteúdo, abas e reprodução de vídeo. Os quatro testes do navegador também passaram com ASan/UBSan (`detect_leaks=0`); LeakSanitizer segue pendente. Testes automatizados usam compositor isolado headless/Pixman; não comprovam aparência ou desempenho em GPU física.
 
+Instalado em 06/11/2026: `jlinux-browser-git 0.1.0.r46.g6e7897c-1` (código `6e7897c`), após oito checks do pacote. O executável instalado completou uma busca Google com DOM/JavaScript em modo `--probe`; isso não valida o conteúdo/ranking dos resultados nem representa benchmark. Janelas abertas continuam executando a versão anterior até serem reabertas; não foram encerradas. PR #46 enviado para revisão, com CI em execução no momento do registro.
+
 ## Vídeo e encerramentos — feature/browser-media
 
 Vídeo HTML5 foi validado em Wayland headless/Pixman com arquivos locais gerados pelo FFmpeg: MP4 H.264/AAC, WebM VP8/Opus e MediaSource com MP4 fragmentado. O teste exige avanço de `currentTime`, dimensão de vídeo válida e quadros decodificados, não apenas detecção de codecs. Os elementos `<video controls>` dos sites apresentam os controles do motor. Autoplay sem som é permitido; autoplay com som continua sujeito à interação do usuário. Não há implementação de Widevine/DRM de serviços comerciais, fullscreen do desktop ou garantia de compatibilidade com todo site de streaming.
