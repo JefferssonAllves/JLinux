@@ -9,14 +9,7 @@ static void color(cairo_t *cr, unsigned int value, double alpha) {
 bool ui_contains(struct ui_rect rect, double x, double y) {
     return x >= rect.x && y >= rect.y && x < rect.x + rect.width && y < rect.y + rect.height;
 }
-static void round_rect(cairo_t *cr, struct ui_rect r, double radius) {
-    cairo_new_sub_path(cr);
-    cairo_arc(cr, r.x + r.width - radius, r.y + radius, radius, -3.14159265358979323846 / 2, 0);
-    cairo_arc(cr, r.x + r.width - radius, r.y + r.height - radius, radius, 0, 3.14159265358979323846 / 2);
-    cairo_arc(cr, r.x + radius, r.y + r.height - radius, radius, 3.14159265358979323846 / 2, 3.14159265358979323846);
-    cairo_arc(cr, r.x + radius, r.y + radius, radius, 3.14159265358979323846, 3.14159265358979323846 * 1.5);
-    cairo_close_path(cr);
-}
+
 void ui_text(cairo_t *cr, const char *text, double x, double y, int size, bool bold, unsigned int value) {
     PangoLayout *layout = pango_cairo_create_layout(cr);
     PangoFontDescription *font = pango_font_description_new();
@@ -52,13 +45,6 @@ void ui_icon(cairo_t *cr, enum ui_icon icon, double x, double y, double size, un
         cairo_move_to(cr, 6, 10); cairo_line_to(cr, 6, 21); cairo_line_to(cr, 10, 21);
         cairo_line_to(cr, 10, 15); cairo_line_to(cr, 14, 15); cairo_line_to(cr, 14, 21);
         cairo_line_to(cr, 18, 21); cairo_line_to(cr, 18, 10); break;
-    case UI_TERMINAL:
-        cairo_rectangle(cr, 2, 3, 20, 18); cairo_move_to(cr, 6, 8); cairo_line_to(cr, 10, 12);
-        cairo_line_to(cr, 6, 16); cairo_move_to(cr, 13, 16); cairo_line_to(cr, 18, 16); break;
-    case UI_CODE:
-        cairo_move_to(cr, 8, 6); cairo_line_to(cr, 2, 12); cairo_line_to(cr, 8, 18);
-        cairo_move_to(cr, 16, 6); cairo_line_to(cr, 22, 12); cairo_line_to(cr, 16, 18);
-        cairo_move_to(cr, 14, 3); cairo_line_to(cr, 10, 21); break;
     case UI_WIFI:
         cairo_arc(cr, 12, 22, 20, -2.16, -.98); cairo_new_sub_path(cr);
         cairo_arc(cr, 12, 22, 13, -2.16, -.98); cairo_new_sub_path(cr);
@@ -73,11 +59,6 @@ void ui_icon(cairo_t *cr, enum ui_icon icon, double x, double y, double size, un
         cairo_move_to(cr, 12, 2); cairo_line_to(cr, 12, 12); break;
     }
     cairo_stroke(cr); cairo_restore(cr);
-}
-void ui_button(cairo_t *cr, struct ui_rect rect, enum ui_icon icon, bool hovered, unsigned int accent) {
-    round_rect(cr, rect, 12);
-    color(cr, hovered ? 0x647392 : 0x0c101b, hovered ? .38 : .16); cairo_fill(cr);
-    ui_icon(cr, icon, rect.x + (rect.width - 26) / 2, rect.y + (rect.height - 26) / 2, 26, accent);
 }
 
 void ui_finish(void) {

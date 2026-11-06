@@ -40,7 +40,7 @@
 ## Referências visuais do usuário
 
 - As duas imagens adicionadas no commit cf4238a (“Estilo que eu quero”) são a fonte principal para reproduzir fielmente o visual: docs/design/1E9E8B07-9F84-40EA-B5AA-73308C2A7A66.png e docs/design/D415668D-8698-411F-A41D-0DE333BCE255.png. Consultar as próprias imagens e docs/design/README.md antes de criar telas.
-- Essas referências substituem as propostas geradas V1/V2 e as interpretações anteriores de paleta. Preservar composição, proporções, material azul-preto translúcido, bordas finas iluminadas, reflexos azuis/violetas e ícones coloridos das fotos. Dock à esquerda e barra superior conforme a primeira referência.
+- Essas referências substituem as propostas geradas V1/V2 e as interpretações anteriores de paleta. Preservar composição, proporções, material azul-preto translúcido, bordas finas iluminadas, reflexos azuis/violetas e ícones coloridos das fotos. O dock lateral foi removido por pedido posterior explícito do usuário: não reintroduzir o componente, suas ações, seletor ou configuração. As fotos continuam sendo referência de material/cores; a presença do dock nelas está superada.
 - Comparar o resultado renderizado com as fotos na mesma resolução. Não prometer correspondência exata sem comparação visual nem tratar aplicativos e funções ilustrados como implementados.
 
 - Compositor, shell e iniciador de sessão executam em C. Python permanece apenas em testes/ferramentas de desenvolvimento; não reintroduzir dependência Python na inicialização ou no caminho gráfico.
