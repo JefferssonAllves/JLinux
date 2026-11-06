@@ -24,7 +24,6 @@ struct app {
     gboolean probe;
     gboolean media_available;
     gboolean consumed[768];
-    guint consumed_buttons;
     gint64 started, load_started;
     int status;
 };
@@ -72,12 +71,6 @@ static void append_text(struct app *app, const char *text) {
 static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
     struct app *app = data; struct browser_chrome *chrome = &app->chrome;
     WPEEventType type = wpe_event_get_event_type(event);
-    if (type == WPE_EVENT_POINTER_UP) {
-        guint button = wpe_event_pointer_button_get_button(event);
-        if (button < 32 && (app->consumed_buttons & (1u << button))) {
-            app->consumed_buttons &= ~(1u << button); return TRUE;
-        }
-    }
     if (type == WPE_EVENT_KEYBOARD_KEY_UP) {
         guint code = wpe_event_keyboard_get_keycode(event);
         if (code < G_N_ELEMENTS(app->consumed) && app->consumed[code]) { app->consumed[code] = FALSE; return TRUE; }
@@ -120,43 +113,32 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         if (code < G_N_ELEMENTS(app->consumed)) { app->consumed[code] = TRUE; }
         return TRUE;
     }
-    double x, y;
-    if (wpe_event_get_position(event, &x, &y)) {
-        int width = CLAMP(wpe_view_get_width(view) - 32, 320, 4096);
-        if (x >= 16 && x < width + 16 && y >= 16 && y < 16 + BROWSER_CHROME_HEIGHT) {
-            if (type == WPE_EVENT_POINTER_DOWN) {
-                guint button = wpe_event_pointer_button_get_button(event);
-                if (button < 32) { app->consumed_buttons |= 1u << button; }
-            }
-            if (type == WPE_EVENT_POINTER_DOWN && wpe_event_pointer_button_get_button(event) == WPE_BUTTON_PRIMARY) {
-                if (y < 16 + BROWSER_TAB_HEIGHT) {
-                    double local = x - 16;
-                    guint count = chrome->tabs->len;
-                    if (local >= width - 44) { new_tab(app, "about:blank"); }
-                    else if (local >= width - 72) { select_tab(app, (chrome->active_tab + 1) % count); }
-                    else if (local >= width - 100) { select_tab(app, (chrome->active_tab + count - 1) % count); }
-                    else if (local >= 12) {
-                        guint slots = browser_chrome_tab_slots(width);
-                        guint slot = (guint)(local - 12) / BROWSER_TAB_WIDTH;
-                        guint index = chrome->active_tab / slots * slots + slot;
-                        if (slot < slots && index < count) {
-                            if (local - 12 - slot * BROWSER_TAB_WIDTH >= BROWSER_TAB_WIDTH - 32) { close_tab(app, index); }
-                            else { select_tab(app, index); }
-                        }
-                    }
-                }
-                else if (y < 72 + BROWSER_TAB_HEIGHT && x < 61) { webkit_web_view_go_back(app->web); }
-                else if (y < 72 + BROWSER_TAB_HEIGHT && x < 99) { webkit_web_view_go_forward(app->web); }
-                else if (y < 72 + BROWSER_TAB_HEIGHT && x < 143) { webkit_web_view_reload(app->web); }
-                else { show_address(app); }
-            }
-            return TRUE;
-        }
-        if (type == WPE_EVENT_POINTER_DOWN) {
-            if (chrome->editing) { focus_page(app); }
-        }
-    }
+    if (type == WPE_EVENT_POINTER_DOWN && chrome->editing) { focus_page(app); }
     return FALSE;
+}
+static void chrome_clicked(struct browser_chrome *chrome, double x, double y, gpointer data) {
+    struct app *app = data;
+    int width = wpe_view_get_width(chrome->view);
+    if (y < BROWSER_TAB_HEIGHT) {
+        guint count = chrome->tabs->len;
+        if (x >= width - 44) { new_tab(app, "about:blank"); }
+        else if (x >= width - 72) { select_tab(app, (chrome->active_tab + 1) % count); }
+        else if (x >= width - 100) { select_tab(app, (chrome->active_tab + count - 1) % count); }
+        else if (x >= 12) {
+            guint slots = browser_chrome_tab_slots(width);
+            guint slot = (guint)(x - 12) / BROWSER_TAB_WIDTH;
+            guint index = chrome->active_tab / slots * slots + slot;
+            if (slot < slots && index < count) {
+                if (x - 12 - slot * BROWSER_TAB_WIDTH >= BROWSER_TAB_WIDTH - 32) { close_tab(app, index); }
+                else { select_tab(app, index); }
+            }
+        }
+    } else if (y < BROWSER_TAB_HEIGHT + 63) {
+        if (x < 45) { webkit_web_view_go_back(app->web); }
+        else if (x < 83) { webkit_web_view_go_forward(app->web); }
+        else if (x < 127) { webkit_web_view_reload(app->web); }
+        else { show_address(app); }
+    }
 }
 static void changed_uri(WebKitWebView *web, GParamSpec *spec, gpointer data) {
     (void)spec; struct app *app = data;
@@ -253,10 +235,17 @@ static void disconnected(WPEDisplay *display, GError *error, gpointer data) {
     (void)display; struct app *app = data; app->status = 1;
     g_printerr("Conexão gráfica encerrada: %s\n", error ? error->message : "sem detalhes"); quit(app);
 }
-static void resized(WPEView *view, gpointer data) {
-    struct app *app = data;
-    if (view != app->chrome.view) { return; }
-    browser_chrome_update(&app->chrome);
+static void view_size_changed(WPEView *view, GParamSpec *spec, gpointer data) {
+    (void)spec; struct app *app = data;
+    WPEToplevel *toplevel = wpe_view_get_toplevel(view);
+    if (!toplevel) { return; }
+    int width, height; wpe_toplevel_get_size(toplevel, &width, &height);
+    height = MAX(1, height - BROWSER_CHROME_HEIGHT);
+    if (width > 0 && (wpe_view_get_width(view) != width || wpe_view_get_height(view) != height)) {
+        wpe_view_resized(view, width, height);
+        return;
+    }
+    if (view == app->chrome.view) { browser_chrome_update(&app->chrome); }
 }
 static gboolean timeout(gpointer data) {
     struct app *app = data; g_printerr("Tempo excedido no teste do motor web\n"); app->status = 1; quit(app); return G_SOURCE_CONTINUE;
@@ -304,9 +293,12 @@ static void new_tab(struct app *app, const char *uri) {
     g_signal_connect(web, "web-process-terminated", G_CALLBACK(terminated), app);
     if (!app->probe) {
         wpe_view_set_visible(view, FALSE);
+        // Clamp before WPE emits resized to WebKit, avoiding an intermediate full-window viewport.
+        g_signal_connect(view, "notify::width", G_CALLBACK(view_size_changed), app);
+        g_signal_connect(view, "notify::height", G_CALLBACK(view_size_changed), app);
         wpe_view_set_toplevel(view, app->toplevel);
+        view_size_changed(view, NULL, app);
         g_signal_connect(view, "event", G_CALLBACK(view_event), app);
-        g_signal_connect(view, "resized", G_CALLBACK(resized), app);
         select_tab(app, app->chrome.tabs->len - 1);
     } else { app->web = web; }
     webkit_web_view_load_uri(web, uri);
@@ -391,6 +383,7 @@ int main(int argc, char **argv) {
     g_signal_connect(display, "disconnected", G_CALLBACK(disconnected), &app);
     g_signal_connect(session, "download-started", G_CALLBACK(download), &app);
     if (!app.probe) {
+        app.chrome.clicked = chrome_clicked; app.chrome.clicked_data = &app;
         if (!browser_chrome_init(&app.chrome, view)) {
             g_printerr("Não foi possível criar a barra nativa Wayland.\n"); app.status = 1; goto cleanup;
         }

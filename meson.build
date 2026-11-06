@@ -28,7 +28,7 @@ if get_option('browser')
   wpe_headless = dependency('wpe-platform-headless-2.0')
   browser = executable('jlinux-browser', 'src/browser/main.c', 'src/browser/address.c',
     'src/browser/chrome.c', 'src/toolkit/painter.c', 'src/effects/glass.c',
-    dependencies: [wpe, wpe_wayland, wpe_headless, dependency('wayland-client'),
+    dependencies: [wpe, wpe_wayland, wpe_headless, dependency('wayland-client'), dependency('wayland-cursor'),
       xkb, cairo, pango, fontconfig, math, dependency('egl'), dependency('gstreamer-1.0')], install: true)
   address_test = executable('jlinux-test-web-address', 'tests/web-address.c',
     'src/browser/address.c', dependencies: dependency('glib-2.0'))

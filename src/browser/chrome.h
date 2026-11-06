@@ -1,6 +1,7 @@
 #ifndef JLINUX_BROWSER_CHROME_H
 #define JLINUX_BROWSER_CHROME_H
 #include <wayland-client.h>
+#include <wayland-cursor.h>
 #include <wpe/wayland/wpe-wayland.h>
 #include <wpe/webkit.h>
 #include "../effects/glass.h"
@@ -16,6 +17,14 @@ struct browser_chrome {
     struct wl_subcompositor *subcompositor;
     struct wl_surface *surface;
     struct wl_subsurface *subsurface;
+    struct wl_seat *seat;
+    struct wl_pointer *pointer;
+    struct wl_cursor_theme *cursor_theme;
+    struct wl_surface *cursor_surface;
+    gboolean pointer_inside;
+    double pointer_x, pointer_y;
+    void (*clicked)(struct browser_chrome *, double, double, gpointer);
+    gpointer clicked_data;
     struct wl_list buffers;
     struct jlinux_glass glass;
     guint idle;
