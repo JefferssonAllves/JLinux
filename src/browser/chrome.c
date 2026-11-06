@@ -48,14 +48,15 @@ void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width)
     ui_text(cr, "›", 54, 18, 25, false, 0xdce7ff);
     ui_text(cr, "↻", 91, 21, 21, false, 0xdce7ff);
     cairo_set_source_rgba(cr, .015, .025, .06, .65);
-    cairo_rectangle(cr, 133, 15, width - 150, 38); cairo_fill(cr);
+    cairo_rectangle(cr, 133, 15, width - 250, 38); cairo_fill(cr);
     if (chrome->editing && chrome->selected) {
         cairo_set_source_rgba(cr, .28, .40, .78, .38);
-        cairo_rectangle(cr, 140, 20, width - 166, 28); cairo_fill(cr);
+        cairo_rectangle(cr, 140, 20, width - 266, 28); cairo_fill(cr);
     }
-    cairo_save(cr); cairo_rectangle(cr, 141, 18, width - 164, 33); cairo_clip(cr);
+    cairo_save(cr); cairo_rectangle(cr, 141, 18, width - 264, 33); cairo_clip(cr);
     ui_text(cr, chrome->address[0] ? chrome->address : "Pesquise no Google ou digite um endereço", 145, 25, 14, false, 0xe2eaff);
     cairo_restore(cr);
+    ui_text(cr, chrome->download_status[0] ? chrome->download_status : "↓", width - 105, 25, 12, false, 0xe2eaff);
     cairo_restore(cr);
 }
 static void free_buffer(struct chrome_buffer *buffer) {
