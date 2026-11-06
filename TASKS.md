@@ -225,3 +225,11 @@ Nome e símbolo JLinux removidos da barra superior; menus começam a 24 px da ma
 - Avisos de protocolos Wayland ainda não implementados permanecem nos logs. A mensagem exata mencionada pelo usuário ainda não foi confirmada; não tratar a correção de locale como resolução de todo possível problema do terminal.
 
 **TERMINAL-UTF8 · instalado:** pacote `0.5.0.r41.g94ddb52-1` instalado pelo pacman após doze testes de pacote aprovados. Terminal adicional aberto na sessão atual com LANG=pt_BR.UTF-8 e ausência do aviso de locale confirmada em log próprio. Sessão atual preservada. Correção herdada automaticamente por dock/atalho/terminal inicial requer próximo login, pois os processos antigos conservam ambiente anterior. Outros avisos Wayland permanecem como diagnósticos.
+
+## Gerenciador de arquivos — feature/file-manager
+
+- FILES-01 implementado: aplicativo C/Wayland separado, toolkit próprio, barra Glass, pastas primeiro, seleção/rolagem, navegação, ocultos e abertura pelo aplicativo associado via GIO sem shell. Primeiro ícone do dock e entrada desktop integrados. Sem operações de escrita de arquivos nesta etapa.
+- Quatorze testes locais release e ASan/UBSan passaram. Novos testes de modelo e UI headless cobrem nomes especiais/UTF-8, links, erro de navegação, teclado, clique e argumentos de abertura; teste do shell verifica lançamento pelo dock. Prévia com dados fictícios inspecionada. Sem benchmark ou teste de VT.
+- Empacotamento/ativação ainda pendentes neste registro. Novo dock exige próximo login; aplicativo pode abrir na sessão existente. Limites em docs/files.md.
+
+**FILES-01 · instalação:** pacote `0.5.0.r43.gf98f87e-1`, fonte f98f87e, compilado do GitHub com 14 testes aprovados no makepkg e instalado pelo pacman. `/usr/bin/jlinux-files` aberto na sessão autenticada existente e permaneceu ativo após inicialização. Shell/compositor existentes preservados, sem logout, reinício ou troca de VT. Novo dock só no próximo login. Inspeção visual física pelo usuário pendente; CI ainda em execução neste registro. PR #30, base temporária fix/terminal-locale, sem merge.

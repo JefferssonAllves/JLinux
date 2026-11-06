@@ -53,3 +53,9 @@ Gerada por `jlinux-test-window-frame --preview`: usa os quatro buffers reais de 
 ![Prévia nativa do login JLinux](native-login-preview.png)
 
 Imagem gerada por `jlinux-greeter --preview`, usando o toolkit C do projeto. Material Glass escuro, bordas finas e brilhos localizados. A imagem é do modo de prévia e não demonstra autenticação PAM real.
+
+## Gerenciador de arquivos inicial
+
+![Prévia do cliente nativo com dados fictícios](native-files-preview.png)
+
+Gerada por `jlinux-files --preview`: barra Glass compartilhada e lista opaca. Não é captura da sessão, não demonstra blur do conteúdo nem operações de gerenciamento além das descritas em ../files.md.

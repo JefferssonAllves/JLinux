@@ -2,7 +2,7 @@
 
 Compositor Wayland próprio, shell e iniciador de sessão em C. A primeira base do toolkit JLinux desenha barra superior, dock à esquerda, texto, ícones e botões, sem GTK, CSS ou navegador.
 
-O dock abre Terminal e Codex. O compositor mantém mouse, teclado, foco por clique e atalhos. O terminal inicial é Foot. Esta é a fundação nativa: o visual Glass completo e a reprodução final das fotos ainda não estão implementados.
+O dock abre Arquivos, Terminal e Codex. O compositor mantém mouse, teclado, foco por clique e atalhos. O terminal inicial é Foot. Esta é a fundação nativa: o visual Glass completo e a reprodução final das fotos ainda não estão implementados.
 
 ## Compilar no Arch Linux
 
@@ -35,7 +35,7 @@ O iniciador localiza os binários na própria pasta, cria runtime privado, aguar
 | --- | --- |
 | Abrir terminal | Super+Enter ou ícone Terminal no dock |
 | Abrir Codex | Ícone de código no dock |
-| Mostrar ajuda | Ícone inicial do dock |
+| Abrir Arquivos | Ícone de pasta no dock ou `jlinux-files` |
 | Alternar janela | Alt+Tab |
 | Focar janela | Clique |
 | Mover / redimensionar | Super+arraste esquerdo / direito |
@@ -73,3 +73,7 @@ Plano: [TASKS.md](TASKS.md). [Arquitetura](docs/architecture.md), [referências 
 Pacote `jlinux-desktop-git`, login próprio em C/Wayland e inicialização via greetd. O desktop instalado executa de `/usr/bin`; a pasta de desenvolvimento não é necessária para entrar na sessão. O login mantém autenticação PAM do Arch e não usa o modo de demonstração. Consulte [instalação, primeiro login e recuperação por TTY2](docs/arch-installation.md).
 
 [Prévia do login nativo](docs/design/native-login-preview.png). A imagem é uma prévia de desenho; não valida PAM real.
+
+## Gerenciador de arquivos inicial
+
+`jlinux-files [pasta]` abre um cliente nativo C/Wayland com lista de pastas e arquivos. Duplo clique ou Enter abre o item; Backspace sobe uma pasta; F5 atualiza; Ctrl+H mostra ocultos. A barra oferece início, pasta superior e atualização. Arquivos usam a associação do sistema via `gio open`. Veja [os limites e controles](docs/files.md).

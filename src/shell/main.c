@@ -76,8 +76,8 @@ static void paint(struct surface *surface, cairo_t *cr) {
     } else if (surface == &surface->app->dock) {
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (width - 2) / 2.0,
             surface->app->backdrop, DOCK_MARGIN, (surface->app->wallpaper.height - height + PANEL_ZONE + PANEL_MARGIN) / 2.0, surface->app->glass);
-        const enum ui_icon icons[] = {UI_HOME, UI_TERMINAL, UI_CODE};
-        const unsigned int colors[] = {0xf0f2ff, 0xe3e8f6, 0x78b8f3};
+        const enum ui_icon icons[] = {UI_FOLDER, UI_TERMINAL, UI_CODE};
+        const unsigned int colors[] = {0x87b8f5, 0xe3e8f6, 0x78b8f3};
         for (int i = 0; i < 3; i++) { ui_button(cr, dock_button(i), icons[i], surface->hover == i, colors[i]); }
     } else {
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (height - 2) / 2.0,
@@ -198,18 +198,20 @@ static bool create_surface(struct app *app, struct surface *surface, const char 
 static void notice(struct app *app, const char *message) {
     snprintf(app->notice, sizeof(app->notice), "%s", message); app->info = true; app->panel.dirty = true;
 }
-static void launch(struct app *app, bool codex) {
+static void launch(struct app *app, int index) {
     char *plain[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL};
     char *assistant[] = {"foot", "--term=xterm-256color", "--title=JLinux Codex", "codex", NULL};
+    char *files[] = {"jlinux-files", NULL};
+    char **args = index == 0 ? files : index == 2 ? assistant : plain;
     posix_spawnattr_t attributes; int error = posix_spawnattr_init(&attributes);
     if (!error) {
         sigset_t empty; sigemptyset(&empty);
         posix_spawnattr_setsigmask(&attributes, &empty);
         posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETSIGMASK);
-        pid_t child; error = posix_spawnp(&child, "foot", NULL, &attributes, codex ? assistant : plain, environ);
+        pid_t child; error = posix_spawnp(&child, args[0], NULL, &attributes, args, environ);
         posix_spawnattr_destroy(&attributes);
     }
-    if (error) { notice(app, "Não foi possível abrir Foot. Verifique a instalação do terminal."); }
+    if (error) { notice(app, "Não foi possível abrir o aplicativo. Verifique a instalação."); }
     else { app->info = false; app->panel.dirty = true; }
 }
 static void pointer_enter(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *wl, wl_fixed_t x, wl_fixed_t y) {
@@ -247,8 +249,7 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
     if (button != BTN_LEFT || state != WL_POINTER_BUTTON_STATE_RELEASED) { return; }
     if (app->pointer_surface == &app->dock) {
         int hit = dock_hit(app->pointer_x, app->pointer_y);
-        if (hit == 0) { notice(app, "JLinux • Dock: Terminal e Codex. Super+Enter: terminal. Super+Esc: sair."); }
-        else if (hit == 1 || hit == 2) { launch(app, hit == 2); }
+        if (hit >= 0 && hit < 3) { launch(app, hit); }
     } else if (app->pointer_surface == &app->panel) {
         if (app->info) { app->info = false; app->panel.dirty = true; }
         else if (app->pointer_x > app->panel.width - 60) {
