@@ -26,14 +26,21 @@ if get_option('browser')
   wpe = dependency('wpe-webkit-2.0', version: '>=2.54')
   wpe_wayland = dependency('wpe-platform-wayland-2.0')
   wpe_headless = dependency('wpe-platform-headless-2.0')
+  browser_resources = import('gnome').compile_resources('browser-resources',
+    'data/browser/browser.gresource.xml', source_dir: 'data/browser')
   browser = executable('jlinux-browser', 'src/browser/main.c', 'src/browser/address.c',
-    'src/browser/chrome.c', 'src/toolkit/painter.c', 'src/effects/glass.c',
+    'src/browser/chrome.c', 'src/browser/blocker.c', browser_resources, 'src/toolkit/painter.c', 'src/effects/glass.c',
+    c_args: ['-Wno-overlength-strings'], # GLib's generated resource is a binary string.
     dependencies: [wpe, wpe_wayland, wpe_headless, dependency('wayland-client'), dependency('wayland-cursor'),
       xkb, cairo, pango, fontconfig, math, dependency('egl'), dependency('gstreamer-1.0')], install: true)
   address_test = executable('jlinux-test-web-address', 'tests/web-address.c',
     'src/browser/address.c', dependencies: dependency('glib-2.0'))
   test('web-address', address_test)
+  test('web-blocklist-data', find_program('tests/browser-blocklist.py'))
+  test('web-browser-blocker', find_program('scripts/smoke-web-blocker.py'), args: [browser], timeout: 60)
   test('web-engine-headless', find_program('scripts/smoke-web-engine.py'), args: [browser], timeout: 60)
+  install_data('data/browser/COPYING.AdAway', install_dir: get_option('datadir') / 'licenses/jlinux-browser-git')
+  install_data('data/browser/README.md', install_dir: get_option('datadir') / 'licenses/jlinux-browser-git', rename: 'AdAway-attribution.md')
   install_data('data/applications/org.jlinux.Browser.desktop', install_dir: get_option('datadir') / 'applications')
 endif
 if get_option('shell')

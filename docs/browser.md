@@ -31,6 +31,24 @@ Abrir/alternar não recarrega páginas: texto em formulários e histórico da ab
 
 O campo inicial permite substituir tudo ou acrescentar/remover texto no fim. Edição com cursor, seleção por trecho, IME, acessibilidade e escalas precisam de implementação/validação. A prévia de componente em `docs/design/` não é uma janela completa, visual definitivo aprovado ou prova de equivalência com as fotos.
 
+## Bloqueio de anúncios — feature/browser-adblock
+
+Ativo por padrão antes da primeira navegação em cada aba. Usa o filtro de conteúdo compilado do próprio WebKit, sem extensão, processo permanente adicional, timer ou varredura JavaScript. A lista de domínios AdAway é embutida comprimida no binário: 4.269 regras após eliminar subdomínios redundantes, incluindo duas regras JLinux adicionais. Créditos, licença CC BY 3.0, snapshot e regeneração em [data/browser/README.md](../data/browser/README.md).
+
+Os domínios da lista são bloqueados em carregamentos de terceiros. O caminho `/pagead/` também bloqueia scripts, imagens e requisições de dados, inclusive no próprio domínio. A ação cosmética nativa oculta `ins.adsbygoogle`, `[data-ad-client]` e iframes com ID começando em `google_ads_iframe`. Não oculta genericamente elementos chamados `ads` e não muda o tema dos sites. É cobertura parcial: anúncios servidos junto ao conteúdo, YouTube/streaming, novos domínios e técnicas antibloqueio podem continuar aparecendo. Não é equivalente ao conjunto de regras e scripts do uBlock Origin.
+
+Ctrl+Shift+B ou clique na última linha do cabeçalho alterna o bloqueio na aba ativa e recarrega a página; formulários em memória dessa página podem perder texto ao recarregar. A escolha dura enquanto essa aba existir, inclusive ao navegar para outro site. Outras abas mantêm seu estado e novas abas começam protegidas. Não há whitelist persistida por site nesta versão efêmera. O cabeçalho informa o estado real; não há contador inventado de anúncios bloqueados.
+
+A primeira abertura compila a lista em `$XDG_CACHE_HOME/jlinux/browser/filters` (ou o cache padrão do GLib). As seguintes carregam o filtro existente identificado pelo SHA-256 das regras. Formato inválido/incompatível recompila pelo WPE. Se a compilação/cache falhar, há diagnóstico no registro e o cabeçalho informa bloqueio inativo, mantendo a navegação. `JLINUX_BROWSER_ADBLOCK=0 jlinux-browser` inicia uma execução inteira sem carregar filtros; para reativar nesse caso, reabrir sem a variável. Não altera DNS, hosts, proxy ou outro navegador; não consulta serviço remoto para atualizar listas. Novos snapshots são revisados e distribuídos com o pacote.
+
+Validação local: 18 testes release e cinco testes C/motor do navegador em build ASan/UBSan (`detect_leaks=0`), além da validação de geração da lista. HTTP local confirma bloqueio antes de baixar, script normal preservado, seletor cosmético, conteúdo normal com classe `ads` visível, filtro desativado, reutilização do cache sem recompilar e navegação quando o cache está inutilizável. O teste Wayland confirma alternância por teclado/mouse, recarga e isolamento entre abas, junto das regressões de layout/vídeo/navegação. Prévia estática do cabeçalho inspecionada; não é captura de um site real.
+
+No fixture, ativar o bloqueio reduziu os bytes da resposta do script publicitário de 524.309 para zero, preservando o script necessário. [Registro de tráfego local](performance/browser-blocker-2026-11-06.json). As durações ali são diagnósticos de uma execução por condição, durante testes paralelos; não demonstram ganho geral de velocidade. A compilação inicial tem custo e é reutilizada depois. Ainda faltam medições comparáveis de CPU, RAM/PSS, energia e carregamento em sites reais; não há base para declarar este navegador o mais leve/rápido. O custo do motor continua separado do custo do bloqueador.
+
+Referências da implementação: [WebKit content blockers](https://webkit.org/blog/3476/content-blockers-first-look/) e [API WPE do cache de filtros](https://people.igalia.com/aperez/Documentation/wpe-webkit/method.UserContentFilterStore.load.html); APIs conferidas nos headers WPE 2.54.2 instalados. LeakSanitizer, GPU/HiDPI e compatibilidade com serviços de anúncios reais permanecem pendentes.
+
+Instalado em 06/11/2026: `jlinux-browser-git 0.1.0.r50.gada56a9-1`, código `ada56a9`, após dez checks do pacote. O teste de bloqueio/cache/falha de cache também passou usando `/usr/bin/jlinux-browser` já instalado. Créditos e licença AdAway instalados em `/usr/share/licenses/jlinux-browser-git/`. Janelas existentes foram preservadas; precisam ser reabertas para carregar os filtros. PR #50 enviado; as duas execuções da CI do commit de código passaram antes desta atualização documental. Nenhum merge realizado.
+
 ## Página abaixo do cabeçalho — fix/browser-content-layout
 
 O cabeçalho ocupa a largura da janela em uma subsuperfície em `(0, -148)`, acima da origem da página. A geometria automática xdg inclui as duas superfícies; o motor recebe somente a altura útil abaixo do cabeçalho. O tamanho da view é ajustado nas notificações de largura/altura, antes de WPE emitir `resized` para WebKit, evitando enviar temporariamente o tamanho da janela inteira durante troca de abas ou foco. Não há cópia dos quadros web, mudança de motor ou alteração de CSS dos sites.
@@ -47,7 +65,7 @@ Exibição da barra e foco de edição são estados separados. Ctrl+L ou clique 
 
 Termos como `jlinux` e `navegador leve` abrem `https://www.google.com/search?q=…`, com codificação UTF-8 e percent-encoding dos parâmetros. Domínios, localhost, IPs e URLs continuam abrindo diretamente; esquemas explícitos não permitidos e credenciais continuam recusados. Não há sugestões, chamadas a uma API de busca, chave ou requisições a cada tecla: a consulta é enviada ao Google somente ao confirmar Enter. A URL final continua limitada a 4096 bytes.
 
-A sobreposição existente nesta primeira entrega foi corrigida em `fix/browser-content-layout`, descrita abaixo. Não são injetados CSS ou scripts para modificar o layout dos sites.
+A sobreposição existente nesta primeira entrega foi corrigida em `fix/browser-content-layout`, descrita abaixo. A separação entre cabeçalho e viewport não depende de modificar o layout dos sites; a filtragem cosmética de anúncios é uma função separada.
 
 Validação local: suíte release com 16 testes, incluindo busca/codificação/recusa de entradas inseguras, cliques na barra depois da navegação e Esc, primeiro clique no conteúdo, abas e reprodução de vídeo. Os quatro testes do navegador também passaram com ASan/UBSan (`detect_leaks=0`); LeakSanitizer segue pendente. Testes automatizados usam compositor isolado headless/Pixman; não comprovam aparência ou desempenho em GPU física.
 
@@ -69,7 +87,7 @@ Nesta máquina foram instalados PipeWire-Pulse, PipeWire-Audio e WirePlumber par
 
 ## Instalação persistente e dock
 
-`packaging/arch/browser/PKGBUILD` gera `jlinux-browser-git`, instalado separadamente de `jlinux-desktop-git`. A receita compila/testa a branch `fix/browser-content-layout` e empacota apenas `/usr/bin/jlinux-browser` e `org.jlinux.Browser.desktop`. Não executa `meson install` sobre o desktop instalado. O antigo diretório `/tmp/jlinux-web-browser` desapareceu no reboot; a nova worktree de desenvolvimento fica em `~/.local/src/jlinux-browser`, mas a abertura instalada usa `/usr/bin` e não depende dessa worktree.
+`packaging/arch/browser/PKGBUILD` gera `jlinux-browser-git`, instalado separadamente de `jlinux-desktop-git`. A receita compila/testa a branch `feature/browser-adblock` e empacota apenas `/usr/bin/jlinux-browser` e `org.jlinux.Browser.desktop`. Não executa `meson install` sobre o desktop instalado. O antigo diretório `/tmp/jlinux-web-browser` desapareceu no reboot; a nova worktree de desenvolvimento fica em `~/.local/src/jlinux-browser`, mas a abertura instalada usa `/usr/bin` e não depende dessa worktree.
 
 No dock configurável já instalado, fixar `org.jlinux.Browser.desktop` em `~/.config/jlinux/dock.ini`, preservando os demais IDs, usa a infraestrutura existente e não requer um quarto botão fixo no código. O shell recarrega a configuração ao abrir “+”; role o dock para chegar ao atalho adicional. O catálogo de entradas `.desktop` pode precisar de novo shell/login para reconhecer uma instalação nova. Não reiniciar o compositor para isso. O botão “+” permite remover o atalho posteriormente.
 

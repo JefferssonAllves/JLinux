@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-06",
+  "purpose": "Functional local HTTP traffic check, not a speed/memory benchmark",
+  "code_base": "ea04fa4 plus feature/browser-adblock changes before commit",
+  "backend": "WPE headless, LIBGL_ALWAYS_SOFTWARE=1 requested; no physical output",
+  "kernel": "7.2.14-arch1-1",
+  "architecture": "x86_64",
+  "workload": "Local HTML, one normal script and one 512 KiB padded advertisement script under /pagead/, native cosmetic selector",
+  "conditions": "release build; runs from parallel regression suite; first enabled run compiles, second reuses cache; disabled run uses same executable",
+  "claim": "Advertisement response bytes prevented; timings are diagnostics from one run per condition, not evidence of general speed improvement",
+  "rules": 4269,
+  "runs": [
+    {
+      "enabled": true,
+      "advertisement_bytes": 0,
+      "engine": "WPE WebKit 2.54.2",
+      "startup_to_ready_ms": 1373.173,
+      "load_ms": 39.169,
+      "javascript": true
+    },
+    {
+      "enabled": true,
+      "advertisement_bytes": 0,
+      "engine": "WPE WebKit 2.54.2",
+      "startup_to_ready_ms": 272.806,
+      "load_ms": 33.367,
+      "javascript": true
+    },
+    {
+      "enabled": false,
+      "advertisement_bytes": 524309,
+      "engine": "WPE WebKit 2.54.2",
+      "startup_to_ready_ms": 284.846,
+      "load_ms": 38.238,
+      "javascript": true
+    }
+  ]
+}

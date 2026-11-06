@@ -27,6 +27,8 @@ meson test -C build-browser --print-errorlogs
 
 Requer WPE WebKit >=2.54 com WPEPlatform Wayland/headless. Abas com páginas/históricos independentes e sessão efêmera compartilhada. Ctrl+T abre aba, Ctrl+W fecha, Ctrl+Tab/Ctrl+Shift+Tab alternam; a barra nativa permanece visível acima da página, com espaço reservado, e oferece títulos, “+” e “×”. Ctrl+L seleciona o endereço; Enter abre URLs ou pesquisa no Google; Esc devolve o foco à página, Alt+←/→ navega no histórico, Ctrl+R recarrega e Ctrl+Q fecha a janela. Ainda não é navegador para uso diário: downloads e persistência continuam pendentes. Não substitui o navegador padrão nem atualiza o pacote do desktop instalado. [Implementação, testes e limites](docs/browser.md).
 
+Bloqueio nativo de anúncios ativo por padrão, com lista AdAway embutida e cache compilado pelo WebKit. Ctrl+Shift+B ou clique no estado de bloqueio do cabeçalho alterna somente a aba atual e a recarrega. A cobertura é parcial, incluindo limitações em anúncios do próprio site e de vídeo; [fonte, limites e teste de tráfego](docs/browser.md).
+
 Vídeo HTML5 (MP4/WebM e MediaSource) usa GStreamer. Reprodução com som exige um servidor de áudio e dispositivo disponíveis; PipeWire-Pulse/WirePlumber são a configuração aplicada nesta máquina. Há receita separada em `packaging/arch/browser/PKGBUILD`, que instala somente o navegador e sua entrada `.desktop`, sem substituir o pacote do desktop. Os testes de mídia também requerem FFmpeg para gerar vídeos locais.
 
 ## Executar sem Python

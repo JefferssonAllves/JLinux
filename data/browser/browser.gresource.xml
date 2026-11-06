@@ -1,0 +1,5 @@
+<gresources>
+  <gresource prefix="/org/jlinux/browser">
+    <file compressed="true">blocker.json</file>
+  </gresource>
+</gresources>

@@ -54,7 +54,9 @@ void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width)
     cairo_restore(cr);
     cairo_save(cr); cairo_rectangle(cr, 15, 63, width - 30, 43); cairo_clip(cr);
     ui_text(cr, chrome->message[0] ? chrome->message : "Enter pesquisar / abrir  ·  Esc focar a página", 17, 66, 12, false, 0xb5c4e2);
-    ui_text(cr, "Ctrl+T nova aba   ·   Ctrl+W fechar aba   ·   Ctrl+Tab alternar", 17, 87, 11, false, 0x92a5cb);
+    const char *blocker = !chrome->adblock_available ? "Bloqueio inativo" : chrome->adblock_enabled ? "Anúncios bloqueados" : "Anúncios liberados";
+    char *status = g_strdup_printf("%s nesta aba  ·  Ctrl+Shift+B / clique para alternar e recarregar", blocker);
+    ui_text(cr, status, 17, 87, 11, false, 0x92a5cb); g_free(status);
     cairo_restore(cr);
     cairo_restore(cr);
 }

@@ -23,11 +23,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
         Handler.events.append(self.path)
         body = b"""<!doctype html><meta charset='utf-8'><title>Browser fixture</title>
         <body><button style='position:fixed;left:8px;top:0' onclick="fetch('/page-click')">tap</button><button style='position:fixed;left:8px;bottom:0' onclick="fetch('/bottom-click')">bottom</button><input autofocus oninput="fetch('/typed?value='+encodeURIComponent(this.value))">
-        <script>addEventListener('pageshow',()=>fetch('/shown?path='+location.pathname));
+        <script src='/pagead/banner.js'></script><script>addEventListener('pageshow',()=>fetch('/shown?path='+location.pathname));
         function viewport(){fetch('/viewport?w='+innerWidth+'&h='+innerHeight);}
         addEventListener('resize',viewport); viewport();</script></body>"""
+        mime = "text/html; charset=utf-8"
+        if self.path == "/pagead/banner.js":
+            body, mime = b"window.adLoaded = true;", "application/javascript"
         self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Type", mime)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -45,7 +48,7 @@ def main():
         env = dict(os.environ, XDG_RUNTIME_DIR=directory, XDG_CACHE_HOME=directory + "/cache",
                    XDG_DATA_HOME=directory + "/data", XDG_CONFIG_HOME=directory + "/config",
                    WLR_BACKENDS="headless", WLR_RENDERER="pixman", WLR_HEADLESS_OUTPUTS="1",
-                   JLINUX_TEST_INPUT="1", LIBGL_ALWAYS_SOFTWARE="1")
+                   JLINUX_TEST_INPUT="1", LIBGL_ALWAYS_SOFTWARE="1", JLINUX_BROWSER_ADBLOCK="1")
         logfile = runtime / "session.log"
         web_server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         thread = threading.Thread(target=web_server.serve_forever, daemon=True)
@@ -78,6 +81,21 @@ def main():
                 window_width, window_height = map(int, dimensions.groups())
                 wait_for(lambda: f"/viewport?w={window_width}&h={window_height - 148}" in Handler.events,
                          processes, "viewport desconta a altura do cabeçalho")
+                assert "/pagead/banner.js" not in Handler.events, "Default blocking did not prevent download"
+                before = Handler.events.count("/shown?path=/first")
+                keys("-M", "ctrl", "-M", "shift", "-k", "b", "-m", "shift", "-m", "ctrl")
+                wait_for(lambda: Handler.events.count("/shown?path=/first") > before,
+                         processes, "desativar bloqueio e recarregar")
+                assert Handler.events.count("/pagead/banner.js") == 1, Handler.events
+                keys("-M", "ctrl", "-k", "t", "-m", "ctrl")
+                navigate("/ad-new-tab")
+                assert Handler.events.count("/pagead/banner.js") == 1, "Exceção vazou para outra aba"
+                keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
+                before = Handler.events.count("/shown?path=/first")
+                click(300, 208)  # Re-enable on the original tab using the header status row.
+                wait_for(lambda: Handler.events.count("/shown?path=/first") > before,
+                         processes, "reativar bloqueio pelo cabeçalho")
+                assert Handler.events.count("/pagead/banner.js") == 1, "Ad was downloaded after re-enabling"
                 keys("-k", "Escape", "-d", "10", "native")
                 wait_for(lambda: "/typed?value=native" in Handler.events, processes, "entrada na página")
                 click(75, 238)

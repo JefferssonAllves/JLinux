@@ -10,6 +10,12 @@ As ferramentas web servem para criar e iterar protótipos visuais antes da inter
 
 ## Navegador próprio — feature/web-browser
 
+### Bloqueio de anúncios — feature/browser-adblock
+
+- **BROWSER-ADBLOCK · implementado na branch:** filtro nativo WebKit compilado/cacheado, 4.269 regras a partir de snapshot AdAway CC BY 3.0 mais padrões específicos de anúncios Google; ativo antes de navegar. Sem daemon/extensão ou varredura JS. Ctrl+Shift+B/clique no estado alterna e recarrega somente a aba atual; novas abas protegidas.
+- **Checks locais:** 18 testes release e cinco testes C/motor com ASan/UBSan (`detect_leaks=0`); geração reproduzível, bloqueio antes de baixar, CSS específico, conteúdo normal preservado, cache reutilizado/falhando e isolamento por aba. Regressões de layout, vídeo e navegação passaram. Dez checks do pacote passaram; instalado `0.1.0.r50.gada56a9-1`, código `ada56a9`, em 06/11/2026. Teste do bloqueador/cache/falha de cache passou também com `/usr/bin/jlinux-browser`. PR #50 enviado; duas execuções da CI do código passaram antes da atualização documental. Janelas anteriores preservadas até reabrir.
+- **Evidência limitada:** fixture HTTP publicitário de 524.309 bytes reduzido a zero; sem benchmark comparável de CPU/PSS/energia/velocidade real. Registro em docs/performance/browser-blocker-2026-11-06.json. Não garante remover YouTube, anúncios do próprio domínio ou todo rastreamento. Atualização de lista via pacote; nenhuma whitelist persistente implementada.
+
 ### Conteúdo abaixo do cabeçalho — fix/browser-content-layout
 
 - **BROWSER-LAYOUT · implementado na branch:** cabeçalho em área própria acima da origem da página; viewport recebe altura da janela menos 148 px, inclusive após trocar abas ou redimensionar. Cliques de cabeçalho e conteúdo tratados nas respectivas superfícies, preservando renderização WPE.
