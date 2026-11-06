@@ -131,7 +131,7 @@ def main():
                 navigate("/third")
                 keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
                 typed("x", "twomorex")
-                # The window/header origin is 40,80; the page starts 148 px below it.
+                # The window/header origin is 40,80; the page starts 100 px below it.
                 click(110, 110)
                 typed("y", "keeponey")
                 click(window_width + 16, 110)  # +
@@ -154,7 +154,7 @@ def main():
                 wait_for(lambda: "Janela maximizada:" in log(), processes, "maximização")
                 maximized = re.search(r"Janela maximizada:.*\((\d+)x(\d+) em (\d+),(\d+)", log())
                 width, height, x, y = map(int, maximized.groups())
-                wait_for(lambda: f"/viewport?w={width}&h={height - 148}" in Handler.events,
+                wait_for(lambda: f"/viewport?w={width}&h={height - 100}" in Handler.events,
                          processes, "viewport maximizado desconta o cabeçalho")
                 before = Handler.events.count("/page-click")
                 click(x + 35, y + 110)
@@ -170,7 +170,7 @@ def main():
                          processes, "restaurar viewport")
                 click(40 + window_width + 2, 80 + window_height + 2,
                       40 + window_width + 66, 80 + window_height - 78)
-                wait_for(lambda: f"/viewport?w={window_width + 64}&h={window_height - 80 - 148}" in Handler.events,
+                wait_for(lambda: f"/viewport?w={window_width + 64}&h={window_height - 80 - 100}" in Handler.events,
                          processes, "viewport após redimensionar pela borda")
                 keys("-M", "ctrl", "-k", "l", "-m", "ctrl", "-k", "Escape")
                 keys("-M", "ctrl", "-k", "q", "-m", "ctrl")
