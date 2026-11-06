@@ -361,3 +361,7 @@ FUTURISTA — instalação confirmada: pacote `0.5.0.r76.g18a1cae-1` instalado; 
 ### FUTURISTA-CONTROL-SEPARATION
 
 Painel de controle separado do dock: Super alterna somente dock; botão de ajustes à direita alterna painel. Ambos começam ocultos e os alvos do componente oculto são excluídos do hit test. Barra sem sinal Wi-Fi e lupa, data/hora centralizadas pela medida Pango do texto. Quatro testes locais relevantes passaram e o cenário de alternância/reinício passou com ASan/UBSan. Prévias nativas separadas em docs/design; sessão física não reiniciada para teste.
+
+### FUTURISTA-SUPER-HOLD
+
+Dock visível enquanto Super fica pressionada; keyup ou remoção do teclado oculta. Combinações existentes cancelam o dock; mouse seleciona aplicativos enquanto Super permanece pressionada. Input limitado à área do dock deixa janelas externas acessíveis, com encaixe/atalhos preservados. IPC passa a show/hide idempotentes; painel por botão permanece separado. Quatro testes locais relevantes passaram; cenário de dock com ASan/UBSan. Não testado em teclado físico/DRM nesta entrega.

@@ -638,6 +638,10 @@ static struct layout layout(int width, int height) {
     return (struct layout){scale, (width - 1672 * scale) / 2,
                            52 + (height - 52 - 889 * scale) / 2 - 52 * scale};
 }
+struct ui_rect futurista_dock_bounds(int width,int height){
+    struct layout l=layout(width,height);
+    return (struct ui_rect){l.x+(836-345)*l.scale,l.y+(469-345)*l.scale,690*l.scale,690*l.scale};
+}
 void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, bool control_panel) {
     struct layout l = layout(width, height);
     cairo_save(cr);

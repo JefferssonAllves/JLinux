@@ -34,7 +34,7 @@ O iniciador localiza os binários na própria pasta, cria runtime privado, aguar
 | Ação | Controle |
 | --- | --- |
 | Abrir terminal | Super+Enter |
-| Mostrar/esconder dock circular | Super sozinha |
+| Mostrar dock circular | Manter Super pressionada; soltar para ocultar |
 | Abrir Codex | `codex` no terminal |
 | Abrir Arquivos | `jlinux-files` no terminal |
 | Alternar janela | Alt+Tab |

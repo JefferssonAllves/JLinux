@@ -4,8 +4,9 @@ A imagem “Central de Controle JLinux Futurista.png” passa a orientar esta te
 
 ## Operação
 
-- Toque em Super sozinha (esquerda ou direita) para mostrar ou esconder somente o dock, ao soltar a tecla. O painel de controle abre e fecha exclusivamente pelo botão de ajustes à direita da barra; alternar para o dock fecha o painel. Super usada com outra tecla, botão ou roda do mouse não abre o dock. Super+Enter permanece abrindo Foot.
-- Dock e painel começam ocultos e usam modos exclusivos: desenho e hit test não incluem o componente escondido. Clique fora para fechar. Hover muda o setor em destaque; clique abre o aplicativo. O centro abre o setor selecionado.
+- Mantenha Super pressionada para mostrar o dock; ao soltar ele desaparece. Super+Enter e demais combinações de teclado cancelam o dock. Seleção com mouse funciona enquanto a tecla está pressionada; abrir um aplicativo mantém o dock até a liberação da tecla. Desconectar o teclado também remove o dock.
+- O painel de controle continua abrindo/fechando exclusivamente pelo botão de ajustes da barra; soltar Super não fecha o painel aberto por esse botão.
+- Dock e painel começam ocultos e usam modos exclusivos: desenho e hit test não incluem o componente escondido. Clique fora do painel para fechá-lo. O dock deixa passar cliques fora de sua área e permite os gestos existentes de janela. Hover muda o setor em destaque; clique abre o aplicativo. O centro abre o setor selecionado.
 - O ícone de Firefox segue a referência; quando Firefox não está instalado, abre `jlinux-browser`. Terminal/Desenvolvimento abrem Foot; Arquivos/Imagens/Vídeos abrem Arquivos JLinux. Code, Spotify e Steam só são executados se instalados; caso contrário há aviso. Não são instalados automaticamente.
 - Os controles de volume funcionam: metade esquerda da trilha diminui 5%, direita aumenta 5%, ícone alterna mute. O ícone de som da barra continua abrindo o popover de áudio.
 - Encerrar sessão/Reiniciar/Desligar abrem a confirmação existente. Nenhum comando de energia é executado no primeiro clique.
@@ -16,7 +17,7 @@ A imagem “Central de Controle JLinux Futurista.png” passa a orientar esta te
 
 A geometria segue a imagem de 1672 × 941, com transformação compartilhada por desenho e hit test, adaptação à área abaixo da barra e fonte Adwaita Sans. Blur amostra apenas o wallpaper e é calculado uma vez em cache reduzido; não desfoca janelas vivas. Tint, reflexão, blur e sombra mantêm controles independentes. Sem animação ou redesenho contínuo: atualiza por mudança de seleção/estado e relógio de 30 segundos. O dock oculto não reserva buffers novos.
 
-O compositor avisa o shell por datagrama local `toggle` em `$XDG_RUNTIME_DIR/jlinux-shell-control`, modo 0600, dentro do runtime privado do usuário. Bind não substitui socket existente. O shell remove o socket que abriu na saída; sua reinicialização é testada. O compositor não conhece desenho ou políticas de lançamento dos aplicativos.
+O compositor avisa o shell por datagramas locais idempotentes `show`/`hide` em `$XDG_RUNTIME_DIR/jlinux-shell-control`, modo 0600, dentro do runtime privado do usuário. Bind não substitui socket existente. O shell remove o socket que abriu na saída; sua reinicialização é testada. O compositor não conhece desenho ou políticas de lançamento dos aplicativos.
 
 ## Evidências e limites
 
@@ -29,3 +30,5 @@ Validação local: 21 testes release; quatro testes de sessão/interface com ASa
 Gerar a prévia do dock: `jlinux-shell --preview-futurista arquivo.png`; do painel: `jlinux-shell --preview-control-center arquivo.png`. Barra sem Wi-Fi e lupa, com data/hora centralizadas pela largura real do texto e botão de ajustes na direita. [Dock separado](design/futurista-dock-only.png) e [painel separado](design/futurista-control-only.png). A instalação dos executáveis não troca os processos em execução; o novo comportamento de Super exige novo login. Não enviar sinais de recarga ao compositor antigo.
 
 A separação de dock/painel e a barra revista passaram nos testes locais futurista-headless, power-menu-headless, volume-headless e glass-preview; futurista-headless também passou com ASan/UBSan (detect_leaks=0). Sem validação visual da sessão física.
+
+Dock por pressão: testes locais futurista-headless, shell-headless, terminal-input-headless e window-side-snap passaram; regressão do dock também verificada com ASan/UBSan. Exercita Super esquerda/direita, soltar, clique segurando, Super+Enter e remoção do teclado.

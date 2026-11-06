@@ -54,7 +54,7 @@ struct keyboard {
     struct interaction *owner;
     struct wlr_keyboard *device;
     bool intercepted[KEY_CNT];
-    bool super_pending;
+    bool dock_requested;
     struct wl_list link;
     struct wl_listener key, modifiers, destroy;
 };
@@ -554,9 +554,17 @@ static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t mo
     return false;
 }
 
+static void update_dock(struct interaction *state) {
+    struct keyboard *keys;bool visible=false;
+    wl_list_for_each(keys,&state->keyboards,link){visible|=keys->dock_requested;}
+    if(!shell_control_dock(visible)){wlr_log(WLR_DEBUG,"%s","Shell sem controle de dock disponível");}
+}
+
 static void cancel_super(struct interaction *state) {
     struct keyboard *keys;
-    wl_list_for_each(keys, &state->keyboards, link) { keys->super_pending = false; }
+    bool was_visible=false;
+    wl_list_for_each(keys, &state->keyboards, link) { was_visible|=keys->dock_requested;keys->dock_requested = false; }
+    if(was_visible){update_dock(state);}
 }
 
 static void key_event(struct wl_listener *listener, void *data) {
@@ -572,11 +580,12 @@ static void key_event(struct wl_listener *listener, void *data) {
     if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         if (super) {
             uint32_t mods = wlr_keyboard_get_modifiers(keyboard->device);
-            keyboard->super_pending = !(mods & (WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_SHIFT));
+            keyboard->dock_requested = !(mods & (WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_SHIFT));
+            update_dock(keyboard->owner);
         } else { cancel_super(keyboard->owner); }
-    } else if (super && keyboard->super_pending) {
-        keyboard->super_pending = false;
-        if (!shell_control_toggle()) { wlr_log(WLR_DEBUG, "%s", "Shell sem controle de dock disponível"); }
+    } else if (super) {
+        keyboard->dock_requested = false;
+        update_dock(keyboard->owner);
     }
     if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         for (int index = 0; index < count; index++) {
@@ -607,6 +616,7 @@ static void keyboard_removed(struct wl_listener *listener, void *data) {
     (void)data;
     struct keyboard *keyboard = wl_container_of(listener, keyboard, destroy);
     struct interaction *state = keyboard->owner;
+    if(keyboard->dock_requested){keyboard->dock_requested=false;update_dock(state);}
     wl_list_remove(&keyboard->key.link);
     wl_list_remove(&keyboard->modifiers.link);
     wl_list_remove(&keyboard->destroy.link);
@@ -731,7 +741,6 @@ static void absolute_event(struct wl_listener *listener, void *data) {
 }
 static void button_event(struct wl_listener *listener, void *data) {
     struct interaction *state = wl_container_of(listener, state, button);
-    cancel_super(state);
     struct wlr_pointer_button_event *event = data;
     if (state->grab_button) {
         if (event->state == WL_POINTER_BUTTON_STATE_RELEASED && event->button == state->grab_button) {
@@ -747,6 +756,7 @@ static void button_event(struct wl_listener *listener, void *data) {
         struct wlr_surface *surface;
         struct view *view = surface_at(state, &surface, &x, &y);
         if (view) {
+            cancel_super(state);
             focus(state, view);
             wlr_log(WLR_INFO, "Foco por clique: %s", view->xdg->title ? view->xdg->title : "sem título");
         }
