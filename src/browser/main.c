@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "chrome.h"
+#include "blocker.h"
 #include <EGL/egl.h>
 #include <glib-unix.h>
 #include <gst/gst.h>
@@ -23,6 +24,7 @@ struct app {
     struct browser_chrome chrome;
     gboolean probe;
     gboolean media_available;
+    WebKitUserContentFilter *filter;
     gboolean consumed[768];
     gint64 started, load_started;
     int status;
@@ -58,6 +60,16 @@ static void navigate(struct app *app) {
     app->chrome.editing = FALSE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
     webkit_web_view_load_uri(app->web, uri); g_free(uri);
 }
+static void toggle_blocker(struct app *app) {
+    if (!app->filter) { notice(app, "Bloqueio indisponível nesta execução; confira o registro de inicialização."); return; }
+    gboolean enabled = !GPOINTER_TO_INT(g_object_get_data(G_OBJECT(app->web), "jlinux-adblock"));
+    WebKitUserContentManager *manager = webkit_web_view_get_user_content_manager(app->web);
+    if (enabled) { webkit_user_content_manager_add_filter(manager, app->filter); }
+    else { webkit_user_content_manager_remove_filter(manager, app->filter); }
+    g_object_set_data(G_OBJECT(app->web), "jlinux-adblock", GINT_TO_POINTER(enabled));
+    app->chrome.adblock_enabled = enabled; browser_chrome_update(&app->chrome);
+    webkit_web_view_reload(app->web);
+}
 static void append_text(struct app *app, const char *text) {
     if (!text || !g_utf8_validate(text, -1, NULL)) { return; }
     for (const char *p = text; *p; p = g_utf8_next_char(p)) {
@@ -82,6 +94,7 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         gboolean ctrl = modifiers & WPE_MODIFIER_KEYBOARD_CONTROL;
         gboolean alt = modifiers & WPE_MODIFIER_KEYBOARD_ALT;
         if (ctrl && (key == XKB_KEY_l || key == XKB_KEY_L)) { show_address(app); }
+        else if (ctrl && (modifiers & WPE_MODIFIER_KEYBOARD_SHIFT) && (key == XKB_KEY_b || key == XKB_KEY_B)) { toggle_blocker(app); }
         else if (ctrl && (key == XKB_KEY_t || key == XKB_KEY_T)) { new_tab(app, "about:blank"); }
         else if (ctrl && (key == XKB_KEY_w || key == XKB_KEY_W)) { close_tab(app, chrome->active_tab); }
         else if (ctrl && (key == XKB_KEY_Tab || key == XKB_KEY_ISO_Left_Tab)) {
@@ -138,7 +151,7 @@ static void chrome_clicked(struct browser_chrome *chrome, double x, double y, gp
         else if (x < 83) { webkit_web_view_go_forward(app->web); }
         else if (x < 127) { webkit_web_view_reload(app->web); }
         else { show_address(app); }
-    }
+    } else if (y >= BROWSER_TAB_HEIGHT + 84 && y < BROWSER_CHROME_HEIGHT) { toggle_blocker(app); }
 }
 static void changed_uri(WebKitWebView *web, GParamSpec *spec, gpointer data) {
     (void)spec; struct app *app = data;
@@ -267,6 +280,7 @@ static void select_tab(struct app *app, guint index) {
     if (app->web && app->web != web) { wpe_view_set_visible(webkit_web_view_get_wpe_view(app->web), FALSE); }
     app->web = web; app->chrome.active_tab = index;
     app->chrome.view = webkit_web_view_get_wpe_view(web);
+    app->chrome.adblock_enabled = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(web), "jlinux-adblock"));
     wpe_view_set_visible(app->chrome.view, TRUE);
     show_address(app); changed_title(web, NULL, app);
     const char *message = g_object_get_data(G_OBJECT(web), "jlinux-notice");
@@ -280,6 +294,10 @@ static void new_tab(struct app *app, const char *uri) {
     WebKitWebView *web = g_object_new(WEBKIT_TYPE_WEB_VIEW, "display", app->display, "network-session", app->session,
         "settings", settings, "website-policies", policies, NULL);
     g_object_unref(settings); g_object_unref(policies);
+    if (app->filter) {
+        webkit_user_content_manager_add_filter(webkit_web_view_get_user_content_manager(web), app->filter);
+        g_object_set_data(G_OBJECT(web), "jlinux-adblock", GINT_TO_POINTER(TRUE));
+    }
     WPEView *view = webkit_web_view_get_wpe_view(web);
     g_ptr_array_add(app->chrome.tabs, web);
     g_signal_connect(view, "closed", G_CALLBACK(closed), app);
@@ -326,7 +344,7 @@ static void close_tab(struct app *app, guint index) {
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
     if (argc == 2 && !strcmp(argv[1], "--help")) {
-        g_print("Uso: jlinux-browser [URL ou busca] | --probe URL | --preview arquivo.png\nCtrl+L endereço; Ctrl+T nova aba; Ctrl+W fechar aba; Ctrl+Tab alternar; Ctrl+Q sair.\n"); return 0;
+        g_print("Uso: jlinux-browser [URL ou busca] | --probe URL | --preview arquivo.png\nCtrl+L endereço; Ctrl+T nova aba; Ctrl+W fechar aba; Ctrl+Tab alternar; Ctrl+Shift+B alternar bloqueio de anúncios nesta aba; Ctrl+Q sair.\n"); return 0;
     }
     if (g_getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS")) {
         g_printerr("Remova WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: a sandbox é obrigatória.\n"); return 1;
@@ -335,6 +353,7 @@ int main(int argc, char **argv) {
     wl_list_init(&app.chrome.buffers);
     if (!jlinux_glass_settings(&app.chrome.glass)) { return 1; }
     if (argc == 3 && !strcmp(argv[1], "--preview")) {
+        app.chrome.adblock_available = TRUE; app.chrome.adblock_enabled = TRUE;
         g_strlcpy(app.chrome.address, "https://example.org", sizeof(app.chrome.address));
         cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1000, BROWSER_CHROME_HEIGHT);
         cairo_t *cr = cairo_create(image); browser_chrome_paint(&app.chrome, cr, 1000); cairo_destroy(cr);
@@ -369,6 +388,15 @@ int main(int argc, char **argv) {
     app.session = session;
     webkit_network_session_set_tls_errors_policy(session, WEBKIT_TLS_ERRORS_POLICY_FAIL);
     app.chrome.tabs = g_ptr_array_new_with_free_func(g_object_unref);
+    const char *blocker = g_getenv("JLINUX_BROWSER_ADBLOCK");
+    if (!blocker || strcmp(blocker, "0")) {
+        app.filter = browser_blocker_load(&error);
+        if (!app.filter) {
+            g_printerr("Bloqueio de anúncios indisponível: %s\n", error ? error->message : "sem detalhes");
+            g_clear_error(&error);
+        }
+    }
+    app.chrome.adblock_available = app.filter != NULL;
     if (!app.probe) {
         if (!wpe_settings_set_boolean(wpe_display_get_settings(display), WPE_SETTING_CREATE_VIEWS_WITH_A_TOPLEVEL,
                 FALSE, WPE_SETTINGS_SOURCE_APPLICATION, &error)) {
@@ -406,6 +434,7 @@ cleanup:
     g_signal_handlers_disconnect_by_data(display, &app);
     browser_chrome_finish(&app.chrome);
     g_ptr_array_unref(app.chrome.tabs);
+    if (app.filter) { webkit_user_content_filter_unref(app.filter); }
     g_clear_object(&app.toplevel);
     g_object_unref(session);
     // shortcut: WPE 2.54 disconnects Wayland before EGL teardown; remove when upstream fixes disposal order.
