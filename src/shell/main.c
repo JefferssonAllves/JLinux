@@ -192,7 +192,6 @@ static void paint(struct surface *surface, cairo_t *cr) {
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (height - 2) / 2.0,
             surface->app->backdrop, PANEL_MARGIN, PANEL_MARGIN, surface->app->glass);
         cairo_save(cr); cairo_translate(cr, 0, (height - 54) / 2.0);
-        if (width > 1000) { ui_text(cr, "Aplicativos     Arquivos     Configurações", 24, 18, 15, false, 0xd2d7eb); }
         time_t now = time(NULL); struct tm local;
         localtime_r(&now, &local);
         char clock[64]; strftime(clock, sizeof(clock), "%d/%m  •  %H:%M", &local);
@@ -485,7 +484,7 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
         else if (app->info) { app->info = false; app->panel.dirty = true; }
         else if (app->pointer_x > app->panel.width - 60) {
             toggle_power(app);
-        } else { notice(app, "Wi-Fi, Bluetooth e os menus de aplicativos serão conectados aos serviços do sistema."); }
+        } else if (app->pointer_x >= app->panel.width - 272) { notice(app, "Wi-Fi e Bluetooth ainda serão conectados aos serviços do sistema."); }
     }
 }
 static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {

@@ -314,3 +314,11 @@ WM-SNAP substitui WM-AUTO por decisão do usuário. Removidos algoritmo de divis
 21 testes locais release e ASan/UBSan passaram, incluindo ambos os lados com barra/dock, restauração, ausência de efeito no topo, ausência de rearranjo ao abrir/fechar e mínimo incompatível com meia tela. Teste de tiling removido/substituído; regressões de limites/transientes preservadas. Sem benchmark ou VT. Base instalada com volume/dock/tema preservada; pacote/ativação registrados na conclusão. Estado atual em docs/window-management.md prevalece sobre os registros históricos de WM-AUTO.
 
 **WM-SNAP · instalado em 06/11/2026:** pacote `0.5.0.r62.g6df67d0-1`, fonte 6df67d0, compilado do GitHub com 21 testes aprovados no makepkg e instalado via pacman. 21 testes locais release e ASan/UBSan passaram. Instalação substitui o modo automático rejeitado e preserva volume, dock e tema. Compositor da sessão atual preservado: janelas livres e encaixe lateral passam a valer no próximo login. Sem reinício/logout/VT nesta entrega. PR #44, base feature/panel-volume, sem merge; CI e avaliação visual física pendentes neste registro.
+
+
+## Barra superior sem menus à esquerda — fix/remove-panel-menus
+
+Aplicativos, Arquivos e Configurações removidos da barra superior por pedido do usuário. Cliques na área vazia não mostram mais o aviso de menus pendentes. Relógio, Som, Wi-Fi, Bluetooth, energia e dock preservados. Base feature/window-side-snap (#44), que corresponde à instalação atual; sem alteração no comportamento das janelas. Validação e instalação registradas após conclusão.
+
+
+**Menus da barra · instalado:** pacote `0.5.0.r64.gda44b00-1`, fonte da44b00, instalado após 21 testes do makepkg aprovados. Build/testes locais de shell e material passaram; prévia nativa inspecionada. Primeira tentativa de empacotamento interrompida por HUP; repetição concluída. Arquivo do pacote e binário instalado conferidos como root:root 0755. Nenhum logout/reinício de shell/compositor realizado por esta entrega: remoção visível no próximo login. PR #55, base feature/window-side-snap, sem merge. Sem novos sanitizers, benchmark ou teste de VT.
