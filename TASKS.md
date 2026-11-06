@@ -241,3 +241,11 @@ Pedido atual substitui pontos focais nas janelas: contorno contínuo de 0,85 px 
 Quatorze testes locais release e ASan/UBSan passaram. Teste da moldura passa a conferir continuidade de opacidade e variação cromática em vez dos antigos pontos intensos; controles independentes preservados. Prévias dos componentes inspecionadas junto às referências, sem declarar correspondência exata. Sem timer, animação, blur novo ou benchmark. Ativação das molduras exige novo compositor no próximo login; sessão atual preservada devido à investigação STABILITY-BOOT.
 
 **NEON-01 · instalado:** pacote `0.5.0.r45.g13cadc7-1`, fonte 13cadc7, compilado do GitHub com 14 testes aprovados no makepkg e instalado via pacman. Apenas o gerenciador foi reaberto com o novo fundo e barra interna; processo permaneceu ativo. Compositor/shell da sessão preservados: novas molduras globais aguardam próximo login. Sem teste físico de VT, benchmark ou confirmação visual pelo usuário. PR #31 sem merge; CI pendente neste registro.
+
+## Sidebar do Arquivos — feature/files-sidebar
+
+FILES-02 implementado: barra lateral Pessoal/Downloads/Documentos/Imagens/Vídeos com caminhos XDG, destaque da pasta atual, clique e Alt+1…5. Pastas ausentes não são criadas; erro preserva o diretório anterior. Lista reposicionada e coluna de detalhes oculta em janela estreita, mínimo 540×360.
+
+Quatorze testes locais release e ASan/UBSan passaram. Teste headless ampliado abre os cinco locais com HOME/configuração isolados, nomes personalizados com espaços/acentos, verifica argumentos do aplicativo associado e tentativa de pasta ausente. Prévia com arquivos fictícios inspecionada. Sem benchmark, teste de VT ou confirmação visual física. Empacotamento/ativação pendentes neste registro. Alteração local concorrente em src/shell/main.c preservada fora desta entrega.
+
+**FILES-02 · instalado:** pacote `0.5.0.r47.g0578b80-1`, fonte 0578b80, compilado do GitHub com 14 testes aprovados no makepkg e instalado via pacman. Gerenciador instalado reaberto com sidebar na sessão existente e permaneceu ativo. Esta entrega não reiniciou compositor/shell nem realizou troca de VT. PR #33, base temporária feature/window-neon-rim, sem merge. CI e avaliação visual pelo usuário pendentes neste registro. Alterações concorrentes de shell/empacotamento preservadas fora dos commits desta entrega.

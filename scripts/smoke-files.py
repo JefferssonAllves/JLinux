@@ -23,6 +23,21 @@ with tempfile.TemporaryDirectory(prefix='jlinux-files-') as directory:
     outside = folder / 'B-name $(touch SENTINEL).txt'
     outside.write_text('example')
     (folder / '.hidden').write_text('example')
+    home = runtime / 'home'
+    home.mkdir()
+    personal = home / 'personal.txt'
+    personal.write_text('example')
+    config = runtime / 'config'
+    config.mkdir()
+    places = [home]
+    settings = []
+    for kind in ('DOWNLOAD', 'DOCUMENTS', 'PICTURES', 'VIDEOS'):
+        place = runtime / ('Custom ' + kind + ' á')
+        place.mkdir()
+        (place / 'probe.txt').write_text(kind)
+        places.append(place)
+        settings.append(f'XDG_{kind}_DIR="{place}"')
+    (config / 'user-dirs.dirs').write_text('\n'.join(settings) + '\n')
     tools = runtime / 'bin'
     tools.mkdir()
     marker = runtime / 'opened.json'
@@ -30,7 +45,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-files-') as directory:
     opener.write_text('#!/usr/bin/env python3\nimport json, os, sys\nfrom pathlib import Path\nPath(os.environ["JLINUX_FILES_MARKER"]).write_text(json.dumps(sys.argv[1:]))\n')
     opener.chmod(0o700)
     env = dict(os.environ, XDG_RUNTIME_DIR=directory, WLR_BACKENDS='headless', WLR_RENDERER='pixman',
-               WLR_HEADLESS_OUTPUTS='1', JLINUX_TEST_INPUT='1', PATH=str(tools) + ':' + os.environ['PATH'], JLINUX_FILES_MARKER=str(marker))
+               WLR_HEADLESS_OUTPUTS='1', JLINUX_TEST_INPUT='1', HOME=str(home), XDG_CONFIG_HOME=str(config), PATH=str(tools) + ':' + os.environ['PATH'], JLINUX_FILES_MARKER=str(marker))
     logfile = runtime / 'session.log'
     def key(*args):
         subprocess.run([wtype, '-s', '200', *args], env=env, check=True, timeout=5)
@@ -54,6 +69,17 @@ with tempfile.TemporaryDirectory(prefix='jlinux-files-') as directory:
             assert not (folder / 'SENTINEL').exists()
             key('-M', 'ctrl', 'h', '-m', 'ctrl')
             key('-k', 'F5')
+            for index, place in enumerate(places):
+                subprocess.run([pointer, '100', str(206 + index * 40)], env=env, check=True, timeout=4)
+                key('-k', 'Return')
+                opened(personal if not index else place / 'probe.txt')
+            # Missing shortcut must leave the current folder intact; Alt+number also navigates.
+            key('-M', 'alt', '-k', '4', '-m', 'alt')
+            (places[4] / 'probe.txt').unlink()
+            places[4].rmdir()
+            key('-M', 'alt', '-k', '5', '-m', 'alt')
+            key('-k', 'Return')
+            opened(places[3] / 'probe.txt')
             assert client.poll() is None
             helpers.stop(client)
             assert client.returncode == 0
