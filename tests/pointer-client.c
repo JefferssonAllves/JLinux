@@ -20,7 +20,8 @@ static void global(void *data, struct wl_registry *registry, uint32_t name, cons
 }
 static void removed(void *data, struct wl_registry *registry, uint32_t name) { (void)data; (void)registry; (void)name; }
 int main(int argc, char **argv) {
-    if (argc != 3 && argc != 5) { return 2; }
+    int motion_only = argc == 4 && !strcmp(argv[3], "--motion");
+    if (argc != 3 && argc != 5 && !motion_only) { return 2; }
     bool scroll = argc == 5 && !strcmp(argv[1], "--scroll");
     struct wl_display *display = wl_display_connect(NULL);
     if (!display) { return 1; }
@@ -41,6 +42,7 @@ int main(int argc, char **argv) {
         zwlr_virtual_pointer_v1_frame(pointer);
         if (wl_display_roundtrip(display) < 0) { return 1; }
     } else {
+    if (!motion_only) {
     zwlr_virtual_pointer_v1_button(pointer, 2, BTN_LEFT, WL_POINTER_BUTTON_STATE_PRESSED);
     zwlr_virtual_pointer_v1_frame(pointer);
     if (argc == 5) {
@@ -51,6 +53,7 @@ int main(int argc, char **argv) {
     zwlr_virtual_pointer_v1_button(pointer, 3, BTN_LEFT, WL_POINTER_BUTTON_STATE_RELEASED);
     zwlr_virtual_pointer_v1_frame(pointer);
     if (wl_display_roundtrip(display) < 0) { return 1; }
+    }
     }
     zwlr_virtual_pointer_v1_destroy(pointer);
     zwlr_virtual_pointer_manager_v1_destroy(globals.manager);

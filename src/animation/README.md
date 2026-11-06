@@ -1,6 +1,6 @@
 # animation/
 
-Responsabilidade planejada: avaliar tempo, curvas e transições de propriedades. O motor ainda não foi implementado; este diretório define sua fronteira.
+Base implementada em transition.c: interpolação escalar smoothstep com relógio fornecido pelo chamador, retarget sem salto e duração zero para movimento reduzido. Usada inicialmente pelo dock; ainda não é um motor geral de animações de janelas.
 
 - Entrada: instante monotônico, duração, curva, valores inicial/final e política de movimento reduzido.
 - Saída: propriedades atualizadas e indicação de que outra amostra será necessária.
