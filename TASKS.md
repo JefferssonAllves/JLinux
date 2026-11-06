@@ -309,3 +309,9 @@ Dezenove testes release passaram nesta base. ASan/UBSan e empacotamento registra
 
 
 **SHELL-VOLUME · instalado/ativo:** pacote `0.5.0.r61.g841643c-1`, fonte 841643c, com 21 testes de pacote aprovados. Integra o layout automático de #42 para preservar a instalação concorrente c1bcc75. Cliente transitório instalado mapeou `jlinux-volume-button` na sessão greetd 3 do boot atual (PID 23834; shell principal 719 preservado). Log: `/tmp/jlinux-volume-live-kfk36qww/volume.log`. Backend C consultou a saída real a 40%, sem mute, simulando runtime Wayland privado; nenhuma alteração de volume ou reprodução de som real foi feita. Shell normal inclui o botão no próximo login; compositor/dock/aplicativos ativos preservados. PR #43, base temporária feature/window-auto-layout, CI parcialmente concluída no registro. Validação auditiva física pelo usuário pendente.
+
+## Realce de cor das janelas — feature/window-color-accent
+
+- **VISUAL-COLOR · implementado na branch:** aumentadas saturação/opacidade do reflexo azul/violeta e do halo interno já existente em `jlinux_glass_window_reflections`. Mesmas espessuras, passes e ativação independente por REFLECTION. Callers: molduras, barra de Arquivos e login; pintura do painel/dock preservada.
+- 21 testes locais release passaram, incluindo efeitos independentes e continuidade cromática das molduras; `git diff --check` passou. Prévias nativas de moldura/Arquivos inspecionadas antes/depois; prévia temporária de moldura a 1670×941 comparada à referência principal. Sem afirmar fidelidade completa, validação física ou ganho de desempenho. Não houve novo sanitizer/benchmark: apenas constantes de cor/opacidade mudaram.
+- Base temporária `feature/panel-volume` (PR #43), para preservar o tema escuro atual. Instalação observada `jlinux-desktop-git 0.5.0.r61.g841643c-1`; esta alteração não foi instalada. Sessão greetd preservada, sem VT, DRM, logout ou reinício.

@@ -94,3 +94,11 @@ Quatorze testes locais release e ASan/UBSan passaram. Teste da moldura passa a c
 O toolkit nativo aplica 93% do tamanho nominal dos textos (aproximadamente 7% menor), compartilhado por shell, molduras, Arquivos e greeter. Não configura fontes do terminal nem de aplicativos externos. O material compartilhado usa tonalização azul-preta mais escura e menor reflexão ampla sobre as superfícies, com contornos azuis/violetas mais saturados e intensos. A espessura dos contornos permanece igual. Arquivos recebe também um gradiente de fundo mais escuro; wallpaper e ícones permanecem preservados.
 
 Os controles independentes de tint/reflection continuam respeitados. São novos valores padrão compilados, sem editor de tema ou recarga ao vivo. Não comprovam fidelidade às fotos nem desempenho de GPU. Prévias do shell, Arquivos e moldura foram inspecionadas; comparação antes/depois de Arquivos na mesma resolução mostrou a redução da fonte e o escurecimento das superfícies.
+
+### Maior realce nas cores das janelas
+
+Nesta iteração, o cabeçalho ganha reflexo azul mais intenso no topo e violeta na base. O contorno usa azul/ciano e violeta mais vivos, com maior opacidade no halo interno existente. Mantidas as espessuras de 0,85 px e 2,8 px, as bordas físicas de 3 px e o fundo escuro. O material compartilhado também atualiza a barra interna de Arquivos e o acabamento do login; painel/dock usam outro caminho de pintura.
+
+REFLECTION continua controlando esse realce independentemente de TINT, SHADOW e BLUR. São apenas valores de cor/opacidade: nenhum passe, buffer, timer ou animação adicional. Não é alteração das cores do conteúdo de aplicativos externos.
+
+Prévias nativas de moldura e Arquivos atualizadas e inspecionadas antes/depois. Uma prévia temporária de moldura também foi renderizada a 1670×941 para comparação com a primeira referência do usuário: contorno azul/violeta e fundo escuro preservados; materiais, composição e proporções da referência ainda não são reproduzidos integralmente. Não é captura da sessão ativa nem promessa de fidelidade exata.
