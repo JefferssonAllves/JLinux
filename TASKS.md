@@ -233,3 +233,11 @@ Nome e símbolo JLinux removidos da barra superior; menus começam a 24 px da ma
 - Empacotamento/ativação ainda pendentes neste registro. Novo dock exige próximo login; aplicativo pode abrir na sessão existente. Limites em docs/files.md.
 
 **FILES-01 · instalação:** pacote `0.5.0.r43.gf98f87e-1`, fonte f98f87e, compilado do GitHub com 14 testes aprovados no makepkg e instalado pelo pacman. `/usr/bin/jlinux-files` aberto na sessão autenticada existente e permaneceu ativo após inicialização. Shell/compositor existentes preservados, sem logout, reinício ou troca de VT. Novo dock só no próximo login. Inspeção visual física pelo usuário pendente; CI ainda em execução neste registro. PR #30, base temporária fix/terminal-locale, sem merge.
+
+## Bordas neon discretas — feature/window-neon-rim
+
+Pedido atual substitui pontos focais nas janelas: contorno contínuo de 0,85 px azul/violeta, halo interno discreto de 2,8 px recortado à moldura, sem núcleos brancos. Cabeçalho retangular de 36 px, borda física de 3 px e cantos de 6 px preservados. Dock/barra superior não mudam. Gerenciador recebe fundo opaco em gradiente azul-ardósia mais claro e barra interna com o mesmo acabamento contínuo; não altera conteúdo de aplicativos externos.
+
+Quatorze testes locais release e ASan/UBSan passaram. Teste da moldura passa a conferir continuidade de opacidade e variação cromática em vez dos antigos pontos intensos; controles independentes preservados. Prévias dos componentes inspecionadas junto às referências, sem declarar correspondência exata. Sem timer, animação, blur novo ou benchmark. Ativação das molduras exige novo compositor no próximo login; sessão atual preservada devido à investigação STABILITY-BOOT.
+
+**NEON-01 · instalado:** pacote `0.5.0.r45.g13cadc7-1`, fonte 13cadc7, compilado do GitHub com 14 testes aprovados no makepkg e instalado via pacman. Apenas o gerenciador foi reaberto com o novo fundo e barra interna; processo permaneceu ativo. Compositor/shell da sessão preservados: novas molduras globais aguardam próximo login. Sem teste físico de VT, benchmark ou confirmação visual pelo usuário. PR #31 sem merge; CI pendente neste registro.

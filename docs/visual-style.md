@@ -81,3 +81,9 @@ O usuário rejeitou o contorno largo contínuo. Direção atual: bordas laterais
 ### Sombreamento e contorno superior fino
 
 Sombra interna leve destaca o volume da moldura de 3 px sem engrossá-la. É controlada por `JLINUX_GLASS_SHADOW`, independentemente dos reflexos; não é sombra externa desfocada. Barra superior e cabeçalhos compactos usam contorno de 0,75 px, bevel reduzido e nenhuma linha interna duplicada, mantendo altura e pontos de brilho. Dock preservado.
+
+## Bordas neon discretas — feature/window-neon-rim
+
+Pedido atual substitui pontos focais nas janelas: contorno contínuo de 0,85 px azul/violeta, halo interno discreto de 2,8 px recortado à moldura, sem núcleos brancos. Cabeçalho retangular de 36 px, borda física de 3 px e cantos de 6 px preservados. Dock/barra superior não mudam. Gerenciador recebe fundo opaco em gradiente azul-ardósia mais claro e barra interna com o mesmo acabamento contínuo; não altera conteúdo de aplicativos externos.
+
+Quatorze testes locais release e ASan/UBSan passaram. Teste da moldura passa a conferir continuidade de opacidade e variação cromática em vez dos antigos pontos intensos; controles independentes preservados. Prévias dos componentes inspecionadas junto às referências, sem declarar correspondência exata. Sem timer, animação, blur novo ou benchmark. Ativação das molduras exige novo compositor no próximo login; sessão atual preservada devido à investigação STABILITY-BOOT.

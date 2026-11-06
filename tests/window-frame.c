@@ -26,11 +26,19 @@ int main(int argc, char **argv) {
     wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
     CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[3]->buffer, WLR_BUFFER_DATA_PTR_ACCESS_READ,
         &pixels, &format, &stride));
-    int peak_x = (int)((frame.parts[3]->buffer->width - 1) * .64 + .5);
-    uint32_t peak = *(uint32_t *)((unsigned char *)pixels + stride + peak_x * 4);
-    uint32_t quiet = *(uint32_t *)((unsigned char *)pixels + stride + 280 * 4);
+    uint32_t left = *(uint32_t *)((unsigned char *)pixels + stride + 80 * 4);
+    uint32_t middle = *(uint32_t *)((unsigned char *)pixels + stride + 360 * 4);
+    uint32_t right = *(uint32_t *)((unsigned char *)pixels + stride + 640 * 4);
+    /* Continuous light: no former bottom hotspot; hue still changes along the rim. */
+    for (int x = 81; x < 640; x++) {
+        uint32_t previous = *(uint32_t *)((unsigned char *)pixels + stride + (x - 1) * 4);
+        uint32_t current = *(uint32_t *)((unsigned char *)pixels + stride + x * 4);
+        int delta = (int)(current >> 24) - (int)(previous >> 24);
+        CHECK(delta >= -2 && delta <= 2);
+    }
+    CHECK(left != middle && middle != right);
+    CHECK((left & 255) > ((left >> 16) & 255));
     wlr_buffer_end_data_ptr_access(frame.parts[3]->buffer);
-    CHECK((peak >> 24) > (quiet >> 24) + 60);
 
     effects.reflection = false;
     CHECK(jlinux_window_frame_update(&frame, 711, 411, "JLinux Terminal", effects, false));
@@ -58,7 +66,7 @@ int main(int argc, char **argv) {
         cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 800, 520);
         cairo_t *cr = cairo_create(image); ui_wallpaper(cr, 800, 520);
         /* A component preview, not an application screenshot. */
-        cairo_set_source_rgb(cr, .025, .035, .065); cairo_rectangle(cr, 44, 80, 711, 411); cairo_fill(cr);
+        cairo_set_source_rgb(cr, .13, .17, .25); cairo_rectangle(cr, 44, 80, 711, 411); cairo_fill(cr);
         ui_text(cr, "Prévia da moldura nativa", 64, 102, 16, false, 0xa9b7d0);
         for (int i = 0; i < 4; i++) {
             struct wlr_buffer *buffer = frame.parts[i]->buffer;
