@@ -21,3 +21,18 @@ O fundo atual é um gradiente opaco azul-ardósia, sem preto predominante; barra
 Atalhos fixos à esquerda: Pessoal, Downloads, Documentos, Imagens e Vídeos. Um clique navega; Alt+1…5 segue a mesma ordem. A pasta atual recebe destaque. Caminhos seguem user-dirs.dirs via GLib, incluindo pastas personalizadas fora da home; sem configuração, usam nomes padrão Downloads/Documents/Pictures/Videos dentro da home. Pastas ausentes ficam esmaecidas; a tentativa mostra erro e preserva a pasta atual. Nenhuma pasta é criada automaticamente.
 
 Lista e área de clique ficam à direita da barra lateral; a roda sobre a barra não rola a lista. Tamanho mínimo passa a 540×360 para manter os cinco atalhos legíveis; abaixo de 760 px de largura a coluna de tamanho fica oculta. A prévia usa apenas arquivos fictícios.
+
+## Pastas dos usuários existentes — configuração local
+
+Em 05/11/2026 foram criadas Downloads, Documentos, Imagens e Vídeos nas homes dos dois usuários locais regulares existentes (UIDs 1000 e 1001). Pessoal aponta para a própria home, sem subpasta duplicada. Os diretórios foram criados como cada usuário, com modo 0700; nenhum arquivo foi movido, excluído ou renomeado. As duas contas não tinham configuração user-dirs.dirs anterior.
+
+Em cada home, ~/.config/user-dirs.dirs foi criado com modo 0600 e propriedade do usuário:
+
+```sh
+XDG_DOWNLOAD_DIR="$HOME/Downloads"
+XDG_DOCUMENTS_DIR="$HOME/Documentos"
+XDG_PICTURES_DIR="$HOME/Imagens"
+XDG_VIDEOS_DIR="$HOME/Vídeos"
+```
+
+A resolução foi conferida via g_get_user_special_dir da GLib, sob cada conta, juntamente com acesso de leitura/escrita/travessia e propriedade dos diretórios/configuração. Arquivos foi reaberto na sessão atual para renovar o cache GLib. Esta é uma configuração local aplicada aos usuários existentes, não um provisionador automático de novas contas. Os arquivos privados de configuração não são versionados; este registro descreve a alteração aplicada. Não houve atualização de pacote ou reinício do desktop por esta entrega.
