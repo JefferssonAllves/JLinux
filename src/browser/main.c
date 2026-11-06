@@ -134,7 +134,8 @@ static void chrome_clicked(struct browser_chrome *chrome, double x, double y, gp
     int width = wpe_view_get_width(chrome->view);
     if (y < BROWSER_TAB_HEIGHT) {
         guint count = chrome->tabs->len;
-        if (x >= width - 44) { new_tab(app, "about:blank"); }
+        int add_x = browser_chrome_new_tab_x(chrome, width);
+        if (x >= add_x && x < add_x + 32) { new_tab(app, "about:blank"); }
         else if (x >= width - 72) { select_tab(app, (chrome->active_tab + 1) % count); }
         else if (x >= width - 100) { select_tab(app, (chrome->active_tab + count - 1) % count); }
         else if (x >= 12) {

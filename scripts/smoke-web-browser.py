@@ -134,7 +134,7 @@ def main():
                 # The window/header origin is 40,80; the page starts 100 px below it.
                 click(110, 110)
                 typed("y", "keeponey")
-                click(window_width + 16, 110)  # +
+                click(40 + 12 + 2 * 180 + 16, 110)  # + beside the second tab.
                 navigate("/mouse-third")
                 click(222, 110)  # Close the inactive first tab.
                 typed("third", "third")
@@ -162,7 +162,7 @@ def main():
                 before = Handler.events.count("/bottom-click")
                 click(x + 35, y + height - 10)
                 wait_for(lambda: Handler.events.count("/bottom-click") > before, processes, "rodapé após maximizar")
-                click(x + width - 24, y + 18)  # Header still handles input at its new position.
+                click(x + 12 + 180 + 16, y + 18)  # + follows the remaining tab after maximizing.
                 keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
                 before = Handler.events.count(f"/viewport?w={window_width}&h={window_height - 100}")
                 keys("-M", "logo", "-k", "Down", "-m", "logo")
