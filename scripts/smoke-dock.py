@@ -39,10 +39,9 @@ with tempfile.TemporaryDirectory(prefix='jlinux-dock-test-') as directory:
                          [server, client], 'dock')
                 if iteration:
                     marker.unlink()
-                    subprocess.run([pointer, '--scroll', '34', '443', '15'], env=env, check=True, timeout=4)
-                    click(34, 443)
-                    wait_for(marker.exists, [server, client], 'atalho persistido acessível pela roda')
-                click(34, 482)  # Bottom plus button; geometry matches the unchanged default dock.
+                    click(34, 475)
+                    wait_for(marker.exists, [server, client], 'quarto atalho persistido visível sem rolar')
+                click(34, 515)  # Plus below the four visible slots.
                 wait_for(lambda: logfile.read_text().count('Interface mapeada: jlinux-dock-apps') > iteration,
                          [server, client], 'lista de aplicativos')
                 if not iteration:
@@ -50,7 +49,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-dock-test-') as directory:
                     wait_for(lambda: settings.exists() and 'test-dock.desktop' in settings.read_text(), [server, client], 'preferência salva')
                     assert settings.stat().st_mode & 0o777 == 0o600
                     click(150, 545)  # Close list.
-                    click(34, 443)  # Last visible slot is the newly pinned application.
+                    click(34, 475)  # Fourth slot; Files, Terminal and Codex remain visible.
                     wait_for(marker.exists, [server, client], 'aplicativo fixado aberto')
                 else:
                     assert 'test-dock.desktop' in settings.read_text()
@@ -62,7 +61,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-dock-test-') as directory:
             settings.write_text('invalid configuration')
             client = subprocess.Popen([shell, *sys.argv[4:]], env=env, stdout=shell_out, stderr=subprocess.STDOUT)
             wait_for(lambda: logfile.read_text().count('Interface mapeada: jlinux-dock\n') > 2, [server, client], 'fallback de configuração')
-            click(34, 482)
+            click(34, 515)
             wait_for(lambda: logfile.read_text().count('Interface mapeada: jlinux-dock-apps') > 2, [server, client], 'lista em fallback')
             click(150, 235)
             assert settings.read_text() == 'invalid configuration'

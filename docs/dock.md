@@ -1,6 +1,6 @@
 # Aplicativos no dock
 
-O botão **+** na parte inferior do dock abre uma lista nativa dos aplicativos instalados. Clique no nome para fixar; clique novamente para remover. O marcador ✓ indica os aplicativos adicionais fixados. Fechar volta ao desktop. Role a lista para ver os demais aplicativos e role sobre o dock para acessar os atalhos que não cabem nas três posições visíveis. Ao fixar um aplicativo, o dock passa a mostrar o final da lista.
+O botão **+** na parte inferior do dock abre uma lista nativa dos aplicativos instalados. Clique no nome para fixar; clique novamente para remover. O marcador ✓ indica os aplicativos adicionais fixados. Fechar volta ao desktop. Há quatro posições visíveis: Arquivos, Terminal, Codex e o primeiro aplicativo adicional (nesta instalação, JLinux Browser), sem precisar rolar. Role a lista para ver os demais aplicativos e role sobre o dock para acessar atalhos adicionais que não cabem. Ao fixar mais aplicativos, o dock passa a mostrar o final da lista.
 
 Arquivos, Terminal e Codex continuam sendo as três ações iniciais. Os atalhos adicionais usam a inicial do nome em um bloco azul/violeta; ainda não há carregador de temas de ícones. A lista mostra nomes completos. Arrastar/reordenar atalhos, busca e navegação por teclado na lista ainda não estão implementados.
 
@@ -25,4 +25,6 @@ O modo integrado mantém o material com fundo do wallpaper do shell. A sobreposi
 
 ## Validação
 
-Testes headless usam HOME/XDG isolados, aplicativo fictício e assert de máscara de sinais no filho. Cobrem fixar, abrir, persistir após reiniciar, acessar pelo scroll, remover e preservar configuração inválida. O mesmo fluxo roda no shell completo e no modo --dock-panel. A prévia em design/native-dock-apps-preview.png é renderizada pelas rotinas do shell, não uma captura da sessão.
+Em 06/11/2026, a correção das quatro posições foi instalada no pacote `0.5.0.r56.g8c5c803-1` e ativada na sessão atual pelo modo auxiliar descrito acima. O navegador aparece como a letra **J** no quarto botão, após Arquivos, Terminal e Codex. Não exige rolar nem abrir a lista para atualizar. No próximo login o shell integrado apresenta o mesmo layout. Foram aprovados 17 testes locais, 17 no empacotamento e CI do PR #41; o clique no quarto atalho foi validado em headless, não por interação física na sessão do usuário.
+
+Testes headless usam HOME/XDG isolados, aplicativo fictício e assert de máscara de sinais no filho. Cobrem fixar, abrir o quarto atalho sem rolar, persistir após reiniciar, remover e preservar configuração inválida. O mesmo fluxo roda no shell completo e no modo --dock-panel. A prévia em design/native-dock-apps-preview.png é renderizada pelas rotinas do shell, não uma captura da sessão.
