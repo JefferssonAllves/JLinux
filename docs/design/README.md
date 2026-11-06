@@ -69,3 +69,7 @@ As prévias nativas de moldura e Arquivos acima foram atualizadas: sem pontos fo
 ![Lista nativa para fixar aplicativos](native-dock-apps-preview.png)
 
 Prévia renderizada por `jlinux-shell --preview-dock-apps`, sem captura da sessão. O botão + foi adicionado ao dock preservando suas dimensões; aplicativos adicionais usam monogramas nesta etapa.
+
+### Realce de cor nas janelas
+
+As prévias de moldura e Arquivos foram atualizadas com azul/ciano e violeta mais intensos no contorno e reflexos mais presentes no cabeçalho. O fundo permanece escuro e a borda fina. São prévias de componentes nativos; não representam a sessão instalada nem o conteúdo de aplicativos externos.
