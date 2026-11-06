@@ -266,3 +266,8 @@ Nome e símbolo JLinux removidos da barra superior; menus começam a 24 px da ma
 - Avisos de protocolos Wayland ainda não implementados permanecem nos logs. A mensagem exata mencionada pelo usuário ainda não foi confirmada; não tratar a correção de locale como resolução de todo possível problema do terminal.
 
 **TERMINAL-UTF8 · instalado:** pacote `0.5.0.r41.g94ddb52-1` instalado pelo pacman após doze testes de pacote aprovados. Terminal adicional aberto na sessão atual com LANG=pt_BR.UTF-8 e ausência do aviso de locale confirmada em log próprio. Sessão atual preservada. Correção herdada automaticamente por dock/atalho/terminal inicial requer próximo login, pois os processos antigos conservam ambiente anterior. Outros avisos Wayland permanecem como diagnósticos.
+
+
+### BROWSER-DOWNLOADS — instalado
+
+Downloads nativos WPE em Downloads, sem sobrescrita, progresso e acesso à pasta pelo padrão XDG. Testes locais web-browser-wayland (bytes, duplicatas, erro de destino e abertura via padrão), web-browser-media e web-browser-blocker passaram. Pacote instalado 0.1.0.r55.g5a9a774-1; reabrir navegador para ativar. Sem benchmark de memória novo nem suporte a pausa/retomada/histórico.

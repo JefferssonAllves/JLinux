@@ -29,7 +29,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
         mime = "text/html; charset=utf-8"
         if self.path == "/pagead/banner.js":
             body, mime = b"window.adLoaded = true;", "application/javascript"
+        if self.path in ("/download", "/download-broken"):
+            body, mime = b"JLinux download fixture\n", "application/octet-stream"
         self.send_response(200)
+        if self.path in ("/download", "/download-broken"):
+            self.send_header("Content-Disposition", 'attachment; filename="' + ("x" * 300 if self.path == "/download-broken" else "fixture.bin") + '"')
         self.send_header("Content-Type", mime)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -49,6 +53,20 @@ def main():
                    XDG_DATA_HOME=directory + "/data", XDG_CONFIG_HOME=directory + "/config",
                    WLR_BACKENDS="headless", WLR_RENDERER="pixman", WLR_HEADLESS_OUTPUTS="1",
                    JLINUX_TEST_INPUT="1", LIBGL_ALWAYS_SOFTWARE="1", JLINUX_BROWSER_ADBLOCK="1")
+        downloads = runtime / "Downloads"
+        downloads.mkdir()
+        (downloads / "fixture.bin").write_bytes(b"preserve existing file")
+        config = runtime / "config"
+        config.mkdir()
+        (config / "user-dirs.dirs").write_text(f'XDG_DOWNLOAD_DIR="{downloads}"\n')
+        applications = runtime / "data" / "applications"
+        applications.mkdir(parents=True)
+        opener = runtime / "folder-opener.py"
+        opener.write_text("import pathlib,sys\npathlib.Path(sys.argv[1]).write_text(sys.argv[2])\n")
+        marker = runtime / "opened-folder"
+        (applications / "test-folder.desktop").write_text(
+            f"[Desktop Entry]\nType=Application\nName=Folder test\nExec={sys.executable} {opener} {marker} %f\nMimeType=inode/directory;\n")
+        (config / "mimeapps.list").write_text("[Default Applications]\ninode/directory=test-folder.desktop;\n")
         logfile = runtime / "session.log"
         web_server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         thread = threading.Thread(target=web_server.serve_forever, daemon=True)
@@ -82,6 +100,19 @@ def main():
                 wait_for(lambda: f"/viewport?w={window_width}&h={window_height - 100}" in Handler.events,
                          processes, "viewport desconta a altura do cabeçalho")
                 assert "/pagead/banner.js" not in Handler.events, "Default blocking did not prevent download"
+                for number in (1, 2):
+                    keys("-M", "ctrl", "-k", "l", "-m", "ctrl", base + "/download", "-k", "Return")
+                    destination = downloads / f"{number}-fixture.bin"
+                    wait_for(lambda: log().count("Download concluído:") >= number,
+                             processes, "download concluído sem sobrescrever")
+                    assert destination.read_bytes() == b"JLinux download fixture\n"
+                    assert (downloads / "fixture.bin").read_bytes() == b"preserve existing file"
+                keys("-M", "ctrl", "-k", "l", "-m", "ctrl", base + "/download-broken", "-k", "Return")
+                wait_for(lambda: "Download falhou:" in log(), processes, "destino inválido sinaliza falha")
+                assert log().count("Download concluído:") == 2, log()
+                keys("-M", "ctrl", "-k", "j", "-m", "ctrl")
+                wait_for(marker.exists, processes, "abrir Downloads pelo aplicativo padrão")
+                assert marker.read_text() == str(downloads), marker.read_text()
                 before = Handler.events.count("/shown?path=/first")
                 keys("-M", "ctrl", "-M", "shift", "-k", "b", "-m", "shift", "-m", "ctrl")
                 wait_for(lambda: Handler.events.count("/shown?path=/first") > before,

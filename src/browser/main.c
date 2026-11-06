@@ -21,6 +21,7 @@ struct app {
     WPEDisplay *display;
     WPEToplevel *toplevel;
     WebKitNetworkSession *session;
+    GPtrArray *downloads;
     struct browser_chrome chrome;
     gboolean probe;
     gboolean media_available;
@@ -30,6 +31,7 @@ struct app {
     int status;
 };
 static void new_tab(struct app *app, const char *uri);
+static void open_downloads(void);
 static void select_tab(struct app *app, guint index);
 static void close_tab(struct app *app, guint index);
 static gboolean quit(gpointer data) { g_main_loop_quit(((struct app *)data)->loop); return G_SOURCE_CONTINUE; }
@@ -95,6 +97,7 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         gboolean alt = modifiers & WPE_MODIFIER_KEYBOARD_ALT;
         if (ctrl && (key == XKB_KEY_l || key == XKB_KEY_L)) { show_address(app); }
         else if (ctrl && (modifiers & WPE_MODIFIER_KEYBOARD_SHIFT) && (key == XKB_KEY_b || key == XKB_KEY_B)) { toggle_blocker(app); }
+        else if (ctrl && (key == XKB_KEY_j || key == XKB_KEY_J)) { open_downloads(); }
         else if (ctrl && (key == XKB_KEY_t || key == XKB_KEY_T)) { new_tab(app, "about:blank"); }
         else if (ctrl && (key == XKB_KEY_w || key == XKB_KEY_W)) { close_tab(app, chrome->active_tab); }
         else if (ctrl && (key == XKB_KEY_Tab || key == XKB_KEY_ISO_Left_Tab)) {
@@ -151,6 +154,7 @@ static void chrome_clicked(struct browser_chrome *chrome, double x, double y, gp
         if (x < 45) { webkit_web_view_go_back(app->web); }
         else if (x < 83) { webkit_web_view_go_forward(app->web); }
         else if (x < 127) { webkit_web_view_reload(app->web); }
+        else if (x >= width - 112) { open_downloads(); }
         else { show_address(app); }
     }
 }
@@ -197,7 +201,8 @@ static void load_changed(WebKitWebView *web, WebKitLoadEvent event, gpointer dat
 }
 static gboolean load_failed(WebKitWebView *web, WebKitLoadEvent event, const char *uri, GError *error, gpointer data) {
     (void)web; (void)event; (void)uri; struct app *app = data;
-    if (g_error_matches(error, WEBKIT_NETWORK_ERROR, WEBKIT_NETWORK_ERROR_CANCELLED)) { return TRUE; }
+    if (g_error_matches(error, WEBKIT_NETWORK_ERROR, WEBKIT_NETWORK_ERROR_CANCELLED)
+        || g_error_matches(error, WEBKIT_POLICY_ERROR, WEBKIT_POLICY_ERROR_FRAME_LOAD_INTERRUPTED_BY_POLICY_CHANGE)) { return TRUE; }
     g_printerr("Falha de carregamento: %s\n", error->message);
     if (app->probe) { app->status = 1; quit(app); }
     else { web_notice(app, web, "Não foi possível abrir a página. Confira o endereço e a conexão."); }
@@ -220,9 +225,13 @@ static gboolean policy(WebKitWebView *web, WebKitPolicyDecision *decision, WebKi
     }
     if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE
         && !webkit_response_policy_decision_is_mime_type_supported(WEBKIT_RESPONSE_POLICY_DECISION(decision))) {
-        webkit_policy_decision_ignore(decision);
-        web_notice(app, web, "Downloads ainda não estão disponíveis.");
-        if (app->probe) { app->status = 1; quit(app); } return TRUE;
+        if (!app->probe && webkit_response_policy_decision_is_main_frame_main_resource(WEBKIT_RESPONSE_POLICY_DECISION(decision))) {
+            webkit_policy_decision_download(decision);
+        } else {
+            webkit_policy_decision_ignore(decision);
+            if (app->probe) { app->status = 1; quit(app); }
+        }
+        return TRUE;
     }
     return FALSE;
 }
@@ -234,10 +243,83 @@ static gboolean authenticate(WebKitWebView *web, WebKitAuthenticationRequest *re
     struct app *app = data; webkit_authentication_request_cancel(request);
     web_notice(app, web, "Autenticação HTTP ainda não disponível nesta versão."); return TRUE;
 }
+static char *download_directory(void) {
+    const char *configured = g_get_user_special_dir(G_USER_DIRECTORY_DOWNLOAD);
+    return configured ? g_strdup(configured) : g_build_filename(g_get_home_dir(), "Downloads", NULL);
+}
+static void folder_opened(GObject *source, GAsyncResult *result, gpointer data) {
+    (void)source; (void)data; GError *error = NULL;
+    if (!g_app_info_launch_default_for_uri_finish(result, &error)) {
+        g_printerr("Não foi possível abrir Downloads: %s\n", error->message); g_error_free(error);
+    }
+}
+static void open_downloads(void) {
+    char *directory = download_directory();
+    if (g_mkdir_with_parents(directory, 0700) == 0) {
+        char *uri = g_filename_to_uri(directory, NULL, NULL);
+        if (uri) { g_app_info_launch_default_for_uri_async(uri, NULL, NULL, folder_opened, NULL); g_free(uri); }
+    } else { g_printerr("Não foi possível criar a pasta Downloads.\n"); }
+    g_free(directory);
+}
+static void download_progress(WebKitDownload *item, GParamSpec *spec, gpointer data) {
+    (void)item; (void)spec; struct app *app = data;
+    double total = 0;
+    for (guint i = 0; i < app->downloads->len; i++) {
+        total += webkit_download_get_estimated_progress(g_ptr_array_index(app->downloads, i));
+    }
+    g_snprintf(app->chrome.download_status, sizeof(app->chrome.download_status), "↓ %u · %.0f%%",
+        app->downloads->len, app->downloads->len ? total * 100 / app->downloads->len : 0);
+    if (!app->probe) { browser_chrome_update(&app->chrome); }
+}
+static gboolean download_destination(WebKitDownload *item, const char *suggested, gpointer data) {
+    struct app *app = data; char *directory = download_directory();
+    char *name = g_path_get_basename(suggested && *suggested ? suggested : "download");
+    if (!strcmp(name, ".") || !strcmp(name, "..") || !strcmp(name, "/")) { g_free(name); name = g_strdup("download"); }
+    if (g_mkdir_with_parents(directory, 0700) != 0) {
+        g_printerr("Download: não foi possível criar a pasta de destino.\n");
+        webkit_download_cancel(item); g_free(name); g_free(directory); return TRUE;
+    }
+    char *path = NULL;
+    for (guint suffix = 0; suffix < 10000; suffix++) {
+        char *filename = suffix ? g_strdup_printf("%u-%s", suffix, name) : g_strdup(name);
+        g_free(path); path = g_build_filename(directory, filename, NULL); g_free(filename);
+        gboolean occupied = g_file_test(path, G_FILE_TEST_EXISTS) || g_file_test(path, G_FILE_TEST_IS_SYMLINK);
+        for (guint i = 0; !occupied && i < app->downloads->len; i++) {
+            WebKitDownload *other = g_ptr_array_index(app->downloads, i);
+            occupied = other != item && !g_strcmp0(path, webkit_download_get_destination(other));
+        }
+        if (occupied) { continue; }
+        webkit_download_set_allow_overwrite(item, FALSE);
+        webkit_download_set_destination(item, path);
+        g_free(path); g_free(name); g_free(directory); return TRUE;
+    }
+    g_printerr("Download: não foi possível escolher um nome livre.\n");
+    webkit_download_cancel(item); g_free(path); g_free(name); g_free(directory); return TRUE;
+}
+static void download_failed(WebKitDownload *item, GError *error, gpointer data) {
+    (void)data; g_object_set_data(G_OBJECT(item), "jlinux-download-failed", GINT_TO_POINTER(1));
+    g_printerr("Download falhou: %s\n", error->message);
+}
+static void download_finished(WebKitDownload *item, gpointer data) {
+    struct app *app = data;
+    gboolean failed = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "jlinux-download-failed"));
+    if (!failed) { g_print("Download concluído: %s\n", webkit_download_get_destination(item)); }
+    g_signal_handlers_disconnect_by_data(item, app);
+    g_ptr_array_remove(app->downloads, item);
+    if (app->downloads->len) { download_progress(NULL, NULL, app); }
+    else {
+        g_strlcpy(app->chrome.download_status, failed ? "↓ !" : "↓ ✓", sizeof(app->chrome.download_status));
+        if (!app->probe) { browser_chrome_update(&app->chrome); }
+    }
+}
 static void download(WebKitNetworkSession *session, WebKitDownload *item, gpointer data) {
-    (void)session; struct app *app = data; webkit_download_cancel(item);
-    WebKitWebView *web = webkit_download_get_web_view(item);
-    if (web) { web_notice(app, web, "Downloads ainda não estão disponíveis."); }
+    (void)session; struct app *app = data;
+    g_ptr_array_add(app->downloads, g_object_ref(item));
+    g_signal_connect(item, "decide-destination", G_CALLBACK(download_destination), app);
+    g_signal_connect(item, "notify::estimated-progress", G_CALLBACK(download_progress), app);
+    g_signal_connect(item, "failed", G_CALLBACK(download_failed), app);
+    g_signal_connect(item, "finished", G_CALLBACK(download_finished), app);
+    download_progress(item, NULL, app);
 }
 static void terminated(WebKitWebView *web, WebKitWebProcessTerminationReason reason, gpointer data) {
     (void)web; struct app *app = data; g_printerr("Processo web encerrado: %d\n", reason);
@@ -345,7 +427,7 @@ static void close_tab(struct app *app, guint index) {
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
     if (argc == 2 && !strcmp(argv[1], "--help")) {
-        g_print("Uso: jlinux-browser [URL ou busca] | --probe URL | --preview arquivo.png\nCtrl+L endereço; Ctrl+T nova aba; Ctrl+W fechar aba; Ctrl+Tab alternar; Ctrl+Shift+B alternar bloqueio de anúncios nesta aba; Ctrl+Q sair.\n"); return 0;
+        g_print("Uso: jlinux-browser [URL ou busca] | --probe URL | --preview arquivo.png\nCtrl+J Downloads; Ctrl+L endereço; Ctrl+T nova aba; Ctrl+W fechar aba; Ctrl+Tab alternar; Ctrl+Shift+B alternar bloqueio de anúncios nesta aba; Ctrl+Q sair.\n"); return 0;
     }
     if (g_getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS")) {
         g_printerr("Remova WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: a sandbox é obrigatória.\n"); return 1;
@@ -410,6 +492,7 @@ int main(int argc, char **argv) {
     new_tab(&app, uri);
     WPEView *view = webkit_web_view_get_wpe_view(app.web);
     g_signal_connect(display, "disconnected", G_CALLBACK(disconnected), &app);
+    app.downloads = g_ptr_array_new_with_free_func(g_object_unref);
     g_signal_connect(session, "download-started", G_CALLBACK(download), &app);
     if (!app.probe) {
         app.chrome.clicked = chrome_clicked; app.chrome.clicked_data = &app;
@@ -426,6 +509,13 @@ int main(int argc, char **argv) {
     if (deadline) { g_source_remove(deadline); }
     g_source_remove(term); g_source_remove(interrupt);
 cleanup:
+    if (app.downloads) {
+        for (guint i = 0; i < app.downloads->len; i++) {
+            WebKitDownload *item = g_ptr_array_index(app.downloads, i);
+            g_signal_handlers_disconnect_by_data(item, &app); webkit_download_cancel(item);
+        }
+        g_ptr_array_unref(app.downloads);
+    }
     for (guint i = 0; i < app.chrome.tabs->len; i++) {
         WebKitWebView *web = g_ptr_array_index(app.chrome.tabs, i);
         g_signal_handlers_disconnect_by_data(webkit_web_view_get_wpe_view(web), &app);
