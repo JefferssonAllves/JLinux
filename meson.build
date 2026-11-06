@@ -89,6 +89,12 @@ if foot.found() and wtype.found()
     test('dock-live-headless', find_program('scripts/smoke-dock.py'), args: [compositor, shell, pointer_test, '--dock-panel'], timeout: 30)
     test('power-menu-headless', find_program('scripts/smoke-power.py'), args: [compositor, shell, pointer_test], timeout: 35)
   endif
+  if get_option('shell')
+    layout_client = executable('jlinux-test-layout-client', 'tests/layout-client.c', client_xdg_header, client_xdg_code,
+      dependencies: client_dep)
+    test('window-layout-constraints', find_program('scripts/smoke-layout-constraints.py'), args: [compositor, layout_client, wtype], timeout: 25)
+  endif
+  test('automatic-tiling', find_program('scripts/smoke-tiling.py'), args: [compositor, pointer_test, foot, wtype], timeout: 40)
   test('window-frame-input', find_program('scripts/smoke-window-frame.py'), args: [compositor, pointer_test, foot, wtype], timeout: 35)
   terminal_test = find_program('scripts/smoke-terminal.py')
   test('terminal-input-headless', terminal_test, args: [compositor, pointer_test, foot, wtype], timeout: 40)
