@@ -13,7 +13,7 @@ As ferramentas web servem para criar e iterar protótipos visuais antes da inter
 ### Conteúdo abaixo do cabeçalho — fix/browser-content-layout
 
 - **BROWSER-LAYOUT · implementado na branch:** cabeçalho em área própria acima da origem da página; viewport recebe altura da janela menos 148 px, inclusive após trocar abas ou redimensionar. Cliques de cabeçalho e conteúdo tratados nas respectivas superfícies, preservando renderização WPE.
-- **Regressão local:** mede o viewport e testa topo/rodapé clicáveis, sete abas sem tamanho intermediário incorreto, entrada no cabeçalho maximizado, maximizar/restaurar e resize pela borda. Passaram os 16 testes locais release e os quatro do navegador com ASan/UBSan (`detect_leaks=0`). CI e pacote serão registrados após envio.
+- **Regressão local:** mede o viewport e testa topo/rodapé clicáveis, sete abas sem tamanho intermediário incorreto, entrada no cabeçalho maximizado, maximizar/restaurar e resize pela borda. Passaram os 16 testes locais release e os quatro do navegador com ASan/UBSan (`detect_leaks=0`). Oito checks do pacote passaram; instalado `0.1.0.r48.gfdcdfdf-1` (código `fdcdfdf`) em 06/11/2026. Teste Wayland de layout/entrada repetido com sucesso usando `/usr/bin/jlinux-browser`. PR #48 enviado; uma execução da CI passou e outra seguia em execução antes da atualização documental. Janelas anteriores preservadas até reabrir.
 - **Limites:** sem novo benchmark ou validação visual em GPU/HiDPI; não modifica CSS de sites, sessão de login ou desktop instalado.
 
 ### Barra persistente e Google — feature/browser-search-bar

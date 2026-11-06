@@ -39,6 +39,8 @@ O cabeçalho trata seus próprios eventos de ponteiro Wayland e cursor; coordena
 
 O teste headless verifica `innerHeight = altura da janela - 148`, ausência de viewport intermediário com altura inteira ao alternar abas, cliques reais em botões fixos no topo e rodapé do site, nova aba pelo cabeçalho maximizado, maximizar/restaurar e redimensionar pela borda. Não equivale a uma captura visual nem a teste físico com GPU/HiDPI. Nenhum compositor paralelo foi iniciado no TTY ativo. Passaram os 16 testes locais release e os quatro testes do navegador com ASan/UBSan (`detect_leaks=0`); LeakSanitizer permanece pendente.
 
+Instalado em 06/11/2026: `jlinux-browser-git 0.1.0.r48.gfdcdfdf-1`, código `fdcdfdf`, após os oito checks do pacote. O teste Wayland de layout/entrada também passou usando `/usr/bin/jlinux-browser` já instalado. Janelas existentes foram preservadas e só adotam o layout novo ao reabrir. Correção enviada no PR #48; uma execução da CI passou e outra seguia em execução no momento do registro, antes desta atualização documental.
+
 ## Barra persistente e Google — feature/browser-search-bar
 
 Exibição da barra e foco de edição são estados separados. Ctrl+L ou clique no campo seleciona o endereço atual; Enter navega; Esc cancela a edição e restaura o endereço carregado. Cliques fora da barra chegam à página na primeira tentativa. Mudanças de URI atualizam o campo, exceto durante uma edição em andamento. As abas e botões continuam clicáveis sem Ctrl+L.
