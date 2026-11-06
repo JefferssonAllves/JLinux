@@ -336,3 +336,9 @@ Aplicativos, Arquivos e Configurações removidos da barra superior por pedido d
 ### FILES-DEFAULT
 
 Associação de sistema para inode/directory em /etc/xdg/mimeapps.list, preservando precedência das preferências pessoais. xdg-utils passa a ser dependência do desktop. Usuário atual configurado com gio mime; xdg-mime confirmou org.jlinux.Files.desktop e xdg-open abriu Downloads em jlinux-files. Não substitui seletores internos nem oferece FileManager1 por D-Bus.
+
+### Aplicação direta no sistema — preferência do usuário
+
+O usuário autorizou instalar/aplicar diretamente no sistema toda alteração solicitada, após os checks, além de commit/push. Regra registrada em AGENTS.md; preservar atualizações instaladas e combinar logout/reinício quando houver encerramento de aplicativos.
+
+**SHELL-NO-DOCK · instalado em 06/11/2026:** pacote `0.5.0.r73.gc81b589-1`, fonte c81b589, compilado da branch GitHub após incorporar feature/default-file-manager para preservar a instalação 850294f (bordas rosadas e associação de pastas). Os 19 testes do makepkg passaram; pacman -Qkk confirmou 20 arquivos/zero alterações; hash do shell corresponde ao pacote e inode/directory continua associado a Arquivos JLinux. Teste do iniciador instalado em headless privado por dois segundos e prévia do shell passaram. Instalação anterior preservada no cache do pacman. Sessão greetd atual intacta: shell antigo em execução; remoção visível no próximo login. Sem logout, VT, DRM, benchmark ou alegação de ativação visual imediata.
