@@ -48,7 +48,7 @@ if sys.argv[1] == 'get-volume': print('Volume: 0.40 [MUTED]')
                 name = 'jlinux-volume-button' if live else 'jlinux-panel'
                 wait_for(lambda: f'Interface mapeada: {name}' in log(), [server, client], name)
                 time.sleep(.2)
-                click(974 if live else 846, 24)
+                click(974 if live else 1074, 24)
                 wait_for(lambda: recorded() and recorded()[-1][0] == 'get-volume', [server, client], 'consulta')
                 time.sleep(.15)
                 for x, expected in ((950, ['set-volume', '--limit', '1.0', '@DEFAULT_AUDIO_SINK@', '5%-']),

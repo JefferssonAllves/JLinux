@@ -61,7 +61,7 @@ sys.exit(1 if pathlib.Path(os.environ['POWER_FAIL']).exists() else 0)
                     before = len(recorded())
                     click(1240, 24)
                     if not panel_only:
-                        wait_for(lambda: 'jlinux-radial-dock' in log(), [server, client], 'central de controle')
+                        wait_for(lambda: 'jlinux-control-center' in log(), [server, client], 'central de controle')
                         click(round((1284+action*145)*1280/1672), round(751*720/941))
                     maps += 1
                     wait_for(lambda: log().count('Interface mapeada: jlinux-power-menu') >= maps,
@@ -72,7 +72,7 @@ sys.exit(1 if pathlib.Path(os.environ['POWER_FAIL']).exists() else 0)
                     assert len(recorded()) == before, 'Cancelar executou ação'
                     click(1240, 24)
                     if not panel_only:
-                        wait_for(lambda: 'jlinux-radial-dock' in log(), [server, client], 'central de controle')
+                        wait_for(lambda: 'jlinux-control-center' in log(), [server, client], 'central de controle')
                         click(round((1284+action*145)*1280/1672), round(751*720/941))
                     maps += 1
                     wait_for(lambda: log().count('Interface mapeada: jlinux-power-menu') >= maps,

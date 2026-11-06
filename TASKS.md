@@ -357,3 +357,7 @@ O usuário autorizou instalar/aplicar diretamente no sistema toda alteração so
 - O usuário autorizou instalar a prévia completa e adiou a reconstrução exata dos assets que não tem separados. Controles sem backend mostram indisponibilidade. Fidelidade exata, integração dos controles restantes e validação na sessão real permanecem pendentes; ver docs/futurista.md.
 
 FUTURISTA — instalação confirmada: pacote `0.5.0.r76.g18a1cae-1` instalado; `pacman -Qkk` sem alterações, prévia gerada pelo executável instalado. Ativação no próximo login; processos atuais preservados. Commit/backup e limites em docs/arch-installation.md. Fidelidade pixel a pixel e backends ausentes continuam pendentes; não tratados como concluídos.
+
+### FUTURISTA-CONTROL-SEPARATION
+
+Painel de controle separado do dock: Super alterna somente dock; botão de ajustes à direita alterna painel. Ambos começam ocultos e os alvos do componente oculto são excluídos do hit test. Barra sem sinal Wi-Fi e lupa, data/hora centralizadas pela medida Pango do texto. Quatro testes locais relevantes passaram e o cenário de alternância/reinício passou com ASan/UBSan. Prévias nativas separadas em docs/design; sessão física não reiniciada para teste.

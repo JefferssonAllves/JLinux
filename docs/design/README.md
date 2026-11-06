@@ -1,6 +1,6 @@
 # Referência mais recente — Futurista
 
-[Imagem do usuário](futurista-reference.png) · [Prévia nativa](futurista-native-preview.png) · [Implementação e limites](../futurista.md). A nova tela substitui as referências anteriores para barra, dock circular e centro de controle. Correspondência exata ainda não foi alcançada; instalação da prévia completa autorizada pelo usuário.
+[Imagem do usuário](futurista-reference.png) · [Dock](futurista-dock-only.png) · [Painel](futurista-control-only.png) · [Implementação e limites](../futurista.md). A nova tela substitui as referências anteriores para barra, dock circular e centro de controle. Correspondência exata ainda não foi alcançada; instalação da prévia completa autorizada pelo usuário.
 
 # JLinux — referências visuais escolhidas pelo usuário
 

@@ -58,6 +58,7 @@ struct app {
     struct wl_surface *cursor_surface;
     struct surface wallpaper, panel, power, audio, launcher;
     struct futurista futurista;
+    bool showing_controls;
     int control;
     struct volume volume;
     struct surface *pointer_surface;
@@ -115,7 +116,7 @@ static void paint(struct surface *surface, cairo_t *cr) {
     if (surface == &surface->app->launcher) {
         surface->app->futurista.volume = surface->app->volume.available ? surface->app->volume.level : -1;
         surface->app->futurista.muted = surface->app->volume.muted;
-        futurista_overlay(&surface->app->futurista, cr, width, height);
+        futurista_overlay(&surface->app->futurista, cr, width, height, surface->app->showing_controls);
     } else if (surface == &surface->app->audio) {
         paint_volume(surface->app, cr);
     } else if (surface == &surface->app->panel && surface->app->volume_panel) {
@@ -211,6 +212,12 @@ static bool create_surface(struct app *app, struct surface *surface, const char 
         wl_region_add(input, 0, 0, 8192, PANEL_BODY_HEIGHT);
         wl_surface_set_input_region(surface->wl, input); wl_region_destroy(input);
     }
+    if(surface==&app->launcher){
+        struct wl_region *input=wl_compositor_create_region(app->compositor);
+        if(!input){return false;}
+        wl_region_add(input,0,PANEL_BODY_HEIGHT,8192,8192);
+        wl_surface_set_input_region(surface->wl,input);wl_region_destroy(input);
+    }
     if (surface == &app->wallpaper) {
         struct wl_region *empty = wl_compositor_create_region(app->compositor);
         if (!empty) { return false; }
@@ -297,24 +304,25 @@ static void close_launcher(struct app *app) {
     app->launcher.wl = NULL;
     app->launcher.configured = false;
     app->launcher.dirty = false;
-    fprintf(stderr, "Dock circular fechado.\n");
+    fprintf(stderr, "%s\n",app->showing_controls?"Painel de controle fechado.":"Dock circular fechado.");
 }
-static void toggle_launcher(struct app *app) {
-    if (app->launcher.wl) {
-        close_launcher(app);
-        return;
+static void toggle_launcher(struct app *app, bool controls) {
+    if(app->launcher.wl){
+        bool same=app->showing_controls==controls;close_launcher(app);
+        if(same){return;}
     }
+    app->showing_controls=controls;
     uint32_t all = ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
                    ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
-    if (!create_surface(app, &app->launcher, "jlinux-radial-dock", ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, all, 0,
+    if (!create_surface(app, &app->launcher, controls?"jlinux-control-center":"jlinux-radial-dock", ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, all, 0,
                         0, -1, 0)) {
         app->running = false;
         return;
     }
     futurista_status(&app->futurista);
-    volume_start(&app->volume, 0);
+    if(controls){volume_start(&app->volume, 0);}
     app->futurista.message[0] = 0;
-    fprintf(stderr, "Dock circular aberto.\n");
+    fprintf(stderr,"%s\n",controls?"Painel de controle aberto.":"Dock circular aberto.");
 }
 static void reset_child_signals(gpointer data) {
     (void)data;
@@ -330,7 +338,7 @@ static void launch_item(struct app *app, int index) {
     }
     if (index == 5) {
         snprintf(app->futurista.message, sizeof(app->futurista.message),
-                 "Configurações: use os controles à direita.");
+                 "Abra o painel pelo botão à direita da barra.");
         app->launcher.dirty = true;
         return;
     }
@@ -422,7 +430,7 @@ static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time
     (void)pointer; (void)time;
     struct app *app = data; app->pointer_x = wl_fixed_to_double(x); app->pointer_y = wl_fixed_to_double(y);
     if(app->pointer_surface==&app->launcher){
-        int hit=futurista_hit(app->pointer_x,app->pointer_y,app->launcher.width,app->launcher.height);
+        int hit=futurista_hit(app->pointer_x,app->pointer_y,app->launcher.width,app->launcher.height,app->showing_controls);
         if(hit>=0 && hit<10 && hit!=app->futurista.selected){app->futurista.selected=hit;app->launcher.dirty=true;}
     }
 }
@@ -431,7 +439,7 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
     struct app *app = data;
     if (button != BTN_LEFT || state != WL_POINTER_BUTTON_STATE_RELEASED) { return; }
     if (app->pointer_surface == &app->launcher) {
-        launcher_action(app,futurista_hit(app->pointer_x,app->pointer_y,app->launcher.width,app->launcher.height));
+        launcher_action(app,futurista_hit(app->pointer_x,app->pointer_y,app->launcher.width,app->launcher.height,app->showing_controls));
     } else if (app->pointer_surface == &app->audio) {
         if (app->pointer_y >= 122) { toggle_volume(app); }
         else if (app->pointer_y >= 78 && app->pointer_y < 116) {
@@ -449,8 +457,9 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
         }
     } else if (app->pointer_surface == &app->panel) {
         if (!app->volume_panel && !app->power_panel) {
-            double design_x=app->pointer_x+1672-app->panel.width;
-            if(design_x>=1220 && design_x<1260){toggle_volume(app);}else{toggle_launcher(app);}
+            if(app->pointer_x>=app->panel.width-60){toggle_launcher(app,true);}
+            else if(app->pointer_x>=app->panel.width-226 && app->pointer_x<app->panel.width-188){toggle_volume(app);}
+
         }
         else if (app->volume_panel || (app->pointer_x >= app->panel.width - 326 && app->pointer_x < app->panel.width - 272)) { toggle_volume(app); }
         else if (app->info) { app->info = false; app->panel.dirty = true; }
@@ -503,7 +512,7 @@ static int preview(const char *path) {
     ui_finish();
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
-static int preview_futurista(const char *path) {
+static int preview_futurista(const char *path, bool controls) {
     struct futurista scene;
     struct jlinux_glass effects;
     if (!jlinux_glass_settings(&effects)) { return 1; }
@@ -516,7 +525,7 @@ static int preview_futurista(const char *path) {
     cairo_t *cr = cairo_create(image);
     futurista_wallpaper(&scene, cr, 1672, 941);
     futurista_panel(&scene, cr, 1672);
-    futurista_overlay(&scene, cr, 1672, 941);
+    futurista_overlay(&scene, cr, 1672, 941, controls);
     cairo_status_t status = cairo_surface_write_to_png(image, path);
     cairo_destroy(cr);
     cairo_surface_destroy(image);
@@ -541,7 +550,8 @@ int main(int argc, char **argv) {
     bool power_panel = argc == 2 && !strcmp(argv[1], "--power-panel");
     if (argc == 3 && !strcmp(argv[1], "--preview-volume")) { return preview_power(argv[2], true); }
     if (argc == 3 && !strcmp(argv[1], "--preview-power")) { return preview_power(argv[2], false); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-futurista")) { return preview_futurista(argv[2]); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-control-center")) { return preview_futurista(argv[2],true); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-futurista")) { return preview_futurista(argv[2],false); }
     if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2]); }
     if (argc != 1 && !power_panel && !volume_panel) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-power arquivo.png | --power-panel | --volume-panel]\n"); return 1; }
     struct app app = {.running = true, .power_panel = power_panel, .volume_panel = volume_panel, .power_action = -1, .timer = -1, .signals = -1, .control = -1}; wl_list_init(&app.buffers);
@@ -595,7 +605,7 @@ int main(int argc, char **argv) {
         }
         if (fds[3].revents & POLLIN) {
             char command[32];ssize_t count;
-            while((count=recv(app.control,command,sizeof(command),0))>0){if(count==6 && !memcmp(command,"toggle",6)){toggle_launcher(&app);}}
+            while((count=recv(app.control,command,sizeof(command),0))>0){if(count==6 && !memcmp(command,"toggle",6)){toggle_launcher(&app,false);}}
         }
         if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) { goto cleanup; }
         if (fds[1].revents & POLLIN) { uint64_t ticks; if (read(app.timer, &ticks, sizeof(ticks)) > 0) { app.panel.dirty = true; futurista_status(&app.futurista); if(app.launcher.wl){app.launcher.dirty=true;} if (app.audio.wl) { volume_start(&app.volume, 0); app.audio.dirty = true; } } }
