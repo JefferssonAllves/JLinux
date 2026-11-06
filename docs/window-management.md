@@ -31,3 +31,9 @@ Isso verifica comportamento, não latência de apresentação nem desempenho de 
 Plano PERF-01: comparar release manual (`JLINUX_TILING=0`) e automática (`1`) com 1, 3, 10 e 30 clientes equivalentes, repetindo abertura/fechamento e alteração de divisão. Registrar commit, wlroots, backend, resolução/frequência e alimentação; medir separadamente duração do rearranjo, configure→commit, tempo de quadro p50/p95/p99, CPU em repouso e PSS. Usar headless para custo de CPU e sessão aninhada para apresentação; GPU/energia exigem medição física posterior, preservando a sessão principal e a investigação STABILITY-BOOT. Sanitizers servem apenas a correção e não à comparação de velocidade.
 
 Validação local desta entrega: 16 testes release e 16 com ASan/UBSan passaram em headless/Pixman; `git diff --check` passou. A fixture xdg cobre mínimos/máximos, atualização dos limites, centralização de diálogos e herança de espaço em transientes aninhados. CI remoto, comparação visual e benchmark de hardware ainda não executados no momento do registro.
+
+## Integração na base instalada — feature/window-auto-layout
+
+A implementação de feature/automatic-tiling foi reaproveitada sobre fix/visible-browser-dock, preservando o dock configurável, o navegador fixado e o tema escuro já instalados. Não é merge de PR. PR #38 permanece separado; esta entrega prepara a integração necessária ao pacote atual. As configurações pessoais de diretórios e do dock são preservadas. Instalar o pacote não troca o compositor que já está rodando: o modo automático entra no próximo login. Não reiniciar o processo compositor isoladamente, pois isso encerra a sessão e seus aplicativos.
+
+A bateria desta base contém 19 testes locais, incluindo dock integrado/auxiliar, login, arquivos e limites de tamanho/transientes. Resultado e versão instalada são registrados em docs/validation.md e TASKS.md. Sem benchmark ou nova validação DRM/VT nesta integração.

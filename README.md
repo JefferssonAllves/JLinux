@@ -81,3 +81,7 @@ Pacote `jlinux-desktop-git`, login próprio em C/Wayland e inicialização via g
 ## Fixar aplicativos no dock
 
 Clique em **+** no dock e depois no aplicativo para fixar ou remover. Role o mouse sobre o dock para acessar os atalhos adicionais. Preferências são salvas por usuário. Veja [controles e limites](docs/dock.md).
+
+## Ajuste automático das janelas
+
+Por padrão, uma janela ocupa a área útil; duas ficam lado a lado; as seguintes se dividem à direita. Abrir ou fechar reorganiza o espaço sem cobrir barra/dock. Super+F alterna a janela entre automática e flutuante; Super+←/→ ajusta a proporção e Super+Espaço promove a janela focada a principal. Arrastar ou redimensionar manualmente deixa a janela flutuante. Veja [atalhos e limites](docs/window-management.md).
