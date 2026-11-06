@@ -17,8 +17,12 @@ gboolean browser_uri_allowed(const char *text) {
 }
 
 char *browser_address_uri(const char *text) {
-    if (!text || strlen(text) > BROWSER_ADDRESS_LIMIT) { return NULL; }
+    if (!text || strlen(text) > BROWSER_ADDRESS_LIMIT || !g_utf8_validate(text, -1, NULL)) { return NULL; }
+    for (const unsigned char *p = (const unsigned char *)text; *p; p++) {
+        if (*p < 32 || *p == 127 || *p == '\\') { return NULL; }
+    }
     char *trimmed = g_strdup(text); g_strstrip(trimmed);
+    if (!*trimmed) { g_free(trimmed); return NULL; }
     const char *scheme = g_uri_peek_scheme(trimmed);
     const char *colon = strchr(trimmed, ':');
     gboolean host_port = FALSE;
@@ -27,7 +31,15 @@ char *browser_address_uri(const char *text) {
         while (g_ascii_isdigit(*end)) { end++; }
         host_port = end > colon + 1 && (!*end || *end == '/' || *end == '?' || *end == '#');
     }
-    char *uri = !scheme || host_port ? g_strconcat("https://", trimmed, NULL) : g_strdup(trimmed);
+    gboolean address = scheme || host_port || (!strchr(trimmed, ' ') &&
+        (strchr(trimmed, '.') || strchr(trimmed, '/') || trimmed[0] == '[' || !strcmp(trimmed, "localhost")));
+    char *uri;
+    if (address) {
+        uri = !scheme || host_port ? g_strconcat("https://", trimmed, NULL) : g_strdup(trimmed);
+    } else {
+        char *query = g_uri_escape_string(trimmed, NULL, FALSE);
+        uri = g_strconcat("https://www.google.com/search?q=", query, NULL); g_free(query);
+    }
     g_free(trimmed);
     if (!browser_uri_allowed(uri)) { g_free(uri); return NULL; }
     return uri;

@@ -10,6 +10,12 @@ As ferramentas web servem para criar e iterar protótipos visuais antes da inter
 
 ## Navegador próprio — feature/web-browser
 
+### Barra persistente e Google — feature/browser-search-bar
+
+- **BROWSER-SEARCH · implementado:** termos abrem Google com parâmetros codificados; URLs continuam validadas. Barra/abas permanecem visíveis, com foco de edição separado; Esc cancela e devolve o foco à página. URI atualiza fora da edição.
+- **Checks locais:** 16 testes release, incluindo teclado/mouse sem reabrir barra, primeiro clique na página, buscas/entradas inválidas e regressões de mídia/abas. Quatro testes do navegador com ASan/UBSan passaram (`detect_leaks=0`). Oito checks do pacote passaram; instalado `0.1.0.r46.g6e7897c-1`, código `6e7897c`, em 06/11/2026. Busca Google via executável instalado completou DOM/JS. PR #46 enviado, CI em execução; janelas existentes preservadas até reabrir.
+- **Limite explícito:** barra ainda sobrepõe 148 px da página; reserva de viewport depende de incorporação WPE própria e permanece pendente. Sem mudança de CSS dos sites ou novo benchmark.
+
 ### Mídia, estabilidade e instalação — feature/browser-media
 
 - **BROWSER-MEDIA · validado localmente:** MP4 H.264/AAC, WebM VP8/Opus e MediaSource com MP4 fragmentado; teste verifica tempo avançando e frames decodificados em Wayland headless. Plugins base/good/libav declarados no novo pacote separado. Autoplay com áudio continua exigindo interação; sem Widevine, fullscreen do desktop ou alegação de compatibilidade universal.

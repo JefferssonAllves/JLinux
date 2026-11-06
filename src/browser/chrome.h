@@ -20,7 +20,7 @@ struct browser_chrome {
     struct jlinux_glass glass;
     guint idle;
     int in_flight;
-    gboolean visible, dirty, selected;
+    gboolean editing, dirty, selected;
     char address[BROWSER_ADDRESS_LIMIT + 1];
     char message[256];
 };
