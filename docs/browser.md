@@ -47,6 +47,8 @@ No fixture, ativar o bloqueio reduziu os bytes da resposta do script publicitár
 
 Referências da implementação: [WebKit content blockers](https://webkit.org/blog/3476/content-blockers-first-look/) e [API WPE do cache de filtros](https://people.igalia.com/aperez/Documentation/wpe-webkit/method.UserContentFilterStore.load.html); APIs conferidas nos headers WPE 2.54.2 instalados. LeakSanitizer, GPU/HiDPI e compatibilidade com serviços de anúncios reais permanecem pendentes.
 
+Instalado em 06/11/2026: `jlinux-browser-git 0.1.0.r50.gada56a9-1`, código `ada56a9`, após dez checks do pacote. O teste de bloqueio/cache/falha de cache também passou usando `/usr/bin/jlinux-browser` já instalado. Créditos e licença AdAway instalados em `/usr/share/licenses/jlinux-browser-git/`. Janelas existentes foram preservadas; precisam ser reabertas para carregar os filtros. PR #50 enviado; as duas execuções da CI do commit de código passaram antes desta atualização documental. Nenhum merge realizado.
+
 ## Página abaixo do cabeçalho — fix/browser-content-layout
 
 O cabeçalho ocupa a largura da janela em uma subsuperfície em `(0, -148)`, acima da origem da página. A geometria automática xdg inclui as duas superfícies; o motor recebe somente a altura útil abaixo do cabeçalho. O tamanho da view é ajustado nas notificações de largura/altura, antes de WPE emitir `resized` para WebKit, evitando enviar temporariamente o tamanho da janela inteira durante troca de abas ou foco. Não há cópia dos quadros web, mudança de motor ou alteração de CSS dos sites.
