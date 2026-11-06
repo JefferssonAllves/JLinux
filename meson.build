@@ -22,6 +22,20 @@ frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
   'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
   dependencies: [wlroots, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
 test('window-frame-lifecycle', frame_test)
+if get_option('browser')
+  wpe = dependency('wpe-webkit-2.0', version: '>=2.54')
+  wpe_wayland = dependency('wpe-platform-wayland-2.0')
+  wpe_headless = dependency('wpe-platform-headless-2.0')
+  browser = executable('jlinux-browser', 'src/browser/main.c', 'src/browser/address.c',
+    'src/browser/chrome.c', 'src/toolkit/painter.c', 'src/effects/glass.c',
+    dependencies: [wpe, wpe_wayland, wpe_headless, dependency('wayland-client'),
+      xkb, cairo, pango, fontconfig, math, dependency('egl')], install: true)
+  address_test = executable('jlinux-test-web-address', 'tests/web-address.c',
+    'src/browser/address.c', dependencies: dependency('glib-2.0'))
+  test('web-address', address_test)
+  test('web-engine-headless', find_program('scripts/smoke-web-engine.py'), args: [browser], timeout: 60)
+  install_data('data/applications/org.jlinux.Browser.desktop', install_dir: get_option('datadir') / 'applications')
+endif
 if get_option('shell')
   client = dependency('wayland-client')
   cursor = dependency('wayland-cursor')
@@ -73,6 +87,9 @@ if foot.found() and wtype.found()
     command: [scanner, 'private-code', '@INPUT@', '@OUTPUT@'])
   pointer_test = executable('jlinux-test-pointer', 'tests/pointer-client.c', pointer_header, pointer_code,
     dependencies: client_dep)
+  if get_option('browser')
+    test('web-browser-wayland', find_program('scripts/smoke-web-browser.py'), args: [compositor, browser, wtype], timeout: 60)
+  endif
   if get_option('shell')
     test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
     test('shell-headless', shell_smoke, args: [compositor, shell, pointer_test], timeout: 20)

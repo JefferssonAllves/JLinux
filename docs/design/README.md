@@ -28,7 +28,13 @@ As imagens são o alvo visual; não comprovam que navegador, música, conectivid
 
 O próximo protótipo deve seguir essas referências diretamente. A implementação definitiva permanece nativa e mantém animation/, effects/ e renderer/ separados, com controle individual de efeitos e desempenho medido.
 
-## Histórico substituído
+## Barra experimental do navegador
+
+![Prévia do componente nativo de navegação](browser-navigation-preview.png)
+
+Gerada por `jlinux-browser --preview`; não é captura da sessão nem de um site. Mostra somente a barra sobreposta provisória (Ctrl+L), com a biblioteca de material atual. As duas fotos continuam sendo a referência principal: abas, proporções/layout completo, blur e fidelidade do navegador ainda não foram implementados/validados. Não houve comparação de uma janela completa renderizada na mesma resolução das fotos.
+
+## Histórico das propostas anteriores
 
 A imagem gerada jlinux-glass-v1.png foi preservada como histórico. As propostas V1 e V2 não são a direção visual escolhida; as referências acima têm precedência.
 

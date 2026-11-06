@@ -1,6 +1,6 @@
 # JLinux Desktop
 
-Compositor Wayland próprio, shell e iniciador de sessão em C. A primeira base do toolkit JLinux desenha barra superior, dock à esquerda, texto, ícones e botões, sem GTK, CSS ou navegador.
+Compositor Wayland próprio, shell e iniciador de sessão em C. A primeira base do toolkit JLinux desenha barra superior, dock à esquerda, texto, ícones e botões, sem GTK, CSS ou motor web no shell. O navegador experimental é um aplicativo separado e opcional.
 
 O dock abre Terminal e Codex. O compositor mantém mouse, teclado, foco por clique e atalhos. O terminal inicial é Foot. Esta é a fundação nativa: o visual Glass completo e a reprodução final das fotos ainda não estão implementados.
 
@@ -14,6 +14,18 @@ meson test -C build-native --print-errorlogs
 ```
 
 Requer Meson >=1.6 e wlroots 0.20.x. Python e wtype são usados nos testes, não para executar a sessão. Para reconfigurar o diretório existente: `meson setup build-native --reconfigure`.
+
+## Navegador experimental
+
+```sh
+sudo pacman -S --needed wpewebkit
+meson setup build-browser --buildtype=release -Dbrowser=true
+meson compile -C build-browser
+meson test -C build-browser --print-errorlogs
+./build-browser/jlinux-browser https://example.org
+```
+
+Requer WPE WebKit >=2.54 com WPEPlatform Wayland/headless. Uma página por janela, sessão efêmera e barra nativa sobreposta por Ctrl+L; Enter navega, Esc retorna à página, Alt+←/→ navega no histórico, Ctrl+R recarrega e Ctrl+Q fecha. Ainda não é navegador para uso diário: abas, downloads e persistência continuam pendentes. Não substitui o navegador padrão nem atualiza o pacote do desktop instalado. [Implementação, testes e limites](docs/browser.md).
 
 ## Executar sem Python
 

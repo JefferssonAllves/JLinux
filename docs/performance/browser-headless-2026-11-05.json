@@ -1,0 +1,34 @@
+{
+  "binary_sha256": "5ce2e7ff02142bb8119c5c1a0aa41d30c2332a89e109b30a2cce08762768d8e3",
+  "kernel": "7.2.14-arch1-1",
+  "backend": "WPE headless / software solicitado",
+  "workload": "HTTP local + DOM + JS + redirect",
+  "security_checks": "esquemas locais/ativos e redirecionamento file bloqueados; certificado autoassinado recusado",
+  "note": "3 processos novos; PSS amostrado a cada 25 ms; sem medição GPU/energia ou comparação de motores",
+  "runs": [
+    {
+      "engine": "WPE WebKit 2.54.2",
+      "startup_to_ready_ms": 211.169,
+      "load_ms": 21.345,
+      "javascript": true,
+      "sampled_peak_tree_pss_kib": 234988,
+      "samples": 8
+    },
+    {
+      "engine": "WPE WebKit 2.54.2",
+      "startup_to_ready_ms": 217.701,
+      "load_ms": 32.305,
+      "javascript": true,
+      "sampled_peak_tree_pss_kib": 238442,
+      "samples": 8
+    },
+    {
+      "engine": "WPE WebKit 2.54.2",
+      "startup_to_ready_ms": 198.942,
+      "load_ms": 22.447,
+      "javascript": true,
+      "sampled_peak_tree_pss_kib": 237163,
+      "samples": 7
+    }
+  ]
+}
