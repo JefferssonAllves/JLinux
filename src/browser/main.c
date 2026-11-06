@@ -34,7 +34,7 @@ static void close_tab(struct app *app, guint index);
 static gboolean quit(gpointer data) { g_main_loop_quit(((struct app *)data)->loop); return G_SOURCE_CONTINUE; }
 static void notice(struct app *app, const char *message) {
     g_strlcpy(app->chrome.message, message, sizeof(app->chrome.message));
-    if (!app->probe) { app->chrome.visible = TRUE; browser_chrome_update(&app->chrome); }
+    if (!app->probe) { browser_chrome_update(&app->chrome); }
 }
 static void web_notice(struct app *app, WebKitWebView *web, const char *message) {
     g_object_set_data_full(G_OBJECT(web), "jlinux-notice", g_strdup(message), g_free);
@@ -43,14 +43,20 @@ static void web_notice(struct app *app, WebKitWebView *web, const char *message)
 static void show_address(struct app *app) {
     const char *uri = webkit_web_view_get_uri(app->web);
     g_strlcpy(app->chrome.address, uri && strcmp(uri, "about:blank") ? uri : "", sizeof(app->chrome.address));
-    app->chrome.selected = TRUE; app->chrome.visible = TRUE;
+    app->chrome.selected = TRUE; app->chrome.editing = TRUE;
     g_strlcpy(app->chrome.message, app->media_available ? "" : "Vídeo indisponível: instale os plugins GStreamer base/good/libav.", sizeof(app->chrome.message));
+    browser_chrome_update(&app->chrome);
+}
+static void focus_page(struct app *app) {
+    const char *uri = webkit_web_view_get_uri(app->web);
+    g_strlcpy(app->chrome.address, uri && strcmp(uri, "about:blank") ? uri : "", sizeof(app->chrome.address));
+    app->chrome.editing = FALSE; app->chrome.selected = FALSE;
     browser_chrome_update(&app->chrome);
 }
 static void navigate(struct app *app) {
     char *uri = browser_address_uri(app->chrome.address);
-    if (!uri) { notice(app, "Use um endereço HTTP ou HTTPS válido, sem usuário/senha na URL."); return; }
-    app->chrome.visible = FALSE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
+    if (!uri) { notice(app, "Digite uma busca ou um endereço HTTP/HTTPS válido, sem credenciais e até 4096 bytes."); return; }
+    app->chrome.editing = FALSE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
     webkit_web_view_load_uri(app->web, uri); g_free(uri);
 }
 static void append_text(struct app *app, const char *text) {
@@ -94,8 +100,8 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         else if (key == XKB_KEY_F5 || (ctrl && (key == XKB_KEY_r || key == XKB_KEY_R))) { webkit_web_view_reload(app->web); }
         else if (alt && key == XKB_KEY_Left) { webkit_web_view_go_back(app->web); }
         else if (alt && key == XKB_KEY_Right) { webkit_web_view_go_forward(app->web); }
-        else if (!chrome->visible) { return FALSE; }
-        else if (key == XKB_KEY_Escape) { chrome->visible = FALSE; browser_chrome_update(chrome); }
+        else if (!chrome->editing) { return FALSE; }
+        else if (key == XKB_KEY_Escape) { focus_page(app); }
         else if (key == XKB_KEY_Return || key == XKB_KEY_KP_Enter) { navigate(app); }
         else if (ctrl && (key == XKB_KEY_a || key == XKB_KEY_A)) { chrome->selected = TRUE; browser_chrome_update(chrome); }
         else if (ctrl && (key == XKB_KEY_v || key == XKB_KEY_V)) {
@@ -115,7 +121,7 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         return TRUE;
     }
     double x, y;
-    if (chrome->visible && wpe_event_get_position(event, &x, &y)) {
+    if (wpe_event_get_position(event, &x, &y)) {
         int width = CLAMP(wpe_view_get_width(view) - 32, 320, 4096);
         if (x >= 16 && x < width + 16 && y >= 16 && y < 16 + BROWSER_CHROME_HEIGHT) {
             if (type == WPE_EVENT_POINTER_DOWN) {
@@ -142,17 +148,22 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
                 else if (y < 72 + BROWSER_TAB_HEIGHT && x < 61) { webkit_web_view_go_back(app->web); }
                 else if (y < 72 + BROWSER_TAB_HEIGHT && x < 99) { webkit_web_view_go_forward(app->web); }
                 else if (y < 72 + BROWSER_TAB_HEIGHT && x < 143) { webkit_web_view_reload(app->web); }
-                else { chrome->selected = TRUE; browser_chrome_update(chrome); }
+                else { show_address(app); }
             }
             return TRUE;
         }
         if (type == WPE_EVENT_POINTER_DOWN) {
-            guint button = wpe_event_pointer_button_get_button(event);
-            if (button < 32) { app->consumed_buttons |= 1u << button; }
-            chrome->visible = FALSE; browser_chrome_update(chrome); return TRUE;
+            if (chrome->editing) { focus_page(app); }
         }
     }
     return FALSE;
+}
+static void changed_uri(WebKitWebView *web, GParamSpec *spec, gpointer data) {
+    (void)spec; struct app *app = data;
+    if (app->probe || web != app->web || app->chrome.editing) { return; }
+    const char *uri = webkit_web_view_get_uri(web);
+    g_strlcpy(app->chrome.address, uri && strcmp(uri, "about:blank") ? uri : "", sizeof(app->chrome.address));
+    browser_chrome_update(&app->chrome);
 }
 static void changed_title(WebKitWebView *web, GParamSpec *spec, gpointer data) {
     (void)spec; struct app *app = data;
@@ -284,6 +295,7 @@ static void new_tab(struct app *app, const char *uri) {
     g_ptr_array_add(app->chrome.tabs, web);
     g_signal_connect(view, "closed", G_CALLBACK(closed), app);
     g_signal_connect(web, "notify::title", G_CALLBACK(changed_title), app);
+    g_signal_connect(web, "notify::uri", G_CALLBACK(changed_uri), app);
     g_signal_connect(web, "load-changed", G_CALLBACK(load_changed), app);
     g_signal_connect(web, "load-failed", G_CALLBACK(load_failed), app);
     g_signal_connect(web, "decide-policy", G_CALLBACK(policy), app);
@@ -322,7 +334,7 @@ static void close_tab(struct app *app, guint index) {
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
     if (argc == 2 && !strcmp(argv[1], "--help")) {
-        g_print("Uso: jlinux-browser [URL] | --probe URL | --preview arquivo.png\nCtrl+L endereço; Ctrl+T nova aba; Ctrl+W fechar aba; Ctrl+Tab alternar; Ctrl+Q sair.\n"); return 0;
+        g_print("Uso: jlinux-browser [URL ou busca] | --probe URL | --preview arquivo.png\nCtrl+L endereço; Ctrl+T nova aba; Ctrl+W fechar aba; Ctrl+Tab alternar; Ctrl+Q sair.\n"); return 0;
     }
     if (g_getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS")) {
         g_printerr("Remova WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: a sandbox é obrigatória.\n"); return 1;
@@ -339,7 +351,7 @@ int main(int argc, char **argv) {
     }
     app.probe = argc == 3 && !strcmp(argv[1], "--probe");
     if (argc > 2 && !app.probe) {
-        g_printerr("Uso: jlinux-browser [URL] | --probe URL | --preview arquivo.png\n"); return 2;
+        g_printerr("Uso: jlinux-browser [URL ou busca] | --probe URL | --preview arquivo.png\n"); return 2;
     }
     char *uri = browser_address_uri(app.probe ? argv[2] : argc == 2 ? argv[1] : "about:blank");
     if (!uri) { g_printerr("Endereço inválido: use HTTP ou HTTPS.\n"); return 2; }

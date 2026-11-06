@@ -17,19 +17,29 @@ Instalar `wpewebkit` do Arch e as dependências de desenvolvimento do README. Co
 | Próxima / anterior | Ctrl+Tab / Ctrl+Shift+Tab; setas na fileira |
 | Selecionar aba | Clique no título na fileira |
 | Fechar aba | Ctrl+W ou “×”; fechar a última encerra a janela |
-| Abrir página | Enter; domínio sem esquema recebe HTTPS |
-| Ocultar barra | Esc |
+| Abrir página / pesquisar | Enter; domínio sem esquema recebe HTTPS, termos abrem a busca do Google |
+| Devolver foco à página, mantendo a barra visível | Esc ou clique fora da barra |
 | Selecionar tudo / colar | Ctrl+A / Ctrl+V na barra |
 | Apagar | Backspace/Delete na barra |
 | Histórico | Alt+← / Alt+→; botões ‹ / › na barra |
 | Recarregar | Ctrl+R, F5 ou ↻ |
 | Fechar | Ctrl+Q ou fechamento xdg pelo compositor |
 
-A barra provisória é uma subsuperfície de 148 px (36 px para abas), mostrada temporariamente sobre o site por Ctrl+L e ao abrir/alternar abas; não reduz nem recorta o viewport do motor. Quando as abas não cabem, a fileira mostra o grupo que contém a aba ativa; as setas e os atalhos percorrem todas, com retorno da última à primeira. Não há limite artificial de quantidade, mas cada aba consome recursos. Usa Cairo/Pango e material compartilhado em `effects/`, com no máximo dois buffers SHM em voo e redesenho por mudanças. Não há timer de animação ou captura contínua da página. Não implementa blur/refração sobre sites. `JLINUX_GLASS_TINT`/`REFLECTION` afetam o material; BLUR não cria um passe sem backdrop. O conteúdo web permanece sob controle do motor, sem retematizar sites.
+A barra provisória é uma subsuperfície de 148 px (36 px para abas), sempre visível sobre o site, inclusive após carregar, navegar e pressionar Esc; não reduz nem recorta o viewport do motor. Quando as abas não cabem, a fileira mostra o grupo que contém a aba ativa; as setas e os atalhos percorrem todas, com retorno da última à primeira. Não há limite artificial de quantidade, mas cada aba consome recursos. Usa Cairo/Pango e material compartilhado em `effects/`, com no máximo dois buffers SHM em voo e redesenho por mudanças. Não há timer de animação ou captura contínua da página. Não implementa blur/refração sobre sites. `JLINUX_GLASS_TINT`/`REFLECTION` afetam o material; BLUR não cria um passe sem backdrop. O conteúdo web permanece sob controle do motor, sem retematizar sites.
 
-Abrir/alternar não recarrega páginas: texto em formulários e histórico da aba permanecem. Fechar uma aba libera sua WebView; a vizinha ocupa o lugar da ativa. Fechar uma aba inativa preserva a seleção atual. Erros de carregamento/política são associados à aba de origem; avisos de uma aba oculta não abrem a barra sobre a página ativa. Endereço ainda não enviado na barra é descartado ao alternar; não há restauração de abas fechadas nem confirmação implementada de formulários antes de fechar.
+Abrir/alternar não recarrega páginas: texto em formulários e histórico da aba permanecem. Fechar uma aba libera sua WebView; a vizinha ocupa o lugar da ativa. Fechar uma aba inativa preserva a seleção atual. Erros de carregamento/política são associados à aba de origem; avisos de uma aba oculta não substituem os avisos da página ativa. Endereço ainda não enviado na barra é descartado ao alternar; não há restauração de abas fechadas nem confirmação implementada de formulários antes de fechar.
 
 O campo inicial permite substituir tudo ou acrescentar/remover texto no fim. Edição com cursor, seleção por trecho, IME, acessibilidade e escalas precisam de implementação/validação. A prévia de componente em `docs/design/` não é uma janela completa, visual definitivo aprovado ou prova de equivalência com as fotos.
+
+## Barra persistente e Google — feature/browser-search-bar
+
+Exibição da barra e foco de edição são estados separados. Ctrl+L ou clique no campo seleciona o endereço atual; Enter navega; Esc cancela a edição e restaura o endereço carregado. Cliques fora da barra chegam à página na primeira tentativa. Mudanças de URI atualizam o campo, exceto durante uma edição em andamento. As abas e botões continuam clicáveis sem Ctrl+L.
+
+Termos como `jlinux` e `navegador leve` abrem `https://www.google.com/search?q=…`, com codificação UTF-8 e percent-encoding dos parâmetros. Domínios, localhost, IPs e URLs continuam abrindo diretamente; esquemas explícitos não permitidos e credenciais continuam recusados. Não há sugestões, chamadas a uma API de busca, chave ou requisições a cada tecla: a consulta é enviada ao Google somente ao confirmar Enter. A URL final continua limitada a 4096 bytes.
+
+Limite do protótipo: a subsuperfície permanece sobre os 148 px superiores da página, sem reservar espaço no viewport. Conteúdo sob a barra pode ficar encoberto; uma incorporação WPE com área própria para o conteúdo ainda precisa ser implementada. Não foram injetados CSS ou scripts para modificar o layout dos sites.
+
+Validação local: suíte release com 16 testes, incluindo busca/codificação/recusa de entradas inseguras, cliques na barra depois da navegação e Esc, primeiro clique no conteúdo, abas e reprodução de vídeo. Os quatro testes do navegador também passaram com ASan/UBSan (`detect_leaks=0`); LeakSanitizer segue pendente. Testes automatizados usam compositor isolado headless/Pixman; não comprovam aparência ou desempenho em GPU física.
 
 ## Vídeo e encerramentos — feature/browser-media
 
@@ -47,7 +57,7 @@ Nesta máquina foram instalados PipeWire-Pulse, PipeWire-Audio e WirePlumber par
 
 ## Instalação persistente e dock
 
-`packaging/arch/browser/PKGBUILD` gera `jlinux-browser-git`, instalado separadamente de `jlinux-desktop-git`. A receita compila/testa a branch `feature/browser-media` e empacota apenas `/usr/bin/jlinux-browser` e `org.jlinux.Browser.desktop`. Não executa `meson install` sobre o desktop instalado. O antigo diretório `/tmp/jlinux-web-browser` desapareceu no reboot; a nova worktree de desenvolvimento fica em `~/.local/src/jlinux-browser`, mas a abertura instalada usa `/usr/bin` e não depende dessa worktree.
+`packaging/arch/browser/PKGBUILD` gera `jlinux-browser-git`, instalado separadamente de `jlinux-desktop-git`. A receita compila/testa a branch `feature/browser-search-bar` e empacota apenas `/usr/bin/jlinux-browser` e `org.jlinux.Browser.desktop`. Não executa `meson install` sobre o desktop instalado. O antigo diretório `/tmp/jlinux-web-browser` desapareceu no reboot; a nova worktree de desenvolvimento fica em `~/.local/src/jlinux-browser`, mas a abertura instalada usa `/usr/bin` e não depende dessa worktree.
 
 No dock configurável já instalado, fixar `org.jlinux.Browser.desktop` em `~/.config/jlinux/dock.ini`, preservando os demais IDs, usa a infraestrutura existente e não requer um quarto botão fixo no código. O shell recarrega a configuração ao abrir “+”; role o dock para chegar ao atalho adicional. O catálogo de entradas `.desktop` pode precisar de novo shell/login para reconhecer uma instalação nova. Não reiniciar o compositor para isso. O botão “+” permite remover o atalho posteriormente.
 

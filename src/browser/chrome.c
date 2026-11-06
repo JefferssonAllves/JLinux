@@ -44,15 +44,15 @@ void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width)
     ui_text(cr, "↻", 91, 21, 21, false, 0xdce7ff);
     cairo_set_source_rgba(cr, .015, .025, .06, .65);
     cairo_rectangle(cr, 133, 15, width - 150, 38); cairo_fill(cr);
-    if (chrome->selected) {
+    if (chrome->editing && chrome->selected) {
         cairo_set_source_rgba(cr, .28, .40, .78, .38);
         cairo_rectangle(cr, 140, 20, width - 166, 28); cairo_fill(cr);
     }
     cairo_save(cr); cairo_rectangle(cr, 141, 18, width - 164, 33); cairo_clip(cr);
-    ui_text(cr, chrome->address[0] ? chrome->address : "Digite um endereço", 145, 25, 14, false, 0xe2eaff);
+    ui_text(cr, chrome->address[0] ? chrome->address : "Pesquise no Google ou digite um endereço", 145, 25, 14, false, 0xe2eaff);
     cairo_restore(cr);
     cairo_save(cr); cairo_rectangle(cr, 15, 63, width - 30, 43); cairo_clip(cr);
-    ui_text(cr, chrome->message[0] ? chrome->message : "Enter abrir  ·  Esc voltar à página", 17, 66, 12, false, 0xb5c4e2);
+    ui_text(cr, chrome->message[0] ? chrome->message : "Enter pesquisar / abrir  ·  Esc focar a página", 17, 66, 12, false, 0xb5c4e2);
     ui_text(cr, "Ctrl+T nova aba   ·   Ctrl+W fechar aba   ·   Ctrl+Tab alternar", 17, 87, 11, false, 0x92a5cb);
     cairo_restore(cr);
     cairo_restore(cr);
@@ -70,10 +70,7 @@ static const struct wl_buffer_listener buffer_listener = {.release = released};
 static gboolean draw(gpointer data) {
     struct browser_chrome *chrome = data; chrome->idle = 0;
     if (!chrome->surface) { return G_SOURCE_REMOVE; }
-    if (!chrome->visible) {
-        wl_surface_attach(chrome->surface, NULL, 0, 0); wl_surface_commit(chrome->surface);
-        chrome->dirty = FALSE; return G_SOURCE_REMOVE;
-    }
+    // shortcut: chrome overlays the page; reserve viewport space when the WPE embedding is replaced.
     if (chrome->in_flight >= 2) { return G_SOURCE_REMOVE; }
     int width = CLAMP(wpe_view_get_width(chrome->view) - 32, 320, 4096);
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);

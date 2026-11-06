@@ -22,7 +22,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         Handler.events.append(self.path)
         body = b"""<!doctype html><meta charset='utf-8'><title>Browser fixture</title>
-        <body><input autofocus oninput="fetch('/typed?value='+encodeURIComponent(this.value))">
+        <body><button style='position:fixed;left:8px;top:200px' onclick="fetch('/page-click')">tap</button><input autofocus oninput="fetch('/typed?value='+encodeURIComponent(this.value))">
         <script>addEventListener('pageshow',()=>fetch('/shown?path='+location.pathname));</script></body>"""
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -75,7 +75,11 @@ def main():
                 window_width = int(re.search(r"Janela mapeada:.*\((\d+)x", log()).group(1))
                 keys("-k", "Escape", "-d", "10", "native")
                 wait_for(lambda: "/typed?value=native" in Handler.events, processes, "entrada na página")
-                keys("-M", "ctrl", "-k", "l", "-m", "ctrl", "-d", "2", base + "/second", "-k", "Return")
+                click(75, 290)
+                wait_for(lambda: "/page-click" in Handler.events, processes, "primeiro clique na página")
+                # The address field remains clickable after navigation and Escape, without Ctrl+L.
+                click(340, 165)
+                keys("-d", "2", base + "/second", "-k", "Return")
                 wait_for(lambda: "/shown?path=/second" in Handler.events, processes, "endereço nativo")
                 before = Handler.events.count("/second")
                 keys("-M", "ctrl", "-k", "r", "-m", "ctrl")
@@ -105,16 +109,12 @@ def main():
                 keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
                 typed("x", "twomorex")
                 # The initial content origin is 40,80; the overlay begins at 16,16.
-                keys("-M", "ctrl", "-k", "l", "-m", "ctrl")
                 click(110, 110)
                 typed("y", "keeponey")
-                keys("-M", "ctrl", "-k", "l", "-m", "ctrl")
                 click(window_width - 12, 110)  # +
                 navigate("/mouse-third")
-                keys("-M", "ctrl", "-k", "l", "-m", "ctrl")
                 click(222, 110)  # Close the inactive first tab.
                 typed("third", "third")
-                keys("-M", "ctrl", "-k", "l", "-m", "ctrl")
                 click(402, 110)  # Close the active second tab, keeping tab-two.
                 typed("x", "twomorexx")
                 for _ in range(6):

@@ -8,8 +8,22 @@ int main(void) {
     char *uri = browser_address_uri(" example.org/path "); g_assert_cmpstr(uri, ==, "https://example.org/path"); g_free(uri);
     uri = browser_address_uri("localhost:8080"); g_assert_cmpstr(uri, ==, "https://localhost:8080"); g_free(uri);
     g_assert_null(browser_address_uri("javascript:alert(1)"));
+    const char *queries[][2] = {
+        {"jlinux", "jlinux"}, {"  navegador leve  ", "navegador%20leve"},
+        {"c++ & café", "c%2B%2B%20%26%20caf%C3%A9"},
+    };
+    for (size_t i = 0; i < G_N_ELEMENTS(queries); i++) {
+        char *expected = g_strconcat("https://www.google.com/search?q=", queries[i][1], NULL);
+        uri = browser_address_uri(queries[i][0]); g_assert_cmpstr(uri, ==, expected); g_free(uri); g_free(expected);
+    }
+    const char *bad_input[] = {"", "   ", "\xff", "foo\nbar", "foo\tbar", "https://user:secret@example.org", "file:///etc/passwd", "data:text/html,hi"};
+    for (size_t i = 0; i < G_N_ELEMENTS(bad_input); i++) { g_assert_null(browser_address_uri(bad_input[i])); }
     g_assert_null(browser_address_uri(NULL));
     char long_uri[BROWSER_ADDRESS_LIMIT + 2]; memset(long_uri, 'a', sizeof(long_uri) - 1); long_uri[sizeof(long_uri) - 1] = 0;
     g_assert_null(browser_address_uri(long_uri));
+    long_uri[BROWSER_ADDRESS_LIMIT] = 0;
+    g_assert_null(browser_address_uri(long_uri)); // Search prefix must also fit the URI limit.
+    uri = browser_address_uri("https://example.org/?q=linux");
+    g_assert_cmpstr(uri, ==, "https://example.org/?q=linux"); g_free(uri);
     return 0;
 }
