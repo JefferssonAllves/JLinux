@@ -32,7 +32,7 @@ O próximo protótipo deve seguir essas referências diretamente. A implementaç
 
 ![Prévia do componente nativo de navegação](browser-navigation-preview.png)
 
-Gerada por `jlinux-browser --preview`; não é captura da sessão nem de um site. Mostra somente a barra sobreposta provisória (Ctrl+L), com a biblioteca de material atual. As duas fotos continuam sendo a referência principal: abas, proporções/layout completo, blur e fidelidade do navegador ainda não foram implementados/validados. Não houve comparação de uma janela completa renderizada na mesma resolução das fotos.
+Gerada por `jlinux-browser --preview`; não é captura da sessão nem de um site. Mostra somente a barra sobreposta provisória (Ctrl+L), agora com fileira de abas, “+” e “×”, usando a biblioteca de material atual. Abas funcionais foram testadas separadamente em Wayland headless. As duas fotos continuam sendo a referência principal: proporções/layout completo, blur e fidelidade do navegador ainda não foram implementados/validados. Não houve comparação de uma janela completa renderizada na mesma resolução das fotos.
 
 ## Histórico das propostas anteriores
 

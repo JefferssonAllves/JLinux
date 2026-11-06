@@ -88,7 +88,7 @@ if foot.found() and wtype.found()
   pointer_test = executable('jlinux-test-pointer', 'tests/pointer-client.c', pointer_header, pointer_code,
     dependencies: client_dep)
   if get_option('browser')
-    test('web-browser-wayland', find_program('scripts/smoke-web-browser.py'), args: [compositor, browser, wtype], timeout: 60)
+    test('web-browser-wayland', find_program('scripts/smoke-web-browser.py'), args: [compositor, browser, wtype, pointer_test], timeout: 60)
   endif
   if get_option('shell')
     test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)

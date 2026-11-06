@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#define CHROME_HEIGHT 112
 struct chrome_buffer {
     struct browser_chrome *chrome;
     struct wl_buffer *wl;
@@ -12,15 +11,34 @@ struct chrome_buffer {
     void *data;
     size_t size;
 };
+guint browser_chrome_tab_slots(int width) { return MAX(1, (width - 104) / BROWSER_TAB_WIDTH); }
 
 void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width) {
     cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE); cairo_set_source_rgba(cr, 0, 0, 0, 0); cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
     cairo_set_source_rgba(cr, .015, .025, .055, .96);
-    cairo_rectangle(cr, 1, 1, width - 2, CHROME_HEIGHT - 2); cairo_fill(cr);
+    cairo_rectangle(cr, 1, 1, width - 2, BROWSER_CHROME_HEIGHT - 2); cairo_fill(cr);
     cairo_push_group(cr);
-    jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, CHROME_HEIGHT - 2}, 6, NULL, 0, 0, chrome->glass);
+    jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, BROWSER_CHROME_HEIGHT - 2}, 6, NULL, 0, 0, chrome->glass);
     cairo_pop_group_to_source(cr); cairo_paint_with_alpha(cr, .5);
+    guint slots = browser_chrome_tab_slots(width), first = chrome->active_tab / slots * slots;
+    guint count = chrome->tabs ? chrome->tabs->len : 1;
+    for (guint i = first; i < MIN(count, first + slots); i++) {
+        double x = 12 + (i - first) * BROWSER_TAB_WIDTH;
+        cairo_set_source_rgba(cr, .25, .34, .62, i == chrome->active_tab ? .42 : .12);
+        cairo_rectangle(cr, x, 5, BROWSER_TAB_WIDTH - 5, 28); cairo_fill(cr);
+        const char *title = chrome->tabs ? webkit_web_view_get_title(g_ptr_array_index(chrome->tabs, i)) : "Nova aba";
+        if (!title || !*title) { title = "Nova aba"; }
+        char *short_title = g_utf8_make_valid(title, MIN(strlen(title), 160));
+        char *label = g_strdup_printf("%u  %s", i + 1, short_title); g_free(short_title);
+        cairo_save(cr); cairo_rectangle(cr, x + 7, 7, BROWSER_TAB_WIDTH - 40, 24); cairo_clip(cr);
+        ui_text(cr, label, x + 8, 11, 12, false, 0xe2eaff); cairo_restore(cr); g_free(label);
+        ui_text(cr, "×", x + BROWSER_TAB_WIDTH - 26, 9, 16, false, 0xb5c4e2);
+    }
+    ui_text(cr, "‹", width - 91, 7, 22, false, 0xb5c4e2);
+    ui_text(cr, "›", width - 63, 7, 22, false, 0xb5c4e2);
+    ui_text(cr, "+", width - 36, 8, 21, false, 0xe2eaff);
+    cairo_save(cr); cairo_translate(cr, 0, BROWSER_TAB_HEIGHT);
     ui_text(cr, "‹", 16, 18, 25, false, 0xdce7ff);
     ui_text(cr, "›", 54, 18, 25, false, 0xdce7ff);
     ui_text(cr, "↻", 91, 21, 21, false, 0xdce7ff);
@@ -35,7 +53,8 @@ void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width)
     cairo_restore(cr);
     cairo_save(cr); cairo_rectangle(cr, 15, 63, width - 30, 43); cairo_clip(cr);
     ui_text(cr, chrome->message[0] ? chrome->message : "Enter abrir  ·  Esc voltar à página", 17, 66, 12, false, 0xb5c4e2);
-    ui_text(cr, "Ctrl+L endereço   ·   Alt+←/→ histórico   ·   Ctrl+R recarregar", 17, 87, 11, false, 0x92a5cb);
+    ui_text(cr, "Ctrl+T nova aba   ·   Ctrl+W fechar aba   ·   Ctrl+Tab alternar", 17, 87, 11, false, 0x92a5cb);
+    cairo_restore(cr);
     cairo_restore(cr);
 }
 static void free_buffer(struct chrome_buffer *buffer) {
@@ -58,7 +77,7 @@ static gboolean draw(gpointer data) {
     if (chrome->in_flight >= 2) { return G_SOURCE_REMOVE; }
     int width = CLAMP(wpe_view_get_width(chrome->view) - 32, 320, 4096);
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
-    size_t size = (size_t)stride * CHROME_HEIGHT;
+    size_t size = (size_t)stride * BROWSER_CHROME_HEIGHT;
     int fd = memfd_create("jlinux-browser-chrome", MFD_CLOEXEC);
     if (fd < 0) { goto failed; }
     if (ftruncate(fd, (off_t)size)) { close(fd); goto failed; }
@@ -68,20 +87,20 @@ static gboolean draw(gpointer data) {
     struct wl_shm_pool *pool = wl_shm_create_pool(wpe_display_wayland_get_wl_shm(display), fd, (int)size);
     close(fd);
     if (!pool) { munmap(mapping, size); goto failed; }
-    struct wl_buffer *wl = wl_shm_pool_create_buffer(pool, 0, width, CHROME_HEIGHT, stride, WL_SHM_FORMAT_ARGB8888);
+    struct wl_buffer *wl = wl_shm_pool_create_buffer(pool, 0, width, BROWSER_CHROME_HEIGHT, stride, WL_SHM_FORMAT_ARGB8888);
     wl_shm_pool_destroy(pool);
     if (!wl) { munmap(mapping, size); goto failed; }
     struct chrome_buffer *buffer = g_new0(struct chrome_buffer, 1);
     *buffer = (struct chrome_buffer){.chrome = chrome, .wl = wl, .data = mapping, .size = size};
     wl_list_insert(&chrome->buffers, &buffer->link); chrome->in_flight++;
     wl_buffer_add_listener(wl, &buffer_listener, buffer);
-    cairo_surface_t *image = cairo_image_surface_create_for_data(mapping, CAIRO_FORMAT_ARGB32, width, CHROME_HEIGHT, stride);
+    cairo_surface_t *image = cairo_image_surface_create_for_data(mapping, CAIRO_FORMAT_ARGB32, width, BROWSER_CHROME_HEIGHT, stride);
     cairo_t *cr = cairo_create(image); browser_chrome_paint(chrome, cr, width);
     gboolean valid = cairo_status(cr) == CAIRO_STATUS_SUCCESS;
     cairo_destroy(cr); cairo_surface_destroy(image);
     if (!valid) { free_buffer(buffer); goto failed; }
     wl_surface_attach(chrome->surface, wl, 0, 0);
-    wl_surface_damage_buffer(chrome->surface, 0, 0, width, CHROME_HEIGHT); wl_surface_commit(chrome->surface);
+    wl_surface_damage_buffer(chrome->surface, 0, 0, width, BROWSER_CHROME_HEIGHT); wl_surface_commit(chrome->surface);
     chrome->dirty = FALSE;
     return G_SOURCE_REMOVE;
 failed:

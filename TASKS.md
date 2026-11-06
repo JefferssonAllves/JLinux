@@ -10,6 +10,14 @@ As ferramentas web servem para criar e iterar protótipos visuais antes da inter
 
 ## Navegador próprio — feature/web-browser
 
+### Abas — feature/browser-tabs
+
+- **BROWSER-TABS · implementado na branch:** Ctrl+T/“+” abre aba; Ctrl+Tab/Ctrl+Shift+Tab, títulos clicáveis e setas alternam; Ctrl+W/“×” fecha, inclusive a última (encerra a janela). Um toplevel, WebView/histórico/DOM por aba, sessão efêmera compartilhada e somente a view ativa visível. Fileira integrada à barra provisória aberta por Ctrl+L; títulos e avisos associados à aba correta. Sem dependências novas ou mudanças no desktop.
+- **Validação local:** teste headless/Pixman com sete abas, teclado/mouse, preservação de formulário sem recarregar, histórico próprio, fechamento de ativa/inativa/última, overflow da fileira e fechamento xdg com múltiplas abas. Suíte release e ASan/UBSan registrados em docs/browser.md; LeakSanitizer permanece pendente como na base. Prévia do componente atualizada/inspecionada, sem aprovação visual definitiva ou benchmark novo.
+- **Dependência:** PR de abas parte de `feature/web-browser`/PR #32, ainda aberto. As pendências de downloads, persistência, restauração/suspensão de abas, IME/acessibilidade, GPU/energia e comparação de motores não fazem parte desta entrega.
+
+### Histórico da primeira entrega
+
 - **BROWSER-01 · parcial implementado na branch:** aplicativo C/WPE WebKit 2.54 separado do desktop, build opt-in, uma página por janela, endereço nativo sobreposto por Ctrl+L, navegação/reload/histórico e perfil efêmero. Material compartilhado; ainda é interface provisória, sem abas ou reprodução completa das referências.
 - **BROWSER-TEST · validação local:** 15 testes release passaram. Teste Wayland/Pixman cobre texto em página, endereço nativo, reload, voltar/avançar, maximização, Ctrl+Q e fechamento xdg. HTTP local/DOM/JavaScript/redirecionamento, bloqueio de esquema local e recusa de TLS autoassinado testados. HTTPS externo em example.org passou. ASan/UBSan nos três testes do navegador passaram com `detect_leaks=0`; LeakSanitizer permanece pendente por alocações com stacks em bibliotecas externas.
 - **BROWSER-PERF · baseline inicial, sem comparação:** três processos headless novos, página mínima local, 199–218 ms até DOM/JS prontos e pico de PSS amostrado da árvore de 229–233 MiB. Isso não demonstra consumo em repouso, desempenho em GPU ou superioridade ao Firefox/Chromium. Dados e metodologia em [docs/browser.md](docs/browser.md).
