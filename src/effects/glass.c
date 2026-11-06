@@ -30,6 +30,7 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
         cairo_save(cr); cairo_scale(cr, 4, 4);
         cairo_set_source_surface(cr, backdrop, -origin_x / 4, -origin_y / 4);
         cairo_pattern_set_filter(cairo_get_source(cr), CAIRO_FILTER_BILINEAR);
+        cairo_pattern_set_extend(cairo_get_source(cr), CAIRO_EXTEND_PAD);
         cairo_paint(cr); cairo_restore(cr);
     }
     if (effects.tint) {
@@ -96,6 +97,22 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
         }
         cairo_pattern_destroy(edge);
     }
+}
+
+void jlinux_glass_panel_paint(cairo_t *cr, double width, double body_height, double fade_height,
+        cairo_surface_t *backdrop, struct jlinux_glass effects) {
+    double height = body_height + fade_height;
+    cairo_save(cr); cairo_rectangle(cr, 0, 0, width, height); cairo_clip(cr);
+    cairo_push_group(cr);
+    /* Keep every material edge outside the panel; only the alpha ramp ends it. */
+    jlinux_glass_paint(cr, (struct ui_rect){-6, -6, width + 12, height + 32}, 0,
+        backdrop, 0, 0, effects);
+    cairo_pop_group_to_source(cr);
+    cairo_pattern_t *fade = cairo_pattern_create_linear(0, body_height, 0, height);
+    cairo_pattern_add_color_stop_rgba(fade, 0, 1, 1, 1, 1);
+    cairo_pattern_add_color_stop_rgba(fade, 1, 1, 1, 1, 0);
+    cairo_mask(cr, fade); cairo_pattern_destroy(fade);
+    cairo_restore(cr);
 }
 
 bool jlinux_glass_settings(struct jlinux_glass *effects) {

@@ -65,3 +65,7 @@ Sombreamento interno das molduras: `JLINUX_GLASS_SHADOW=0/1` (padrão ligado) co
 ### Acabamento contínuo atual das janelas
 
 O pedido de borda neon discreta substitui os quatro pontos de brilho da moldura: gradiente azul/violeta, traço de 0,85 px e halo interno recortado de 2,8 px. A geometria segue 3 px nas laterais/inferior. REFLECTION controla esse acabamento; SHADOW permanece independente. Material de janela não chama os reflexos pontuais do dock/painel; esses componentes permanecem intactos. Renderização continua por eventos, em faixas estreitas, sem loop novo.
+
+### Barra superior retangular com base em degradê
+
+`jlinux_glass_panel_paint` reutiliza o material existente com os limites fora da área recortada, evitando contorno visível. Um grupo Cairo de 52 px de altura recebe máscara de opacidade: 36 px para conteúdo e 16 px de fade. É composição no redesenho do shell, não animação nem passe de blur novo. O cache do wallpaper continua compartilhado com o dock. A amostragem bilinear agora prolonga os pixels da borda do cache (`CAIRO_EXTEND_PAD`) para não criar transparência acidental no topo da saída.

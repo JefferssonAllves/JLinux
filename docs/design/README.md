@@ -73,3 +73,7 @@ Prévia renderizada por `jlinux-shell --preview-dock-apps`, sem captura da sess�
 ### Realce de cor nas janelas
 
 As prévias de moldura e Arquivos foram atualizadas com azul/ciano e violeta mais intensos no contorno e reflexos mais presentes no cabeçalho. O fundo permanece escuro e a borda fina. São prévias de componentes nativos; não representam a sessão instalada nem o conteúdo de aplicativos externos.
+
+### Barra encaixada — pedido posterior às referências
+
+A prévia `native-glass-preview.png` agora mostra a barra reta, em toda a largura e sem margem superior. A base termina em transparência gradual, sem contorno inferior. Essa geometria atende ao pedido mais recente do usuário, substituindo a cápsula das fotos; o material de vidro permanece. A imagem é uma prévia nativa a 1672×941, não captura da sessão instalada.
