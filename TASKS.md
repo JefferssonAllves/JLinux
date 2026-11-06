@@ -271,3 +271,9 @@ Quatorze testes locais release e ASan/UBSan passaram. Teste headless ampliado ab
 
 
 **DARK-01 · instalado:** pacote `0.5.0.r52.gbb964fe-1`, fonte bb964fe, compilado do GitHub com 15 testes aprovados no makepkg e instalado via pacman. Nova janela de Arquivos instalada aberta e permaneceu ativa (PID 54544 neste boot). Shell/compositor da sessão greetd e aplicativos existentes preservados; fonte/material globais da barra e molduras entram no próximo login. Menu de energia transitório anterior continua ativo. Sem logout/reinício/VT; CI e avaliação visual física pelo usuário pendentes neste registro. PR #37, base feature/power-menu (#34), sem merge.
+
+## Dock configurável — feature/configurable-dock
+
+DOCK-01 implementado: lista nativa de aplicativos .desktop via GIO, botão +, fixar/remover com persistência atômica por usuário e scroll no dock/lista. Três ações básicas e geometria preservadas. Atalhos adicionais usam monogramas, não ícones reais. Configuração inválida preservada; limite 32; sem comando de shell montado para lançar aplicativos. Modo auxiliar --dock-panel permite ativação sem encerrar a sessão, com fundo próprio opaco; não confundir com material integrado ou recarga do processo antigo.
+
+Testes locais release e ASan/UBSan, prévia e instalação registrados na conclusão abaixo. Fluxo isolado cobre pin, launch, sinais do filho, persistência, scroll, unpin e configuração inválida em ambos os modos. Sem benchmark, teste de VT ou validação de multimonitor/acessibilidade completa. Limites em docs/dock.md. Base na branch do tema escuro para preservar o visual instalado; alterações concorrentes da árvore principal não incluídas.

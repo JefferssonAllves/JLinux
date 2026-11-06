@@ -77,3 +77,7 @@ Pacote `jlinux-desktop-git`, login próprio em C/Wayland e inicialização via g
 ## Gerenciador de arquivos inicial
 
 `jlinux-files [pasta]` abre um cliente nativo C/Wayland com lista de pastas e arquivos. Duplo clique ou Enter abre o item; Backspace sobe uma pasta; F5 atualiza; Ctrl+H mostra ocultos. A barra oferece início, pasta superior e atualização. Arquivos usam a associação do sistema via `gio open`. Veja [os limites e controles](docs/files.md).
+
+## Fixar aplicativos no dock
+
+Clique em **+** no dock e depois no aplicativo para fixar ou remover. Role o mouse sobre o dock para acessar os atalhos adicionais. Preferências são salvas por usuário. Veja [controles e limites](docs/dock.md).

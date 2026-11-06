@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "../toolkit/painter.h"
+#include "dock.h"
 #include "../effects/glass.h"
 #include "../renderer/blur.h"
 #include <errno.h>
@@ -48,14 +49,19 @@ struct app {
     struct wl_shm *shm;
     struct zwlr_layer_shell_v1 *layers;
     struct wl_seat *seat;
+    struct wl_output *output;
+    int output_height, output_scale;
     struct wl_pointer *pointer;
     struct wl_cursor_theme *cursor_theme;
     struct wl_surface *cursor_surface;
-    struct surface wallpaper, panel, dock, power;
+    struct surface wallpaper, panel, dock, power, chooser;
+    struct dock_apps apps;
+    unsigned int dock_scroll, chooser_scroll;
+    char dock_message[180];
     struct surface *pointer_surface;
     struct wl_list buffers;
     double pointer_x, pointer_y;
-    bool running, info, power_panel;
+    bool running, info, power_panel, dock_panel;
     int power_action;
     pid_t power_pid;
     bool power_error;
@@ -69,6 +75,34 @@ static struct ui_rect dock_button(int index) { return (struct ui_rect){8, 18 + i
 static int dock_hit(double x, double y) {
     for (int i = 0; i < 3; i++) { if (ui_contains(dock_button(i), x, y)) { return i; } }
     return -1;
+}
+static GAppInfo *pinned_app(struct app *app, unsigned int index) {
+    if (index >= app->apps.pins->len) { return NULL; }
+    const char *id = g_ptr_array_index(app->apps.pins, index);
+    for (guint i = 0; i < app->apps.apps->len; i++) {
+        GAppInfo *info = g_ptr_array_index(app->apps.apps, i);
+        if (!strcmp(id, g_app_info_get_id(info))) { return info; }
+    }
+    return NULL;
+}
+static void paint_chooser(struct app *app, cairo_t *cr) {
+    cairo_set_source_rgb(cr, .13, .17, .25); cairo_paint(cr);
+    jlinux_glass_paint(cr, (struct ui_rect){1, 1, 378, 418}, 8, NULL, 0, 0, app->glass);
+    ui_text(cr, "Aplicativos no dock", 18, 14, 18, true, 0xf1f2fc);
+    ui_text(cr, "Clique para fixar ou remover • role a lista", 18, 43, 12, false, 0xb5c4df);
+    for (guint row = 0; row < 8 && row + app->chooser_scroll < app->apps.apps->len; row++) {
+        GAppInfo *info = g_ptr_array_index(app->apps.apps, row + app->chooser_scroll);
+        gboolean pinned = dock_apps_pinned(&app->apps, info);
+        double y = 72 + row * 36;
+        if (pinned) { cairo_set_source_rgba(cr, .36, .47, .78, .32); cairo_rectangle(cr, 10, y, 360, 34); cairo_fill(cr); }
+        ui_text(cr, pinned ? "✓" : "+", 18, y + 7, 15, true, 0xa5bffa);
+        cairo_save(cr); cairo_rectangle(cr, 44, y, 316, 36); cairo_clip(cr);
+        ui_text(cr, g_app_info_get_display_name(info), 46, y + 8, 14, pinned, 0xe0e6f5); cairo_restore(cr);
+    }
+    if (!app->apps.apps->len) { ui_text(cr, "Nenhum aplicativo disponível.", 18, 90, 14, false, 0xe0e6f5); }
+    cairo_save(cr); cairo_rectangle(cr, 12, 365, 356, 24); cairo_clip(cr);
+    ui_text(cr, app->dock_message, 18, 368, 12, false, 0xc3cfe9); cairo_restore(cr);
+    ui_text(cr, "Fechar", 18, 395, 14, true, 0xe0e6f5);
 }
 static const char *power_labels[] = {"Sair da sessão", "Reiniciar", "Desligar"};
 static void paint_power(struct app *app, cairo_t *cr) {
@@ -97,18 +131,42 @@ static void paint(struct surface *surface, cairo_t *cr) {
     int width = surface->width, height = surface->height;
     cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE); cairo_set_source_rgba(cr, 0, 0, 0, 0); cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-    if (surface == &surface->app->power) {
+    if (surface == &surface->app->chooser) {
+        paint_chooser(surface->app, cr);
+    } else if (surface == &surface->app->power) {
         paint_power(surface->app, cr);
     } else if (surface == &surface->app->panel && surface->app->power_panel) {
         ui_icon(cr, UI_POWER, 0, 6, 23, 0xe9eafa);
     } else if (surface == &surface->app->wallpaper) {
         ui_wallpaper(cr, width, height);
     } else if (surface == &surface->app->dock) {
+        if (surface->app->dock_panel) {
+            /* Cover only the old dock while previewing the replacement in a live session. */
+            cairo_set_source_rgb(cr, .055, .075, .12);
+            cairo_arc(cr, width / 2.0, width / 2.0, (width - 2) / 2.0, 3.141592653589793, 6.283185307179586);
+            cairo_arc(cr, width / 2.0, height - width / 2.0, (width - 2) / 2.0, 0, 3.141592653589793);
+            cairo_close_path(cr); cairo_fill(cr);
+        }
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (width - 2) / 2.0,
             surface->app->backdrop, DOCK_MARGIN, (surface->app->wallpaper.height - height + PANEL_ZONE + PANEL_MARGIN) / 2.0, surface->app->glass);
         const enum ui_icon icons[] = {UI_FOLDER, UI_TERMINAL, UI_CODE};
         const unsigned int colors[] = {0x87b8f5, 0xe3e8f6, 0x78b8f3};
-        for (int i = 0; i < 3; i++) { ui_button(cr, dock_button(i), icons[i], surface->hover == i, colors[i]); }
+        for (int i = 0; i < 3; i++) {
+            unsigned int index = i + surface->app->dock_scroll;
+            if (index < 3) { ui_button(cr, dock_button(i), icons[index], surface->hover == i, colors[index]); }
+            else {
+                GAppInfo *info = pinned_app(surface->app, index - 3);
+                if (!info) { ui_button(cr, dock_button(i), UI_FILE, surface->hover == i, 0x778199); continue; }
+                ui_button(cr, dock_button(i), UI_CODE, surface->hover == i, 0xa4a2fa);
+                /* shortcut: monograms until the native icon-theme loader exists. */
+                const char *name = g_app_info_get_display_name(info);
+                char initial[8] = {0}; g_unichar_to_utf8(g_utf8_get_char(name), initial);
+                cairo_set_source_rgb(cr, .16, .20, .32);
+                struct ui_rect button = dock_button(i); cairo_rectangle(cr, button.x + 5, button.y + 5, 30, 30); cairo_fill(cr);
+                ui_text(cr, initial, button.x + 12, button.y + 9, 18, true, 0xe0e6ff);
+            }
+        }
+        ui_text(cr, "+", 20, 199, 20, true, 0xc3d5ff);
     } else {
         jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, height - 2}, (height - 2) / 2.0,
             surface->app->backdrop, PANEL_MARGIN, PANEL_MARGIN, surface->app->glass);
@@ -246,6 +304,22 @@ static void toggle_power(struct app *app) {
     zwlr_layer_surface_v1_set_margin(app->power.layer, PANEL_MARGIN + PANEL_HEIGHT + 6, PANEL_MARGIN, 0, 0);
     wl_surface_commit(app->power.wl);
 }
+static void toggle_chooser(struct app *app) {
+    if (app->chooser.wl) {
+        if (app->pointer_surface == &app->chooser) { app->pointer_surface = NULL; }
+        zwlr_layer_surface_v1_destroy(app->chooser.layer); wl_surface_destroy(app->chooser.wl);
+        app->chooser.layer = NULL; app->chooser.wl = NULL;
+        app->chooser.configured = false; app->chooser.dirty = false; return;
+    }
+    dock_apps_finish(&app->apps); dock_apps_init(&app->apps);
+    if (app->dock_scroll > app->apps.pins->len) { app->dock_scroll = app->apps.pins->len; }
+    app->dock.dirty = true;
+    app->chooser_scroll = 0; app->dock_message[0] = 0;
+    if (!app->apps.writable) { snprintf(app->dock_message, sizeof(app->dock_message), "dock.ini inválido; edição desativada."); }
+    if (!create_surface(app, &app->chooser, "jlinux-dock-apps", ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT, 380, 420, -1, 0)) { notice(app, "Não foi possível abrir a lista."); return; }
+    zwlr_layer_surface_v1_set_margin(app->chooser.layer, 0, 0, 0, DOCK_ZONE + 12); wl_surface_commit(app->chooser.wl);
+}
 static void request_power(struct app *app) {
     if (app->power_pid || app->power_action < 0 || app->power_action > 2) { return; }
     char *session = getenv("XDG_SESSION_ID");
@@ -275,7 +349,18 @@ static void request_power(struct app *app) {
     }
     app->power.dirty = true;
 }
+static void child_signals(void *data) {
+    (void)data; sigset_t empty; sigemptyset(&empty); sigprocmask(SIG_SETMASK, &empty, NULL);
+}
 static void launch(struct app *app, int index) {
+    if (index >= 3) {
+        GAppInfo *info = pinned_app(app, (unsigned int)index - 3); GError *error = NULL;
+        if (!info || !g_desktop_app_info_launch_uris_as_manager(G_DESKTOP_APP_INFO(info), NULL, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD, child_signals, NULL, NULL, NULL, &error)) {
+            notice(app, "Não foi possível abrir o aplicativo fixado.");
+            if (error) { fprintf(stderr, "Dock: %s\n", error->message); g_error_free(error); }
+        }
+        return;
+    }
     char *plain[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL};
     char *assistant[] = {"foot", "--term=xterm-256color", "--title=JLinux Codex", "codex", NULL};
     char *files[] = {"jlinux-files", NULL};
@@ -301,9 +386,9 @@ static void pointer_enter(void *data, struct wl_pointer *pointer, uint32_t seria
         wl_surface_damage(app->cursor_surface, 0, 0, (int)image->width, (int)image->height);
         wl_surface_commit(app->cursor_surface);
     }
-    struct surface *surfaces[] = {&app->panel, &app->dock, &app->power};
+    struct surface *surfaces[] = {&app->panel, &app->dock, &app->power, &app->chooser};
     app->pointer_surface = NULL;
-    for (size_t i = 0; i < 3; i++) { if (surfaces[i]->wl == wl) { app->pointer_surface = surfaces[i]; } }
+    for (size_t i = 0; i < 4; i++) { if (surfaces[i]->wl == wl) { app->pointer_surface = surfaces[i]; } }
     app->pointer_x = wl_fixed_to_double(x); app->pointer_y = wl_fixed_to_double(y);
 }
 static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *wl) {
@@ -324,7 +409,21 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
     (void)pointer; (void)serial; (void)time;
     struct app *app = data;
     if (button != BTN_LEFT || state != WL_POINTER_BUTTON_STATE_RELEASED) { return; }
-    if (app->pointer_surface == &app->power) {
+    if (app->pointer_surface == &app->chooser) {
+        if (app->pointer_y >= 390) { toggle_chooser(app); }
+        else if (app->pointer_y >= 72 && app->pointer_y < 360) {
+            unsigned int index = app->chooser_scroll + (unsigned int)((app->pointer_y - 72) / 36);
+            if (index < app->apps.apps->len) {
+                GError *error = NULL; GAppInfo *info = g_ptr_array_index(app->apps.apps, index);
+                if (dock_apps_toggle(&app->apps, info, &error)) {
+                    snprintf(app->dock_message, sizeof(app->dock_message), "%s", dock_apps_pinned(&app->apps, info) ? "Fixado. Role o dock para encontrar o app." : "Removido do dock.");
+                    app->dock_scroll = app->apps.pins->len;
+                    app->dock.dirty = true;
+                } else { snprintf(app->dock_message, sizeof(app->dock_message), "%s", error->message); g_clear_error(&error); }
+                app->chooser.dirty = true;
+            }
+        }
+    } else if (app->pointer_surface == &app->power) {
         double y = app->pointer_y;
         if (app->pointer_x < 8 || app->pointer_x > 312) { return; }
         if (y >= 220) { close_power(app); }
@@ -335,7 +434,8 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
         }
     } else if (app->pointer_surface == &app->dock) {
         int hit = dock_hit(app->pointer_x, app->pointer_y);
-        if (hit >= 0 && hit < 3) { launch(app, hit); }
+        if (app->pointer_y >= 198 && app->pointer_y < 224) { toggle_chooser(app); }
+        else if (hit >= 0 && hit < 3) { launch(app, hit + (int)app->dock_scroll); }
     } else if (app->pointer_surface == &app->panel) {
         if (app->info) { app->info = false; app->panel.dirty = true; }
         else if (app->pointer_x > app->panel.width - 60) {
@@ -344,7 +444,16 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
     }
 }
 static void pointer_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
-    (void)data; (void)pointer; (void)time; (void)axis; (void)value;
+    (void)pointer; (void)time; struct app *app = data;
+    if (axis != WL_POINTER_AXIS_VERTICAL_SCROLL || !value) { return; }
+    unsigned int *scroll = NULL, maximum = 0;
+    if (app->pointer_surface == &app->dock) { scroll = &app->dock_scroll; maximum = app->apps.pins->len; }
+    else if (app->pointer_surface == &app->chooser) { scroll = &app->chooser_scroll; maximum = app->apps.apps->len > 8 ? app->apps.apps->len - 8 : 0; }
+    if (scroll) {
+        if (value > 0 && *scroll < maximum) { (*scroll)++; }
+        else if (value < 0 && *scroll) { (*scroll)--; }
+        app->pointer_surface->dirty = true;
+    }
 }
 static const struct wl_pointer_listener pointer_listener = {.enter = pointer_enter, .leave = pointer_leave,
     .motion = pointer_motion, .button = pointer_button, .axis = pointer_axis};
@@ -357,6 +466,22 @@ static void capabilities(void *data, struct wl_seat *seat, uint32_t capabilities
     }
 }
 static const struct wl_seat_listener seat_listener = {.capabilities = capabilities};
+static void position_live_dock(struct app *app) {
+    if (!app->dock_panel || !app->dock.layer || app->output_height <= 0) { return; }
+    int top = (app->output_height / (app->output_scale > 0 ? app->output_scale : 1) - DOCK_HEIGHT + PANEL_ZONE + PANEL_MARGIN) / 2;
+    zwlr_layer_surface_v1_set_margin(app->dock.layer, top > 0 ? top : 0, 0, 0, DOCK_MARGIN);
+    wl_surface_commit(app->dock.wl);
+}
+static void output_geometry(void *data, struct wl_output *output, int32_t x, int32_t y, int32_t width, int32_t height, int32_t subpixel, const char *make, const char *model, int32_t transform) {
+    (void)data; (void)output; (void)x; (void)y; (void)width; (void)height; (void)subpixel; (void)make; (void)model; (void)transform;
+}
+static void output_mode(void *data, struct wl_output *output, uint32_t flags, int32_t width, int32_t height, int32_t refresh) {
+    (void)output; (void)width; (void)refresh; struct app *app = data;
+    if (flags & WL_OUTPUT_MODE_CURRENT) { app->output_height = height; }
+}
+static void output_scale(void *data, struct wl_output *output, int32_t factor) { (void)output; ((struct app *)data)->output_scale = factor; }
+static void output_done(void *data, struct wl_output *output) { (void)output; position_live_dock(data); }
+static const struct wl_output_listener output_listener = {.geometry = output_geometry, .mode = output_mode, .done = output_done, .scale = output_scale};
 static void global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
     struct app *app = data;
     if (!strcmp(interface, wl_compositor_interface.name) && version >= 4) {
@@ -365,6 +490,9 @@ static void global(void *data, struct wl_registry *registry, uint32_t name, cons
         app->shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
     } else if (!strcmp(interface, zwlr_layer_shell_v1_interface.name)) {
         app->layers = wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, 1);
+    } else if (app->dock_panel && !app->output && version >= 2 && !strcmp(interface, wl_output_interface.name)) {
+        app->output = wl_registry_bind(registry, name, &wl_output_interface, 2);
+        wl_output_add_listener(app->output, &output_listener, app);
     } else if (!strcmp(interface, wl_seat_interface.name) && !app->seat) {
         app->seat = wl_registry_bind(registry, name, &wl_seat_interface, 1); wl_seat_add_listener(app->seat, &seat_listener, app);
     }
@@ -374,6 +502,7 @@ static const struct wl_registry_listener registry_listener = {.global = global, 
 static int preview(const char *path) {
     struct app app = {0};
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
+    dock_apps_init(&app.apps);
     app.wallpaper = (struct surface){.app = &app, .width = 1672, .height = 941};
     app.panel = (struct surface){.app = &app, .width = 1672 - 2 * PANEL_MARGIN, .height = PANEL_HEIGHT};
     app.dock = (struct surface){.app = &app, .width = DOCK_WIDTH, .height = DOCK_HEIGHT, .hover = -1};
@@ -387,26 +516,31 @@ static int preview(const char *path) {
     cairo_status_t status = cairo_surface_write_to_png(image, path);
     cairo_destroy(cr); cairo_surface_destroy(image);
     cairo_surface_destroy(app.backdrop);
-    ui_finish();
+    dock_apps_finish(&app.apps); ui_finish();
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
-static int preview_power(const char *path) {
+static int preview_power(const char *path, bool chooser) {
     struct app app = {.power_action = -1};
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
-    cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 320, 260);
-    cairo_t *cr = cairo_create(image); paint_power(&app, cr);
+    cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, chooser ? 380 : 320, chooser ? 420 : 260);
+    cairo_t *cr = cairo_create(image);
+    if (chooser) { dock_apps_init(&app.apps); paint_chooser(&app, cr); dock_apps_finish(&app.apps); }
+    else { paint_power(&app, cr); }
     cairo_status_t status = cairo_surface_write_to_png(image, path);
     cairo_destroy(cr); cairo_surface_destroy(image); ui_finish();
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
 int main(int argc, char **argv) {
+    bool dock_panel = argc == 2 && !strcmp(argv[1], "--dock-panel");
     bool power_panel = argc == 2 && !strcmp(argv[1], "--power-panel");
-    if (argc == 3 && !strcmp(argv[1], "--preview-power")) { return preview_power(argv[2]); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-power")) { return preview_power(argv[2], false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-dock-apps")) { return preview_power(argv[2], true); }
     if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2]); }
-    if (argc != 1 && !power_panel) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-power arquivo.png | --power-panel]\n"); return 1; }
-    struct app app = {.running = true, .power_panel = power_panel, .power_action = -1, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
+    if (argc != 1 && !power_panel && !dock_panel) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-power arquivo.png | --power-panel | --dock-panel]\n"); return 1; }
+    struct app app = {.running = true, .power_panel = power_panel, .dock_panel = dock_panel, .power_action = -1, .timer = -1, .signals = -1}; wl_list_init(&app.buffers);
     if (getenv("JLINUX_THEME")) { fprintf(stderr, "JLINUX_THEME/CSS não é suportado pelo shell nativo.\n"); return 1; }
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
+    dock_apps_init(&app.apps);
     sigset_t signals; sigemptyset(&signals); sigaddset(&signals, SIGINT); sigaddset(&signals, SIGTERM); sigaddset(&signals, SIGCHLD);
     if (sigprocmask(SIG_BLOCK, &signals, NULL)) { return 1; }
     app.signals = signalfd(-1, &signals, SFD_CLOEXEC | SFD_NONBLOCK);
@@ -416,21 +550,25 @@ int main(int argc, char **argv) {
     if (!app.display || app.signals < 0 || app.timer < 0) { goto cleanup; }
     app.registry = wl_display_get_registry(app.display); wl_registry_add_listener(app.registry, &registry_listener, &app);
     if (wl_display_roundtrip(app.display) < 0 || !app.compositor || !app.shm || !app.layers) { goto cleanup; }
+    if (dock_panel && (wl_display_roundtrip(app.display) < 0 || app.output_height <= 0)) { goto cleanup; }
     app.cursor_theme = wl_cursor_theme_load(NULL, 24, app.shm);
     app.cursor_surface = wl_compositor_create_surface(app.compositor);
     uint32_t all = ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
-    if (!power_panel && !create_surface(&app, &app.wallpaper, "jlinux-wallpaper", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, all, 0, 0, -1, 0)) { goto cleanup; }
-    if (!create_surface(&app, &app.panel, power_panel ? "jlinux-power-button" : "jlinux-panel", power_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+    if (!power_panel && !dock_panel && !create_surface(&app, &app.wallpaper, "jlinux-wallpaper", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND, all, 0, 0, -1, 0)) { goto cleanup; }
+    if (!dock_panel && !create_surface(&app, &app.panel, power_panel ? "jlinux-power-button" : "jlinux-panel", power_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT |
         (power_panel ? 0 : ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT), power_panel ? 44 : 0, PANEL_HEIGHT, power_panel ? -1 : PANEL_ZONE, PANEL_MARGIN)) { goto cleanup; }
-    if (!power_panel && !create_surface(&app, &app.dock, "jlinux-dock", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
-        ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT, DOCK_WIDTH, DOCK_HEIGHT, DOCK_ZONE, DOCK_MARGIN)) { goto cleanup; }
+    if (!power_panel && !create_surface(&app, &app.dock, "jlinux-dock", dock_panel ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+        ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | (dock_panel ? ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP : 0), DOCK_WIDTH, DOCK_HEIGHT, dock_panel ? -1 : DOCK_ZONE, DOCK_MARGIN)) { goto cleanup; }
+    if (dock_panel) {
+        position_live_dock(&app);
+    }
     struct itimerspec timer = {.it_value = {.tv_sec = 30}, .it_interval = {.tv_sec = 30}};
     if (timerfd_settime(app.timer, 0, &timer, NULL)) { goto cleanup; }
     while (app.running) {
         if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
-        if (!draw(&app.wallpaper) || !draw(&app.panel) || !draw(&app.dock) || !draw(&app.power)) { goto cleanup; }
+        if (!draw(&app.wallpaper) || !draw(&app.panel) || !draw(&app.dock) || !draw(&app.power) || !draw(&app.chooser)) { goto cleanup; }
         while (wl_display_prepare_read(app.display) != 0) {
             if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
         }
@@ -470,10 +608,11 @@ cleanup:
     if (app.backdrop) { cairo_surface_destroy(app.backdrop); }
     if (app.pointer) { wl_pointer_destroy(app.pointer); }
     if (app.seat) { wl_seat_destroy(app.seat); }
+    if (app.output) { wl_output_destroy(app.output); }
     if (app.cursor_surface) { wl_surface_destroy(app.cursor_surface); }
     if (app.cursor_theme) { wl_cursor_theme_destroy(app.cursor_theme); }
-    struct surface *surfaces[] = {&app.dock, &app.panel, &app.wallpaper, &app.power};
-    for (size_t i = 0; i < 4; i++) {
+    struct surface *surfaces[] = {&app.dock, &app.panel, &app.wallpaper, &app.power, &app.chooser};
+    for (size_t i = 0; i < 5; i++) {
         if (surfaces[i]->layer) { zwlr_layer_surface_v1_destroy(surfaces[i]->layer); }
         if (surfaces[i]->wl) { wl_surface_destroy(surfaces[i]->wl); }
     }
@@ -487,6 +626,6 @@ cleanup:
     if (app.display) { wl_display_flush(app.display); wl_display_disconnect(app.display); }
     if (app.timer >= 0) { close(app.timer); }
     if (app.signals >= 0) { close(app.signals); }
-    ui_finish();
+    dock_apps_finish(&app.apps); ui_finish();
     return result;
 }

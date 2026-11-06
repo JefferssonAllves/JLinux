@@ -63,3 +63,9 @@ Gerada por `jlinux-files --preview`: barra Glass compartilhada e lista opaca. N�
 ### Iteração de neon discreto
 
 As prévias nativas de moldura e Arquivos acima foram atualizadas: sem pontos focais nas janelas, contorno contínuo azul/violeta e fundo azul-ardósia no cliente. São desenhos dos componentes, não capturas de sessão nem prova de fidelidade exata às fotos. A barra e o dock conservam seu acabamento anterior.
+
+## Seletor de aplicativos do dock
+
+![Lista nativa para fixar aplicativos](native-dock-apps-preview.png)
+
+Prévia renderizada por `jlinux-shell --preview-dock-apps`, sem captura da sessão. O botão + foi adicionado ao dock preservando suas dimensões; aplicativos adicionais usam monogramas nesta etapa.
