@@ -146,12 +146,12 @@ static void chrome_clicked(struct browser_chrome *chrome, double x, double y, gp
                 else { select_tab(app, index); }
             }
         }
-    } else if (y < BROWSER_TAB_HEIGHT + 63) {
+    } else if (y < BROWSER_CHROME_HEIGHT) {
         if (x < 45) { webkit_web_view_go_back(app->web); }
         else if (x < 83) { webkit_web_view_go_forward(app->web); }
         else if (x < 127) { webkit_web_view_reload(app->web); }
         else { show_address(app); }
-    } else if (y >= BROWSER_TAB_HEIGHT + 84 && y < BROWSER_CHROME_HEIGHT) { toggle_blocker(app); }
+    }
 }
 static void changed_uri(WebKitWebView *web, GParamSpec *spec, gpointer data) {
     (void)spec; struct app *app = data;
