@@ -1,1 +1,2 @@
 option('shell', type: 'boolean', value: true, description: 'Compilar o shell Wayland nativo e iniciador de sessão em C')
+option('browser', type: 'boolean', value: false, description: 'Compilar o navegador experimental WPE WebKit (independente do shell)')

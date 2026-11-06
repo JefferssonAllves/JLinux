@@ -8,6 +8,14 @@ Estados: **concluído** = implementação e evidências indicadas; **em andament
 
 As ferramentas web servem para criar e iterar protótipos visuais antes da interface definitiva nativa. O shell GTK/CSS foi substituído pela primeira base Wayland/C; o toolkit ainda é inicial. Tecnologias de produção serão escolhidas por adequação e desempenho medido, preservando personalização.
 
+## Navegador próprio — feature/web-browser
+
+- **BROWSER-01 · parcial implementado na branch:** aplicativo C/WPE WebKit 2.54 separado do desktop, build opt-in, uma página por janela, endereço nativo sobreposto por Ctrl+L, navegação/reload/histórico e perfil efêmero. Material compartilhado; ainda é interface provisória, sem abas ou reprodução completa das referências.
+- **BROWSER-TEST · validação local:** 15 testes release passaram. Teste Wayland/Pixman cobre texto em página, endereço nativo, reload, voltar/avançar, maximização, Ctrl+Q e fechamento xdg. HTTP local/DOM/JavaScript/redirecionamento, bloqueio de esquema local e recusa de TLS autoassinado testados. HTTPS externo em example.org passou. ASan/UBSan nos três testes do navegador passaram com `detect_leaks=0`; LeakSanitizer permanece pendente por alocações com stacks em bibliotecas externas.
+- **BROWSER-PERF · baseline inicial, sem comparação:** três processos headless novos, página mínima local, 199–218 ms até DOM/JS prontos e pico de PSS amostrado da árvore de 229–233 MiB. Isso não demonstra consumo em repouso, desempenho em GPU ou superioridade ao Firefox/Chromium. Dados e metodologia em [docs/browser.md](docs/browser.md).
+- **BROWSER-02 · pendente:** validar composição/entrada/compatibilidade no caminho acelerado aninhado, medir repouso/vídeo/sites reais contra Firefox/Chromium e decidir o motor por evidência. Depois implementar layout definitivo validado, abas, downloads, persistência e permissões. Acessibilidade/IME da barra também pendentes.
+- Branch derivada de `fix/terminal-locale` (PR #28 aberto), conforme fluxo de PR dependente; alterações locais de `feature/file-manager` preservadas em outra worktree. Instalação e sessão greetd preservadas; nenhum teste de VT/DRM realizado.
+
 | ID | Prioridade / estado | Tarefa | Dependências | Critério de conclusão |
 | --- | --- | --- | --- | --- |
 | DESIGN-01 | P1 · pendente | Prototipar e validar a próxima tela com o usuário | Direção visual do usuário | Protótipo identificado como tal, feedback incorporado e visual acordado antes da implementação nativa definitiva |
