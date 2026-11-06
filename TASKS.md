@@ -291,3 +291,18 @@ Testes locais release e ASan/UBSan, prévia e instalação registrados na conclu
 - Backend C separado, ambiente PipeWire do usuário preservando override explícito; não instala/ativa serviços nem altera preferências do áudio. Modo transitório --volume-panel permite botão funcional sem encerrar o shell supervisionado. Prévia do componente inspecionada, 40% são fixture visual.
 - Testes: respostas válidas/mute/acima de 100% e recusa de NaN/infinito/negativo/lixo; cliques headless com wpctl simulado verificam argumentos, nova consulta após ajuste, erro, timeout e recuperação no shell completo e modo transitório. Build release e 19 testes aprovados; 19 testes ASan/UBSan também passaram. Instalação registrada após conclusão. Sem alteração de volume real durante os testes de cliques, benchmark ou VT.
 - Depende de fix/visible-browser-dock (#41), preservando o dock instalado mais recente. Sem merge.
+## Organização automática — feature/automatic-tiling
+
+- **WM-TILE · implementado na branch:** principal + pilha, ordem estável independente do foco, divisão ajustável, flutuante por janela e modo manual por variável de ambiente. Cálculo por eventos, três passagens O(n), sem alocações no rearranjo; geometrias iguais não são reenviadas.
+- **WM-03 · parcial:** nove espaços, troca/envio e recuperação de foco; diálogos xdg-parent acompanham o envio do pai. Regras persistentes, configuração e indicador no shell continuam pendentes.
+- Tela cheia xdg ganha árvore acima dos layers top e abaixo dos overlays, sem molduras; maximização continua separada e restaura para o layout.
+- Validação local: 16 testes release e 16 ASan/UBSan em headless/Pixman; `git diff --check`. Evidência e limites: `docs/window-management.md`. Testes headless com clientes reais não comprovam velocidade em GPU nem equivalência visual. PERF-01 continua pendente; há plano de comparação manual/automático no documento.
+- Instalação ativa preservada: pacote observado `jlinux-desktop-git 0.5.0.r50.g023034a-1`; esta branch não foi instalada e a sessão greetd não foi reiniciada. Nenhum teste de VT/DRM.
+
+## Ajuste automático na base atual — feature/window-auto-layout
+
+WM-AUTO integrado a partir de 6a0f028 sobre a base instalada 8c5c803: uma janela preenche a área útil, duas dividem a tela, demais empilham à direita; abrir/fechar e mudar área útil reorganizam por eventos. Mantidos atalhos de proporção/principal/flutuante, workspaces, limites e diálogos. Dock configurável e tema preservados. Base temporária fix/visible-browser-dock; reaproveitamento de #38, sem integrar PRs.
+
+Dezenove testes release passaram nesta base. ASan/UBSan e empacotamento registrados na conclusão abaixo. Compositor atual preservado; ativação somente no próximo login. Sem reinício, VT, benchmark ou declaração de validação física.
+
+**WM-AUTO · instalado em 06/11/2026:** pacote `0.5.0.r58.gc1bcc75-1`, fonte c1bcc75 (implementação integrada em 0e31436), compilado do GitHub com 19 testes aprovados no makepkg e instalado pelo pacman. Dezenove testes locais release e ASan/UBSan passaram. PR #42, base fix/visible-browser-dock, reutilizando implementação de #38 sem merge de PR. Compositor da sessão atual preservado e ainda executa código anterior: comportamento automático será ativado no próximo login, por padrão, salvo JLINUX_TILING=0 explícito. Não houve logout, reinício, VT ou teste físico de GPU nesta entrega. CI e avaliação visual do usuário pendentes no registro.
