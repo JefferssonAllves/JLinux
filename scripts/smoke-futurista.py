@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real Super tap/chord, native launcher hit testing and shell restart in private Wayland."""
+"""Real Super hold/release, native launcher hit testing and shell restart in private Wayland."""
 import os
 from pathlib import Path
 import runpy
@@ -29,47 +29,43 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
                 assert sock.stat().st_mode&0o777==0o600
                 duplicate=subprocess.run([shell],env=env,stdout=out,stderr=subprocess.STDOUT,timeout=4)
                 assert duplicate.returncode!=0 and sock.exists(),'duplicate shell replaced live socket'
-                dock_maps=log().count('Interface mapeada: jlinux-radial-dock')
-                control_maps=log().count('Interface mapeada: jlinux-control-center')
+                key='Super_L' if iteration==0 else 'Super_R'
                 opened=log().count('Dock circular aberto.')
-                control_opened=log().count('Painel de controle aberto.')
-                keys('-M','logo','-k','F13','-m','logo')
-                assert log().count('Dock circular aberto.')==opened,'Super chord opened launcher'
-                keys('-k','Super_L')
-                wait(lambda:log().count('Dock circular aberto.')>opened,processes,'Super alone opens dock')
-                wait(lambda:log().count('Interface mapeada: jlinux-radial-dock')>dock_maps,processes,'launcher mapped')
-                assert log().count('Painel de controle aberto.')==control_opened,'Super opened control panel'
-                keys('-k','Super_L')
-                wait(lambda:log().count('Dock circular fechado.')>dock_maps,processes,'Super closes dock')
-                keys('-k','Super_L')
-                wait(lambda:log().count('Interface mapeada: jlinux-radial-dock')>dock_maps+1,processes,'reopen')
+                closed=log().count('Dock circular fechado.')
+                control=log().count('Painel de controle aberto.')
+                held=subprocess.Popen([wtype,'-P',key,'-s','1200','-p',key],env=env)
+                processes.append(held)
+                wait(lambda:log().count('Dock circular aberto.')>opened,processes,'press shows dock')
+                assert held.poll() is None,'dock opened only after release'
+                assert log().count('Painel de controle aberto.')==control,'hold opened control panel'
+                held.wait(timeout=4);processes.remove(held)
+                wait(lambda:log().count('Dock circular fechado.')>closed,processes,'release hides dock')
+                opened=log().count('Dock circular aberto.')
+                held=subprocess.Popen([wtype,'-P',key,'-s','1600','-p',key],env=env)
+                processes.append(held)
+                wait(lambda:log().count('Dock circular aberto.')>opened,processes,'hold for mouse selection')
                 mapped=log().count('Janela mapeada: JLinux Terminal')
                 mouse(round(986*1280/1672),round(263*720/941))
-                wait(lambda:log().count('Janela mapeada: JLinux Terminal')>mapped,processes,'radial terminal button launches real Foot')
+                wait(lambda:log().count('Janela mapeada: JLinux Terminal')>mapped,processes,'click while holding opens Foot')
+                held.wait(timeout=4);processes.remove(held)
+                keys('-M','logo','-k','q','-m','logo')
+                mapped=log().count('Janela mapeada: JLinux Terminal')
+                keys('-M','logo','-k','Return','-m','logo')
+                wait(lambda:log().count('Janela mapeada: JLinux Terminal')>mapped,processes,'Super+Enter still opens Foot')
+                wait(lambda:log().count('Dock circular fechado.')==log().count('Dock circular aberto.'),processes,'shortcut leaves no dock')
                 keys('-M','logo','-k','q','-m','logo')
                 mouse(1240,24)
-                wait(lambda:log().count('Painel de controle aberto.')>control_opened,processes,'right button opens control panel')
-                wait(lambda:log().count('Interface mapeada: jlinux-control-center')>control_maps,processes,'control surface')
-                terminals=log().count('Janela mapeada: JLinux Terminal')
-                mouse(round(986*1280/1672),round(263*720/941))
-                wait(lambda:log().count('Painel de controle fechado.')>control_maps,processes,'dock region is outside control panel')
-                assert log().count('Janela mapeada: JLinux Terminal')==terminals,'hidden dock received click'
+                wait(lambda:log().count('Painel de controle aberto.')>control,processes,'right button opens controls')
+                control_closed=log().count('Painel de controle fechado.')
                 mouse(1240,24)
-                wait(lambda:log().count('Interface mapeada: jlinux-control-center')>control_maps+1,processes,'reopen control panel')
-                mouse(1240,24)
-                wait(lambda:log().count('Painel de controle fechado.')>control_maps+1,processes,'right button closes control panel')
-                before_dock=log().count('Dock circular aberto.')
-                keys('-k','Super_L')
-                wait(lambda:log().count('Dock circular aberto.')>before_dock,processes,'open before mode switch')
-                before_control=log().count('Painel de controle aberto.')
-                mouse(1240,24)
-                wait(lambda:log().count('Painel de controle aberto.')>before_control,processes,'right button switches visible dock to controls')
-                before_dock=log().count('Dock circular aberto.')
-                keys('-k','Super_L')
-                wait(lambda:log().count('Dock circular aberto.')>before_dock,processes,'Super switches controls to dock only')
-                before_close=log().count('Dock circular fechado.')
-                keys('-k','Super_L')
-                wait(lambda:log().count('Dock circular fechado.')>before_close,processes,'close switched dock')
+                wait(lambda:log().count('Painel de controle fechado.')>control_closed,processes,'right button closes controls')
+                opened=log().count('Dock circular aberto.')
+                closed=log().count('Dock circular fechado.')
+                held=subprocess.Popen([wtype,'-P',key,'-s','10000'],env=env)
+                processes.append(held)
+                wait(lambda:log().count('Dock circular aberto.')>opened,processes,'hold before disconnect')
+                stop(held);processes.remove(held)
+                wait(lambda:log().count('Dock circular fechado.')>closed,processes,'keyboard disconnect hides dock')
                 stop(client);processes.remove(client)
                 assert client.returncode==0,log()
                 assert not sock.exists(),'stale control socket after shell exit'
@@ -79,4 +75,4 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
         print(log(),file=sys.stderr);raise
     finally:
         for p in reversed(processes):stop(p)
-print('Futurista: Super tap/chord, open/close, terminal launch and socket cleanup passed.')
+print('Futurista: Super hold/release, open/close, terminal launch and socket cleanup passed.')

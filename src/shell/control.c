@@ -51,7 +51,7 @@ void shell_control_close(int fd) {
     }
     close(fd);
 }
-bool shell_control_toggle(void) {
+bool shell_control_dock(bool visible) {
     struct sockaddr_un addr;
     if (!address(&addr)) {
         return false;
@@ -60,7 +60,7 @@ bool shell_control_toggle(void) {
     if (fd < 0) {
         return false;
     }
-    bool sent = sendto(fd, "toggle", 6, MSG_NOSIGNAL, (struct sockaddr *)&addr, sizeof(addr)) == 6;
+    bool sent = sendto(fd, visible ? "show" : "hide", 4, MSG_NOSIGNAL, (struct sockaddr *)&addr, sizeof(addr)) == 4;
     close(fd);
     return sent;
 }

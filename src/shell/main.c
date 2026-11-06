@@ -186,6 +186,13 @@ static void configure(void *data, struct zwlr_layer_surface_v1 *layer, uint32_t 
     /* Keep the last usable buffer while an output has no drawable extent. */
     if (!width || !height) { return; }
     surface->width = (int)width; surface->height = (int)height;
+    if(surface==&surface->app->launcher && !surface->app->showing_controls){
+        struct ui_rect box=futurista_dock_bounds(width,height);
+        struct wl_region *input=wl_compositor_create_region(surface->app->compositor);
+        if(!input){surface->app->running=false;return;}
+        wl_region_add(input,(int)box.x,(int)box.y,(int)box.width+1,(int)box.height+1);
+        wl_surface_set_input_region(surface->wl,input);wl_region_destroy(input);
+    }
     surface->configured = true; surface->dirty = true;
 }
 static void closed(void *data, struct zwlr_layer_surface_v1 *layer) {
@@ -367,8 +374,6 @@ static void launch_item(struct app *app, int index) {
                  error->message);
         g_error_free(error);
         app->launcher.dirty = true;
-    } else {
-        close_launcher(app);
     }
     g_free(found);
     g_free(folder);
@@ -605,7 +610,10 @@ int main(int argc, char **argv) {
         }
         if (fds[3].revents & POLLIN) {
             char command[32];ssize_t count;
-            while((count=recv(app.control,command,sizeof(command),0))>0){if(count==6 && !memcmp(command,"toggle",6)){toggle_launcher(&app,false);}}
+            while((count=recv(app.control,command,sizeof(command),0))>0){
+                if(count==4 && !memcmp(command,"show",4) && (!app.launcher.wl || app.showing_controls)){toggle_launcher(&app,false);}
+                else if(count==4 && !memcmp(command,"hide",4) && app.launcher.wl && !app.showing_controls){close_launcher(&app);}
+            }
         }
         if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) { goto cleanup; }
         if (fds[1].revents & POLLIN) { uint64_t ticks; if (read(app.timer, &ticks, sizeof(ticks)) > 0) { app.panel.dirty = true; futurista_status(&app.futurista); if(app.launcher.wl){app.launcher.dirty=true;} if (app.audio.wl) { volume_start(&app.volume, 0); app.audio.dirty = true; } } }

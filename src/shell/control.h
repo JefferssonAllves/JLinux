@@ -3,5 +3,5 @@
 #include <stdbool.h>
 int shell_control_open(void);
 void shell_control_close(int fd);
-bool shell_control_toggle(void);
+bool shell_control_dock(bool visible);
 #endif
