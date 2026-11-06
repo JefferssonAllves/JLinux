@@ -355,3 +355,5 @@ O usuário autorizou instalar/aplicar diretamente no sistema toda alteração so
 - Implementados: shell C/Wayland com barra, wallpaper reconstruído, dez setores, centro de controle, hover/cliques, volume e confirmação de energia; Super isolada alterna a superfície sem conflitar com Super+Enter/drag.
 - Validação: 21 testes release; quatro cenários headless ASan/UBSan, teste do dock repetido após layout e prévia com LeakSanitizer passaram. Comparação nativa 1672×941 tem MAE RGB normalizado 0,0584804: não é idêntica.
 - O usuário autorizou instalar a prévia completa e adiou a reconstrução exata dos assets que não tem separados. Controles sem backend mostram indisponibilidade. Fidelidade exata, integração dos controles restantes e validação na sessão real permanecem pendentes; ver docs/futurista.md.
+
+FUTURISTA — instalação confirmada: pacote `0.5.0.r76.g18a1cae-1` instalado; `pacman -Qkk` sem alterações, prévia gerada pelo executável instalado. Ativação no próximo login; processos atuais preservados. Commit/backup e limites em docs/arch-installation.md. Fidelidade pixel a pixel e backends ausentes continuam pendentes; não tratados como concluídos.
