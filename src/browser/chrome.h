@@ -39,4 +39,5 @@ void browser_chrome_update(struct browser_chrome *chrome);
 void browser_chrome_finish(struct browser_chrome *chrome);
 void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width);
 guint browser_chrome_tab_slots(int width);
+int browser_chrome_new_tab_x(struct browser_chrome *chrome, int width);
 #endif

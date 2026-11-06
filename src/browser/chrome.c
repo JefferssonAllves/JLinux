@@ -14,14 +14,18 @@ struct chrome_buffer {
 };
 guint browser_chrome_tab_slots(int width) { return MAX(1, (width - 104) / BROWSER_TAB_WIDTH); }
 
+int browser_chrome_new_tab_x(struct browser_chrome *chrome, int width) {
+    guint slots = browser_chrome_tab_slots(width);
+    guint count = chrome->tabs ? chrome->tabs->len : 1;
+    guint first = chrome->active_tab / slots * slots;
+    return 12 + MIN(count - first, slots) * BROWSER_TAB_WIDTH;
+}
+
 void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width) {
     cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE); cairo_set_source_rgba(cr, 0, 0, 0, 0); cairo_paint(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-    cairo_set_source_rgba(cr, .015, .025, .055, .96);
-    cairo_rectangle(cr, 1, 1, width - 2, BROWSER_CHROME_HEIGHT - 2); cairo_fill(cr);
-    cairo_push_group(cr);
-    jlinux_glass_paint(cr, (struct ui_rect){1, 1, width - 2, BROWSER_CHROME_HEIGHT - 2}, 6, NULL, 0, 0, chrome->glass);
-    cairo_pop_group_to_source(cr); cairo_paint_with_alpha(cr, .5);
+    cairo_set_source_rgba(cr, .006, .009, .016, .88);
+    cairo_paint(cr);
     guint slots = browser_chrome_tab_slots(width), first = chrome->active_tab / slots * slots;
     guint count = chrome->tabs ? chrome->tabs->len : 1;
     for (guint i = first; i < MIN(count, first + slots); i++) {
@@ -38,7 +42,7 @@ void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width)
     }
     ui_text(cr, "‹", width - 91, 7, 22, false, 0xb5c4e2);
     ui_text(cr, "›", width - 63, 7, 22, false, 0xb5c4e2);
-    ui_text(cr, "+", width - 36, 8, 21, false, 0xe2eaff);
+    ui_text(cr, "+", browser_chrome_new_tab_x(chrome, width) + 8, 8, 21, false, 0xe2eaff);
     cairo_save(cr); cairo_translate(cr, 0, BROWSER_TAB_HEIGHT);
     ui_text(cr, "‹", 16, 18, 25, false, 0xdce7ff);
     ui_text(cr, "›", 54, 18, 25, false, 0xdce7ff);
