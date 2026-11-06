@@ -58,24 +58,22 @@ def main():
                     client = subprocess.Popen([shell], env=env, stdout=shell_out, stderr=subprocess.STDOUT)
                     processes.append(client)
                     wait_for(lambda: log().count("Interface mapeada: jlinux-panel") > iteration and
-                             log().count("Interface mapeada: jlinux-wallpaper") > iteration and
-                             log().count("Interface mapeada: jlinux-dock") > iteration,
+                             log().count("Interface mapeada: jlinux-wallpaper") > iteration,
                              [server, client], "mapeamento do painel e wallpaper")
+                    assert "Interface mapeada: jlinux-dock" not in log(), "Dock ainda foi criado"
                     time.sleep(0.15)
                     assert client.poll() is None, "Shell encerrou após mapear"
                     if pointer_client:
-                        subprocess.run([pointer_client, "34", "277"], env=env, check=True, timeout=3)
-                        wait_for(lambda: log().count("Janela mapeada: Arquivos") > iteration,
-                                 [server, client], "dock abriu arquivos")
-                        subprocess.run([pointer_client, "34", "344"], env=env, check=True, timeout=3)
+                        subprocess.run(["wtype", "-s", "200", "-M", "logo", "-k", "Return", "-m", "logo"],
+                                       env=env, check=True, timeout=4)
                         wait_for(lambda: log().count("Janela mapeada: JLinux Terminal") > iteration,
-                                 [server, client], "dock abriu terminal")
+                                 [server, client], "atalho abriu terminal sem lançador lateral")
                         subprocess.run(["wtype", "-s", "200", "-M", "logo", "-k", "Up", "-m", "logo"],
                                        env=env, check=True, timeout=4)
                         wait_for(lambda: log().count("Janela maximizada:") > iteration,
-                                 [server, client], "maximização com painel/dock")
+                                 [server, client], "maximização sem reserva lateral")
                         sizes = re.findall(r"Janela maximizada: .* \((\d+)x(\d+) em (\d+),(\d+)\)", log())
-                        assert tuple(map(int, sizes[-1])) == (1204, 631, 73, 86), sizes[-1]
+                        assert tuple(map(int, sizes[-1])) == (1274, 631, 3, 86), sizes[-1]
 
                     stop(client)
                     assert client.returncode == 0, f"Shell encerrou com erro: {client.returncode}"
@@ -90,7 +88,10 @@ def main():
                 stop(server)
                 assert server.returncode == 0, f"Status do compositor: {server.returncode}"
                 assert not socket.exists(), "Socket não foi removido"
-            print("Shell nativo mapeou painel/dock/wallpaper, abriu terminais por clique e reiniciou sem derrubar o compositor.")
+            for option in ("--dock-panel", "--preview-dock-apps"):
+                removed = subprocess.run([shell, option], env=env, capture_output=True, timeout=3)
+                assert removed.returncode == 1, "Modo removido ainda foi aceito"
+            print("Shell: painel/wallpaper sem dock, terminal por atalho, largura útil integral e reinício passaram.")
         except Exception:
             for path in (server_log, shell_log):
                 if path.exists():

@@ -1,8 +1,8 @@
 # JLinux Desktop
 
-Compositor Wayland próprio, shell e iniciador de sessão em C. A primeira base do toolkit JLinux desenha barra superior, dock à esquerda, texto, ícones e botões, sem GTK, CSS ou navegador.
+Compositor Wayland próprio, shell e iniciador de sessão em C. A primeira base do toolkit JLinux desenha barra superior, texto, ícones e controles de sessão, sem GTK, CSS ou navegador.
 
-O dock abre Arquivos, Terminal e Codex. O compositor mantém mouse, teclado, foco por clique e atalhos. O terminal inicial é Foot. Esta é a fundação nativa: o visual Glass completo e a reprodução final das fotos ainda não estão implementados.
+Os aplicativos podem ser abertos pelo terminal. O compositor mantém mouse, teclado, foco por clique e atalhos. O terminal inicial é Foot. Esta é a fundação nativa: o visual Glass completo e a reprodução final das fotos ainda não estão implementados.
 
 ## Compilar no Arch Linux
 
@@ -33,9 +33,9 @@ O iniciador localiza os binários na própria pasta, cria runtime privado, aguar
 
 | Ação | Controle |
 | --- | --- |
-| Abrir terminal | Super+Enter ou ícone Terminal no dock |
-| Abrir Codex | Ícone de código no dock |
-| Abrir Arquivos | Ícone de pasta no dock ou `jlinux-files` |
+| Abrir terminal | Super+Enter |
+| Abrir Codex | `codex` no terminal |
+| Abrir Arquivos | `jlinux-files` no terminal |
 | Alternar janela | Alt+Tab |
 | Focar janela | Clique |
 | Mover / redimensionar | Super+arraste esquerdo / direito |
@@ -43,7 +43,7 @@ O iniciador localiza os binários na própria pasta, cria runtime privado, aguar
 | Fechar janela | Botão × ou Super+Q |
 | Encerrar sessão | Super+Esc |
 
-Layout físico padrão: `br`; alterar com `--keyboard-layout us`. O botão de energia informa como sair; suspensão/reinício/desligamento e os indicadores Wi-Fi/Bluetooth ainda não estão integrados aos serviços. Menus de aplicativos/arquivos/configurações são posições visuais iniciais, com aviso de indisponibilidade ao clicar. Não há bloqueio/suspensão integrados.
+Layout físico padrão: `br`; alterar com `--keyboard-layout us`. O botão de energia oferece sair, reiniciar e desligar com confirmação. O controle Som ajusta volume e mute. Os indicadores Wi-Fi/Bluetooth mostram aviso de indisponibilidade ao clicar; os antigos rótulos de menus à esquerda foram removidos. Não há bloqueio/suspensão integrados.
 
 ## Verificação e preview do desenho nativo
 
@@ -61,7 +61,7 @@ O antigo `scripts/run-desktop.py` e o tema CSS foram removidos. TOML continua se
 ## Organização
 
 - `src/compositor/`: servidor, saídas, janelas e entrada.
-- `src/shell/`: cliente Wayland direto com painel/dock.
+- `src/shell/`: cliente Wayland direto com painel.
 - `src/toolkit/`: componentes e desenho nativos iniciais.
 - `src/session/`: iniciador/supervisor em C.
 - `scripts/smoke-*.py`: testes de integração em runtime privado.
@@ -78,10 +78,8 @@ Pacote `jlinux-desktop-git`, login próprio em C/Wayland e inicialização via g
 
 `jlinux-files [pasta]` abre um cliente nativo C/Wayland com lista de pastas e arquivos. Duplo clique ou Enter abre o item; Backspace sobe uma pasta; F5 atualiza; Ctrl+H mostra ocultos. A barra oferece início, pasta superior e atualização. Arquivos usam a associação do sistema via `gio open`. Veja [os limites e controles](docs/files.md).
 
-## Fixar aplicativos no dock
-
-Clique em **+** no dock e depois no aplicativo para fixar ou remover. Role o mouse sobre o dock para acessar os atalhos adicionais. Preferências são salvas por usuário. Veja [controles e limites](docs/dock.md).
-
 ## Encaixe lateral de janelas
 
 Janelas abrem livres. Arraste pelo cabeçalho e solte na borda esquerda ou direita para ocupar aquela metade da área útil. Puxar para longe da borda restaura o tamanho anterior. Abrir/fechar outras janelas não reorganiza o desktop. Veja [controles e limites](docs/window-management.md).
+
+O dock lateral foi removido, incluindo lista de aplicativos fixados, configuração e modo de sobreposição. A área útil não tem reserva à esquerda. Arquivos, Terminal e Codex continuam disponíveis pelos comandos acima.

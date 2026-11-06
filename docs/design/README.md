@@ -1,5 +1,7 @@
 # JLinux — referências visuais escolhidas pelo usuário
 
+**Direção atual:** o usuário pediu a remoção completa do dock lateral. As fotos originais abaixo são preservadas como referência de material e cores, mas a presença do dock nelas está superada. A prévia nativa atualizada não contém o componente.
+
 As duas imagens do commit **cf4238a — “Estilo que eu quero”**, enviado pelo usuário em feature/glass-design-preview, são a referência principal para reproduzir o visual das próximas telas. O pedido é seguir essas fotos fielmente, sem reinterpretar o estilo a partir das propostas geradas anteriormente.
 
 ## Referência 1 — desktop, dock e aplicativo
@@ -34,13 +36,12 @@ A imagem gerada jlinux-glass-v1.png foi preservada como histórico. As propostas
 
 ## Primeira base nativa — estado de implementação
 
-[Desenho inicial do shell C](native-shell-baseline.png): PNG produzido pelas próprias rotinas Cairo/Pango do toolkit, no modo `jlinux-shell --preview`. Não é uma nova referência escolhida, uma imagem gerada por IA ou uma captura da sessão real. Mostra apenas os componentes já desenhados: painel e dock de três ações. Wallpaper, materiais Glass, ícones completos e fidelidade às fotos acima continuam em implementação.
 
 ## Material inicial do shell nativo
 
 ![Prévia renderizada pelo shell C com material inicial](native-glass-preview.png)
 
-Produzida por `jlinux-shell --preview`, usando as rotinas do shell, sem janelas de aplicativos. Painel/dock amostram o wallpaper procedural provisório com blur em cache e reflexos estáticos. Não é captura da sessão, não reproduz o fundo das fotos nem demonstra blur sobre janelas. As referências escolhidas acima continuam sendo o alvo.
+Produzida por `jlinux-shell --preview`, usando as rotinas do shell, sem janelas de aplicativos. O painel amostra o wallpaper procedural provisório com blur em cache e reflexos estáticos. Não é captura da sessão, não reproduz o fundo das fotos nem demonstra blur sobre janelas. As referências escolhidas acima continuam sendo o alvo.
 
 ## Moldura nativa de janela
 
@@ -62,10 +63,4 @@ Gerada por `jlinux-files --preview`: barra Glass compartilhada e lista opaca. N�
 
 ### Iteração de neon discreto
 
-As prévias nativas de moldura e Arquivos acima foram atualizadas: sem pontos focais nas janelas, contorno contínuo azul/violeta e fundo azul-ardósia no cliente. São desenhos dos componentes, não capturas de sessão nem prova de fidelidade exata às fotos. A barra e o dock conservam seu acabamento anterior.
-
-## Seletor de aplicativos do dock
-
-![Lista nativa para fixar aplicativos](native-dock-apps-preview.png)
-
-Prévia renderizada por `jlinux-shell --preview-dock-apps`, sem captura da sessão. O botão + foi adicionado ao dock preservando suas dimensões; aplicativos adicionais usam monogramas nesta etapa.
+As prévias nativas de moldura e Arquivos acima foram atualizadas: sem pontos focais nas janelas, contorno contínuo azul/violeta e fundo azul-ardósia no cliente. São desenhos dos componentes, não capturas de sessão nem prova de fidelidade exata às fotos. A barra conserva seu acabamento anterior.

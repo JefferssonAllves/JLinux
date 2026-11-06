@@ -1,5 +1,8 @@
 # Animações, efeitos e renderização
 
+**Estado atual:** o dock lateral foi removido por pedido do usuário, incluindo ações, seletor, configuração e sobreposição. Menções ao componente nas iterações abaixo são histórico visual; não devem orientar sua reintrodução.
+
+
 A divisão solicitada é `src/animation/`, `src/effects/` e `src/renderer/`. Esses módulos pertencem à implementação nativa. A inspiração Glass é visual; protótipos web continuam separados da tecnologia de execução do desktop.
 
 | Módulo | Responsabilidade | Não deve controlar |

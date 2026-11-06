@@ -10,7 +10,7 @@ makedepends=('git' 'meson' 'ninja' 'pkgconf' 'wayland-protocols' 'python')
 checkdepends=('wtype')
 optdepends=('greetd: login na inicialização' 'cage: compositor isolado da tela de login')
 provides=('jlinux-desktop')
-source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/default-file-manager')
+source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/remove-dock')
 sha256sums=('SKIP')
 
 pkgver() {

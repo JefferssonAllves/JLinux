@@ -323,6 +323,22 @@ Aplicar contorno discretamente rosado sobre a base do pacote instalado 6df67d0, 
 
 Aplicativos, Arquivos e Configurações removidos da barra superior por pedido do usuário. Cliques na área vazia não mostram mais o aviso de menus pendentes. Relógio, Som, Wi-Fi, Bluetooth, energia e dock preservados. Base feature/window-side-snap (#44), que corresponde à instalação atual; sem alteração no comportamento das janelas. Validação e instalação registradas após conclusão.
 
+
+**Menus da barra · instalado:** pacote `0.5.0.r64.gda44b00-1`, fonte da44b00, instalado após 21 testes do makepkg aprovados. Build/testes locais de shell e material passaram; prévia nativa inspecionada. Primeira tentativa de empacotamento interrompida por HUP; repetição concluída. Arquivo do pacote e binário instalado conferidos como root:root 0755. Nenhum logout/reinício de shell/compositor realizado por esta entrega: remoção visível no próximo login. PR #55, base feature/window-side-snap, sem merge. Sem novos sanitizers, benchmark ou teste de VT.
+
+## Remoção completa do dock — feature/remove-dock
+
+- **SHELL-NO-DOCK · implementado na branch:** removidos a superfície lateral e sua reserva exclusiva, ações de lançamento, lista de aplicativos fixados, leitura/gravação de `dock.ini`, modo de sobreposição e prévia do seletor. Excluídos módulo C/header, smoke específico, documentação dedicada e imagens exclusivas. Removidos dependência direta de GIO no shell e componentes de desenho usados apenas pelo dock. Nenhum lançador substituto foi criado.
+- A barra superior, volume/energia, papel de parede, Super+Enter e inicialização do terminal permanecem. Arquivos/Codex podem ser abertos por comando. Maximização e encaixe lateral passam a usar toda a largura: headless 1280×720 confirma janela maximizada em x=3 com 1274 px de conteúdo e metades de 634 px. Testes verificam ausência da superfície e rejeição dos modos removidos.
+- 19 testes release e 19 ASan/UBSan passaram; `git diff --check` passou. Prévia nativa a 1672×941 inspecionada sem o dock. Os dois smokes exclusivos do componente foram retirados; regressões dos recursos mantidos continuam na suíte. Preferências antigas em diretórios pessoais não foram apagadas, mas o produto não as lê/escreve. Fotos e registros históricos foram preservados, com a nova direção registrada em AGENTS.md e na galeria.
+- Base temporária `fix/remove-panel-menus` (PR #55), que corresponde à instalação observada `0.5.0.r64.gda44b00-1`, preservando as janelas livres com encaixe lateral e a remoção dos rótulos da barra. Receita Arch aponta à branch desta entrega. Sem instalação, alteração da sessão ativa, VT/DRM ou benchmark; CI remoto e avaliação física pendentes no registro.
+
 ### FILES-DEFAULT
 
 Associação de sistema para inode/directory em /etc/xdg/mimeapps.list, preservando precedência das preferências pessoais. xdg-utils passa a ser dependência do desktop. Usuário atual configurado com gio mime; xdg-mime confirmou org.jlinux.Files.desktop e xdg-open abriu Downloads em jlinux-files. Não substitui seletores internos nem oferece FileManager1 por D-Bus.
+
+### Aplicação direta no sistema — preferência do usuário
+
+O usuário autorizou instalar/aplicar diretamente no sistema toda alteração solicitada, após os checks, além de commit/push. Regra registrada em AGENTS.md; preservar atualizações instaladas e combinar logout/reinício quando houver encerramento de aplicativos.
+
+**SHELL-NO-DOCK · instalado em 06/11/2026:** pacote `0.5.0.r73.gc81b589-1`, fonte c81b589, compilado da branch GitHub após incorporar feature/default-file-manager para preservar a instalação 850294f (bordas rosadas e associação de pastas). Os 19 testes do makepkg passaram; pacman -Qkk confirmou 20 arquivos/zero alterações; hash do shell corresponde ao pacote e inode/directory continua associado a Arquivos JLinux. Teste do iniciador instalado em headless privado por dois segundos e prévia do shell passaram. Instalação anterior preservada no cache do pacman. Sessão greetd atual intacta: shell antigo em execução; remoção visível no próximo login. Sem logout, VT, DRM, benchmark ou alegação de ativação visual imediata.

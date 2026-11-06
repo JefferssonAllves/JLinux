@@ -15,3 +15,5 @@ O cálculo é executado somente ao soltar um arraste. Não há timer ou animaç�
 Instalar o pacote não substitui o compositor já em execução. A alteração entra no próximo login. Não encerrar apenas o compositor para tentar recarregá-la, pois isso fecha a sessão e seus aplicativos.
 
 Vinte e um testes locais release e ASan/UBSan passaram nesta base. Novo teste headless com Foot real e shell verifica ausência de reorganização ao abrir/fechar, metades com reservas de dock/barra, transição esquerda→direita, restauração ao puxar e ausência de encaixe no topo. A fixture de limites verifica que um mínimo de 900 px não é forçado em meia tela e mantém regressões de diálogos/espaços. Os testes antigos do modo automático foram removidos/substituídos. Sem benchmark, teste de VT ou nova validação física DRM/GPU.
+
+O dock foi removido: encaixe e maximização usam toda a largura disponível, sem margem lateral reservada.

@@ -43,7 +43,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             env['WAYLAND_DISPLAY'] = next(p.name for p in root.glob('wayland-*') if p.is_socket())
             panel = subprocess.Popen([shell], env=env, stdout=out, stderr=subprocess.STDOUT)
             processes.append(panel)
-            h.wait_for(lambda: 'Interface mapeada: jlinux-dock' in log(), processes, 'shell')
+            h.wait_for(lambda: 'Interface mapeada: jlinux-panel' in log(), processes, 'shell')
             one, (width, height, x, y) = open_window(1)
             original = size()
             two, _ = open_window(2)
@@ -54,11 +54,11 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             processes.remove(two)
             assert size() == original, 'closing another window resized the first'
             mouse(x + 160, y - 18, 0, 240)
-            h.wait_for(lambda: 'Janela encaixada: Snap-1 (599x631 em 73,86)' in log(), processes, 'left half respecting dock/panel')
+            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x631 em 3,86)' in log(), processes, 'left half respecting panel without lateral reserve')
             half = size()
             assert half[1] < original[1]
             mouse(220, 68, 1279, 240)
-            h.wait_for(lambda: 'Janela encaixada: Snap-1 (599x631 em 678,86)' in log(), processes, 'right half')
+            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x631 em 643,86)' in log(), processes, 'right half')
             assert size() == half
             mouse(830, 68, 700, 240)
             assert size() == original, 'dragging away did not restore original dimensions'

@@ -1,5 +1,8 @@
 # Direção visual: Glass no JLinux
 
+**Estado atual:** o dock lateral foi removido por pedido do usuário, incluindo ações, seletor, configuração e sobreposição. Menções ao componente nas iterações abaixo são histórico visual; não devem orientar sua reintrodução.
+
+
 ## Referência principal atual
 
 O usuário rejeitou as propostas geradas anteriormente e forneceu duas imagens no commit cf4238a, “Estilo que eu quero”. Pediu reprodução fiel dessas fotos. A [galeria de referências](design/README.md) passa a definir o visual: material azul-preto translúcido, bordas finas iluminadas e reflexos azuis/violetas localizados, ícones coloridos, dock à esquerda e composição das fotos. As seções de propostas anteriores abaixo são histórico e não prevalecem sobre essas referências.
