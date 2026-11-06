@@ -87,3 +87,10 @@ Sombra interna leve destaca o volume da moldura de 3 px sem engrossá-la. É con
 Pedido atual substitui pontos focais nas janelas: contorno contínuo de 0,85 px azul/violeta, halo interno discreto de 2,8 px recortado à moldura, sem núcleos brancos. Cabeçalho retangular de 36 px, borda física de 3 px e cantos de 6 px preservados. Dock/barra superior não mudam. Gerenciador recebe fundo opaco em gradiente azul-ardósia mais claro e barra interna com o mesmo acabamento contínuo; não altera conteúdo de aplicativos externos.
 
 Quatorze testes locais release e ASan/UBSan passaram. Teste da moldura passa a conferir continuidade de opacidade e variação cromática em vez dos antigos pontos intensos; controles independentes preservados. Prévias dos componentes inspecionadas junto às referências, sem declarar correspondência exata. Sem timer, animação, blur novo ou benchmark. Ativação das molduras exige novo compositor no próximo login; sessão atual preservada devido à investigação STABILITY-BOOT.
+
+
+## Ajuste dark e tipografia compacta
+
+O toolkit nativo aplica 93% do tamanho nominal dos textos (aproximadamente 7% menor), compartilhado por shell, molduras, Arquivos e greeter. Não configura fontes do terminal nem de aplicativos externos. O material compartilhado usa tonalização azul-preta mais escura e menor reflexão ampla sobre as superfícies, com contornos azuis/violetas mais saturados e intensos. A espessura dos contornos permanece igual. Arquivos recebe também um gradiente de fundo mais escuro; wallpaper e ícones permanecem preservados.
+
+Os controles independentes de tint/reflection continuam respeitados. São novos valores padrão compilados, sem editor de tema ou recarga ao vivo. Não comprovam fidelidade às fotos nem desempenho de GPU. Prévias do shell, Arquivos e moldura foram inspecionadas; comparação antes/depois de Arquivos na mesma resolução mostrou a redução da fonte e o escurecimento das superfícies.

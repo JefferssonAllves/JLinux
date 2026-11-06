@@ -260,3 +260,14 @@ Quatorze testes locais release e ASan/UBSan passaram. Teste headless ampliado ab
 
 
 **SHELL-POWER · instalado/ativado:** pacote `0.5.0.r50.g023034a-1`, fonte 023034a, com 15 testes de pacote aprovados, instalado pelo pacman. Botão transitório C/Wayland mapeado na sessão greetd ativa, sem encerrar o shell supervisionado, compositor ou aplicativos. Próximo login usa o menu integrado. Nenhuma ação real de energia/logout nem teste VT executado; confirmação física pelo usuário pendente. PR #34 para feature/files-sidebar (#33), sem merge. Log de ativação em docs/arch-installation.md.
+
+
+## Tons dark e fonte menor — feature/darker-desktop
+
+- **DARK-01 · implementado:** textos do toolkit a 93% do tamanho nominal; tint azul-preto mais escuro e reflexo interior reduzido; contornos compartilhados azul/violeta mais saturados/intensos sem engrossar. Fundo de Arquivos escurecido. Sem alteração de wallpaper, ícones, dimensões ou preferências independentes dos efeitos.
+- Alcance: shell/menu de energia, Arquivos, molduras e greeter que compartilham toolkit/material. Não altera fontes/temas de apps externos nem inclui o navegador em branch separada.
+- Validação local: build release, 15 testes aprovados, diff --check; prévias de Arquivos antes/depois em 1000×640 e de shell/moldura inspecionadas. Sem nova execução de sanitizers, benchmark ou teste VT nesta mudança de constantes visuais.
+- Branch dependente de feature/power-menu (#34); trabalho local concorrente de compositor preservado. Instalação e ativação registradas abaixo após conclusão. Shell/compositor antigos não têm recarga visual; aplicação integral exige próximo login.
+
+
+**DARK-01 · instalado:** pacote `0.5.0.r52.gbb964fe-1`, fonte bb964fe, compilado do GitHub com 15 testes aprovados no makepkg e instalado via pacman. Nova janela de Arquivos instalada aberta e permaneceu ativa (PID 54544 neste boot). Shell/compositor da sessão greetd e aplicativos existentes preservados; fonte/material globais da barra e molduras entram no próximo login. Menu de energia transitório anterior continua ativo. Sem logout/reinício/VT; CI e avaliação visual física pelo usuário pendentes neste registro. PR #37, base feature/power-menu (#34), sem merge.

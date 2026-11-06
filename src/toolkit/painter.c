@@ -21,7 +21,7 @@ void ui_text(cairo_t *cr, const char *text, double x, double y, int size, bool b
     PangoLayout *layout = pango_cairo_create_layout(cr);
     PangoFontDescription *font = pango_font_description_new();
     pango_font_description_set_family(font, "Sans");
-    pango_font_description_set_absolute_size(font, size * PANGO_SCALE);
+    pango_font_description_set_absolute_size(font, size * .93 * PANGO_SCALE);
     pango_font_description_set_weight(font, bold ? PANGO_WEIGHT_SEMIBOLD : PANGO_WEIGHT_NORMAL);
     pango_layout_set_font_description(layout, font);
     pango_layout_set_text(layout, text, -1);
