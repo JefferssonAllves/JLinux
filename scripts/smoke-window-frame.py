@@ -18,7 +18,7 @@ processes = []
 with tempfile.TemporaryDirectory(prefix="jlinux-frame-") as directory:
     runtime = Path(directory)
     env = dict(os.environ, XDG_RUNTIME_DIR=directory, WLR_BACKENDS="headless",
-               WLR_RENDERER="pixman", WLR_HEADLESS_OUTPUTS="1", JLINUX_TEST_INPUT="1", JLINUX_TILING="0")
+               WLR_RENDERER="pixman", WLR_HEADLESS_OUTPUTS="1", JLINUX_TEST_INPUT="1")
     logfile = runtime / "compositor.log"
     def log():
         return logfile.read_text(errors="replace")

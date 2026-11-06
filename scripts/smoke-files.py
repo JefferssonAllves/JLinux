@@ -45,7 +45,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-files-') as directory:
     opener.write_text('#!/usr/bin/env python3\nimport json, os, sys\nfrom pathlib import Path\nPath(os.environ["JLINUX_FILES_MARKER"]).write_text(json.dumps(sys.argv[1:]))\n')
     opener.chmod(0o700)
     env = dict(os.environ, XDG_RUNTIME_DIR=directory, WLR_BACKENDS='headless', WLR_RENDERER='pixman',
-               WLR_HEADLESS_OUTPUTS='1', JLINUX_TEST_INPUT='1', JLINUX_TILING='0', HOME=str(home), XDG_CONFIG_HOME=str(config), PATH=str(tools) + ':' + os.environ['PATH'], JLINUX_FILES_MARKER=str(marker))
+               WLR_HEADLESS_OUTPUTS='1', JLINUX_TEST_INPUT='1', HOME=str(home), XDG_CONFIG_HOME=str(config), PATH=str(tools) + ':' + os.environ['PATH'], JLINUX_FILES_MARKER=str(marker))
     logfile = runtime / 'session.log'
     def key(*args):
         subprocess.run([wtype, '-s', '200', *args], env=env, check=True, timeout=5)

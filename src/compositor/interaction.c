@@ -34,9 +34,10 @@ struct view {
     struct interaction *owner;
     struct wlr_xdg_toplevel *xdg;
     struct wlr_scene_tree *tree;
-    bool mapped, maximized, floating, is_fullscreen;
+    bool mapped, maximized, is_fullscreen;
     unsigned workspace;
-    struct wl_list tile_link;
+    bool snapped;
+    struct wlr_box snap_restore;
     struct wlr_box restore, fullscreen_restore;
     int min_width, min_height, max_width, max_height;
     struct jlinux_window_frame frame;
@@ -73,12 +74,11 @@ struct interaction {
     struct wlr_seat *seat;
     struct wlr_cursor *cursor;
     struct wlr_xcursor_manager *theme;
-    struct wl_list views, tiles, keyboards, pointers;
+    struct wl_list views, keyboards, pointers;
     unsigned workspace;
-    int split;
     struct view *focused, *grabbed;
     struct wlr_box workarea;
-    bool has_workarea, auto_tile;
+    bool has_workarea;
     unsigned int placement;
     uint32_t grab_button;
     bool resizing;
@@ -193,10 +193,6 @@ static void set_maximized(struct view *view, bool maximized) {
     wlr_xdg_toplevel_set_maximized(view->xdg, maximized);
     update_frame(view);
 }
-static bool tiled(struct view *view) {
-    return view->mapped && view->workspace == view->owner->workspace &&
-        view->owner->auto_tile && !view->floating && !view->maximized && !view->is_fullscreen;
-}
 static void place(struct view *view, struct wlr_box box) {
     if (box.width < 1 || box.height < 1) { return; }
     wlr_scene_node_set_position(&view->tree->node, box.x, box.y);
@@ -206,57 +202,47 @@ static void place(struct view *view, struct wlr_box box) {
 }
 static void arrange(struct interaction *state) {
     struct view *view;
-    struct wlr_box area;
-    struct view *first = NULL;
-    unsigned count = 0;
-    wl_list_for_each(view, &state->tiles, tile_link) {
+    wl_list_for_each(view, &state->views, link) {
         wlr_scene_node_set_enabled(&view->tree->node, view->mapped && view->workspace == state->workspace);
-        if (tiled(view)) { if (!first) { first = view; } count++; }
     }
-    if (!first || !maximize_area(first, &area)) { return; }
+}
+static void snap_side(struct interaction *state) {
+    struct view *view = state->grabbed;
+    if (!view || state->resizing || view->maximized || view->is_fullscreen) { return; }
+    struct wlr_output *output = wlr_output_layout_get_center_output(state->layout);
+    if (!output) { return; }
+    struct wlr_box bounds, area;
+    wlr_output_layout_get_box(state->layout, output, &bounds);
+    if (state->cursor->y < bounds.y || state->cursor->y >= bounds.y + bounds.height || !maximize_area(view, &area)) { return; }
+    bool left = state->cursor->x <= bounds.x + 12;
+    bool right = state->cursor->x >= bounds.x + bounds.width - 12;
+    if (!left && !right) { view->snap_restore = (struct wlr_box){0}; return; }
     int outer_width = area.width + 2 * JLINUX_FRAME_BORDER;
-    int outer_height = area.height + JLINUX_FRAME_HEADER + JLINUX_FRAME_BORDER;
-    int master = count > 1 ? outer_width * state->split / 100 : outer_width;
-    unsigned eligible = count;
-    first = NULL;
-    /* Preflight once: removing tiles only increases the remaining space. */
-    wl_list_for_each(view, &state->tiles, tile_link) {
-        if (!tiled(view)) { continue; }
-        int width = (first ? outer_width - master : master) - 2 * JLINUX_FRAME_BORDER;
-        int height = (!first ? outer_height : outer_height / (int)(count - 1)) - JLINUX_FRAME_HEADER - JLINUX_FRAME_BORDER;
-        if (width < 1 || height < 1 || width < view->xdg->current.min_width || height < view->xdg->current.min_height) {
-            /* shortcut: infeasible tiles float until the user explicitly retiles. */
-            view->floating = true; eligible--;
-            int width = view->frame_width, height = view->frame_height;
-            if (width < view->min_width) { width = view->min_width; }
-            if (height < view->min_height) { height = view->min_height; }
-            if (view->max_width > 0 && width > view->max_width) { width = view->max_width; }
-            if (view->max_height > 0 && height > view->max_height) { height = view->max_height; }
-            place(view, (struct wlr_box){view->tree->node.x, view->tree->node.y, width, height});
-            wlr_xdg_toplevel_set_tiled(view->xdg, 0);
-        } else if (!first) { first = view; }
-    }
-    count = eligible;
-    if (!count) { return; }
-    master = count > 1 ? outer_width * state->split / 100 : outer_width;
-    unsigned index = 0;
-    wl_list_for_each(view, &state->tiles, tile_link) {
-        if (!tiled(view)) { continue; }
-        struct wlr_box box = area;
-        if (index == 0) { box.width = master - 2 * JLINUX_FRAME_BORDER; }
-        else {
-            int top = (int)((int64_t)outer_height * (index - 1) / (count - 1));
-            int bottom = (int)((int64_t)outer_height * index / (count - 1));
-            box.x += master; box.y += top;
-            box.width = outer_width - master - 2 * JLINUX_FRAME_BORDER;
-            box.height = bottom - top - JLINUX_FRAME_HEADER - JLINUX_FRAME_BORDER;
-        }
-        const struct wlr_xdg_toplevel_state *limits = &view->xdg->current;
-        if (limits->max_width > 0 && box.width > limits->max_width) { box.width = limits->max_width; }
-        if (limits->max_height > 0 && box.height > limits->max_height) { box.height = limits->max_height; }
-        const uint32_t edges = WLR_EDGE_TOP | WLR_EDGE_BOTTOM | WLR_EDGE_LEFT | WLR_EDGE_RIGHT;
-        if (view->xdg->scheduled.tiled != edges) { wlr_xdg_toplevel_set_tiled(view->xdg, edges); }
-        place(view, box); index++;
+    int half = outer_width / 2;
+    if (right) { area.x += half; }
+    area.width = (right ? outer_width - half : half) - 2 * JLINUX_FRAME_BORDER;
+    const struct wlr_xdg_toplevel_state *limits = &view->xdg->current;
+    if (area.width < 1 || area.width < limits->min_width || area.height < limits->min_height) { return; }
+    if (limits->max_width > 0 && area.width > limits->max_width) { area.width = limits->max_width; }
+    if (limits->max_height > 0 && area.height > limits->max_height) { area.height = limits->max_height; }
+    if (!view->snapped && !view->snap_restore.width) { view->snap_restore = (struct wlr_box){0, 0, state->width, state->height}; }
+    view->snapped = true;
+    wlr_xdg_toplevel_set_tiled(view->xdg, WLR_EDGE_TOP | WLR_EDGE_BOTTOM | WLR_EDGE_LEFT | WLR_EDGE_RIGHT);
+    place(view, area);
+    wlr_log(WLR_INFO, "Janela encaixada: %s (%dx%d em %d,%d)", view->xdg->title ? view->xdg->title : "sem título", area.width, area.height, area.x, area.y);
+}
+static void detach_snap(struct view *view, bool resizing) {
+    if (!view->snapped) { return; }
+    view->snapped = false;
+    wlr_xdg_toplevel_set_tiled(view->xdg, 0);
+    if (resizing) { view->snap_restore = (struct wlr_box){0}; }
+    else {
+        struct wlr_box box = view->snap_restore;
+        double ratio = (view->owner->cursor->x - view->tree->node.x) / (view->frame_width > 0 ? view->frame_width : 1);
+        if (ratio < 0) { ratio = 0; } if (ratio > 1) { ratio = 1; }
+        box.x = (int)(view->owner->cursor->x - box.width * ratio);
+        box.y = (int)view->owner->cursor->y + JLINUX_FRAME_HEADER / 2;
+        place(view, box);
     }
 }
 static bool descendant(struct view *view, struct wlr_xdg_toplevel *parent) {
@@ -269,7 +255,6 @@ static void parent_changed(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, parent), *parent;
     if (!view->xdg->parent) { return; }
-    view->floating = true;
     if (view->xdg->base->initialized) { wlr_xdg_toplevel_set_tiled(view->xdg, 0); }
     wl_list_for_each(parent, &view->owner->views, link) {
         if (parent->xdg == view->xdg->parent) {
@@ -342,7 +327,14 @@ static void view_committed(struct wl_listener *listener, void *data) {
         view->max_width != limits->max_width || view->max_height != limits->max_height;
     view->min_width = limits->min_width; view->min_height = limits->min_height;
     view->max_width = limits->max_width; view->max_height = limits->max_height;
-    if (changed && view->mapped) { arrange(view->owner); }
+    if (changed && view->mapped && !view->maximized && !view->is_fullscreen) {
+        int width = view->frame_width, height = view->frame_height;
+        if (width < limits->min_width) { width = limits->min_width; }
+        if (height < limits->min_height) { height = limits->min_height; }
+        if (limits->max_width > 0 && width > limits->max_width) { width = limits->max_width; }
+        if (limits->max_height > 0 && height > limits->max_height) { height = limits->max_height; }
+        place(view, (struct wlr_box){view->tree->node.x, view->tree->node.y, width, height});
+    }
     if (view->xdg->base->initial_commit) {
         struct wlr_output *output = wlr_output_layout_get_center_output(view->owner->layout);
         struct wlr_box area;
@@ -409,7 +401,6 @@ static void view_destroyed(struct wl_listener *listener, void *data) {
     if (view->owner->grabbed == view) { view->owner->grabbed = NULL; }
     if (view->owner->focused == view) { focus(view->owner, NULL); }
     wl_list_remove(&view->link);
-    wl_list_remove(&view->tile_link);
     wl_list_remove(&view->map.link);
     wl_list_remove(&view->unmap.link);
     wl_list_remove(&view->commit.link);
@@ -442,7 +433,6 @@ static void add_view(struct wl_listener *listener, void *data) {
     view->xdg->base->data = content;
     wlr_scene_node_set_enabled(&view->tree->node, false);
     wl_list_insert(state->views.prev, &view->link);
-    wl_list_insert(state->tiles.prev, &view->tile_link);
     jlinux_window_frame_focus(&view->frame, false);
     listen(&view->parent, &view->xdg->events.set_parent, parent_changed);
     listen(&view->title, &view->xdg->events.set_title, title_changed);
@@ -537,21 +527,6 @@ static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t mo
     }
     if ((modifiers & WLR_MODIFIER_LOGO) && symbol >= XKB_KEY_1 && symbol <= XKB_KEY_9) {
         change_workspace(state, symbol - XKB_KEY_1, modifiers & WLR_MODIFIER_SHIFT); return true;
-    }
-    if ((modifiers & WLR_MODIFIER_LOGO) && (symbol == XKB_KEY_space || symbol == XKB_KEY_f)) {
-        struct view *view = state->focused;
-        if (view && !view->maximized && !view->is_fullscreen && !view->xdg->parent) {
-            if (symbol == XKB_KEY_f) { view->floating = !view->floating; wlr_xdg_toplevel_set_tiled(view->xdg, 0); }
-            else { wl_list_remove(&view->tile_link); wl_list_insert(&state->tiles, &view->tile_link); }
-            arrange(state);
-        }
-        return true;
-    }
-    if ((modifiers & WLR_MODIFIER_LOGO) && (symbol == XKB_KEY_Left || symbol == XKB_KEY_Right)) {
-        state->split += symbol == XKB_KEY_Left ? -5 : 5;
-        if (state->split < 20) { state->split = 20; }
-        if (state->split > 80) { state->split = 80; }
-        arrange(state); return true;
     }
     if ((modifiers & WLR_MODIFIER_LOGO) && symbol == XKB_KEY_Escape) {
         wl_display_terminate(state->display); return true;
@@ -739,6 +714,7 @@ static void button_event(struct wl_listener *listener, void *data) {
     struct wlr_pointer_button_event *event = data;
     if (state->grab_button) {
         if (event->state == WL_POINTER_BUTTON_STATE_RELEASED && event->button == state->grab_button) {
+            snap_side(state);
             state->grabbed = NULL;
             state->grab_button = 0;
             pointer_moved(state, event->time_msec);
@@ -764,11 +740,11 @@ static void button_event(struct wl_listener *listener, void *data) {
                 set_maximized(view, !view->maximized); arrange(state); return;
             }
             if (view->maximized || view->is_fullscreen) { return; }
-            view->floating = true; wlr_xdg_toplevel_set_tiled(view->xdg, 0); arrange(state);
             state->resize_edges = 0;
             if (local_x < 0) { state->resize_edges |= WLR_EDGE_LEFT; }
             if (local_x >= view->frame_width) { state->resize_edges |= WLR_EDGE_RIGHT; }
             if (local_y >= view->frame_height) { state->resize_edges |= WLR_EDGE_BOTTOM; }
+            detach_snap(view, state->resize_edges != 0);
             state->grabbed = view; state->resizing = state->resize_edges != 0;
             state->start_x = state->cursor->x; state->start_y = state->cursor->y;
             state->window_x = view->tree->node.x; state->window_y = view->tree->node.y;
@@ -778,7 +754,7 @@ static void button_event(struct wl_listener *listener, void *data) {
         struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(state->seat);
         if (view && !view->maximized && !view->is_fullscreen && keyboard && (wlr_keyboard_get_modifiers(keyboard) & WLR_MODIFIER_LOGO) &&
             (event->button == BTN_LEFT || event->button == BTN_RIGHT)) {
-            view->floating = true; wlr_xdg_toplevel_set_tiled(view->xdg, 0); arrange(state);
+            detach_snap(view, event->button == BTN_RIGHT);
             state->grabbed = view;
             state->resizing = event->button == BTN_RIGHT;
             state->resize_edges = WLR_EDGE_RIGHT | WLR_EDGE_BOTTOM;
@@ -836,11 +812,7 @@ struct interaction *interaction_create(struct wl_display *display,
     if (!jlinux_glass_settings(&state->glass)) { free(state); return NULL; }
     state->session = session;
     state->display = display; state->scene = scene; state->windows = windows; state->fullscreens = fullscreens; state->layout = layout;
-    const char *tiling = getenv("JLINUX_TILING");
-    if (tiling && strcmp(tiling, "0") != 0 && strcmp(tiling, "1") != 0) { free(state); return NULL; }
-    state->auto_tile = !tiling || strcmp(tiling, "1") == 0;
-    state->split = 60;
-    wl_list_init(&state->tiles); wl_list_init(&state->views); wl_list_init(&state->keyboards); wl_list_init(&state->pointers);
+    wl_list_init(&state->views); wl_list_init(&state->keyboards); wl_list_init(&state->pointers);
     struct wl_listener *items[13];
     size_t count = listeners(state, items);
     for (size_t i = 0; i < count; i++) { wl_list_init(&items[i]->link); }
