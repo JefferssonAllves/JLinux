@@ -1,6 +1,6 @@
 # Animações, efeitos e renderização
 
-**Estado atual:** o dock lateral foi removido por pedido do usuário, incluindo ações, seletor, configuração e sobreposição. Menções ao componente nas iterações abaixo são histórico visual; não devem orientar sua reintrodução.
+**Estado atual:** o dock lateral antigo permanece removido. O pedido mais recente autoriza um novo dock circular por Super; ver [futurista.md](futurista.md). Menções ao antigo dock lateral abaixo são histórico.
 
 
 A divisão solicitada é `src/animation/`, `src/effects/` e `src/renderer/`. Esses módulos pertencem à implementação nativa. A inspiração Glass é visual; protótipos web continuam separados da tecnologia de execução do desktop.

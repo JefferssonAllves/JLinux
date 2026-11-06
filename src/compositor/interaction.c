@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <linux/input-event-codes.h>
 #include <signal.h>
+#include "../shell/control.h"
 #include <spawn.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,7 @@ struct keyboard {
     struct interaction *owner;
     struct wlr_keyboard *device;
     bool intercepted[KEY_CNT];
+    bool super_pending;
     struct wl_list link;
     struct wl_listener key, modifiers, destroy;
 };
@@ -552,13 +554,31 @@ static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t mo
     return false;
 }
 
+static void cancel_super(struct interaction *state) {
+    struct keyboard *keys;
+    wl_list_for_each(keys, &state->keyboards, link) { keys->super_pending = false; }
+}
+
 static void key_event(struct wl_listener *listener, void *data) {
     struct keyboard *keyboard = wl_container_of(listener, keyboard, key);
     struct wlr_keyboard_key_event *event = data;
     bool handled = false;
+    const xkb_keysym_t *symbols;
+    int count = xkb_state_key_get_syms(keyboard->device->xkb_state, event->keycode + 8, &symbols);
+    bool super = false;
+    for (int i = 0; i < count; i++) {
+        super |= symbols[i] == XKB_KEY_Super_L || symbols[i] == XKB_KEY_Super_R;
+    }
     if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-        const xkb_keysym_t *symbols;
-        int count = xkb_state_key_get_syms(keyboard->device->xkb_state, event->keycode + 8, &symbols);
+        if (super) {
+            uint32_t mods = wlr_keyboard_get_modifiers(keyboard->device);
+            keyboard->super_pending = !(mods & (WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_SHIFT));
+        } else { cancel_super(keyboard->owner); }
+    } else if (super && keyboard->super_pending) {
+        keyboard->super_pending = false;
+        if (!shell_control_toggle()) { wlr_log(WLR_DEBUG, "%s", "Shell sem controle de dock disponível"); }
+    }
+    if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         for (int index = 0; index < count; index++) {
             uint32_t mods = wlr_keyboard_get_modifiers(keyboard->device);
             xkb_keysym_t symbol = symbols[index];
@@ -711,6 +731,7 @@ static void absolute_event(struct wl_listener *listener, void *data) {
 }
 static void button_event(struct wl_listener *listener, void *data) {
     struct interaction *state = wl_container_of(listener, state, button);
+    cancel_super(state);
     struct wlr_pointer_button_event *event = data;
     if (state->grab_button) {
         if (event->state == WL_POINTER_BUTTON_STATE_RELEASED && event->button == state->grab_button) {
@@ -769,6 +790,7 @@ static void button_event(struct wl_listener *listener, void *data) {
 }
 static void axis_event(struct wl_listener *listener, void *data) {
     struct interaction *state = wl_container_of(listener, state, axis);
+    cancel_super(state);
     struct wlr_pointer_axis_event *event = data;
     wlr_seat_pointer_notify_axis(state->seat, event->time_msec, event->orientation,
         event->delta, event->delta_discrete, event->source, event->relative_direction);

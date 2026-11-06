@@ -60,18 +60,24 @@ sys.exit(1 if pathlib.Path(os.environ['POWER_FAIL']).exists() else 0)
                 for action, label in enumerate(('logout', 'reboot', 'poweroff')):
                     before = len(recorded())
                     click(1240, 24)
+                    if not panel_only:
+                        wait_for(lambda: 'jlinux-radial-dock' in log(), [server, client], 'central de controle')
+                        click(round((1284+action*145)*1280/1672), round(751*720/941))
                     maps += 1
                     wait_for(lambda: log().count('Interface mapeada: jlinux-power-menu') >= maps,
                              [server, client], 'menu de energia')
-                    click(1000, 48 + 65 + action * 42)
+                    if panel_only: click(1000, 48 + 65 + action * 42)
                     assert len(recorded()) == before, 'Ação antes da confirmação'
                     click(1000, 48 + 240)  # Cancel confirmation.
                     assert len(recorded()) == before, 'Cancelar executou ação'
                     click(1240, 24)
+                    if not panel_only:
+                        wait_for(lambda: 'jlinux-radial-dock' in log(), [server, client], 'central de controle')
+                        click(round((1284+action*145)*1280/1672), round(751*720/941))
                     maps += 1
                     wait_for(lambda: log().count('Interface mapeada: jlinux-power-menu') >= maps,
                              [server, client], 'reabertura')
-                    click(1000, 48 + 65 + action * 42)
+                    if panel_only: click(1000, 48 + 65 + action * 42)
                     if action == 2:
                         failure.touch()
                     click(1000, 48 + 180)
