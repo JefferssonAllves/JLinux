@@ -4,6 +4,8 @@
 
 O ID `org.jlinux.Browser.desktop` já estava fixado, mas ficava fora das três posições visíveis após iniciar o shell. O dock passa a quatro posições/292 px: Arquivos, Terminal, Codex e o primeiro app fixado aparecem juntos. A roda continua acessando apps além do primeiro; botões vazios não executam comandos. Tests de clique/posição atualizados para o shell e modo `--dock-panel`, verificando que o atalho persistido abre sem rolar. Preferências e instalação separada do navegador preservadas. Instalação/ativação e resultados finais serão registrados após os checks.
 
+**Instalado/ativado em 06/11/2026:** pacote `jlinux-desktop-git 0.5.0.r56.g8c5c803-1`, fonte `8c5c803`, com 17 testes locais e 17 testes no makepkg aprovados. CI do PR #41 passou. Atalho do navegador já presente em dock.ini preservado; navegador separado `0.1.0.r45.g0623f8b-1` permanece instalado. Novo dock ativado com o modo auxiliar `--dock-panel`, mantendo o shell integrado e compositor da sessão existentes; nenhum cliente encerrado e nenhum teste de VT. Próximo login usa o dock integrado atualizado. Prévia do componente inspecionada; confirmação visual física do usuário e benchmark não realizados.
+
 Este arquivo é a fonte central das tarefas iniciais. Personalização ampla, compositor próprio, shell separado e eficiência mensurada orientam todas as entregas. Responsável pela execução: coordenador Codex; perfis abaixo indicam especialidade, não execução paralela automática.
 
 Estados: **concluído** = implementação e evidências indicadas; **em andamento** = trabalho ativo; **pendente** = não entregue. Uma tarefa pode estar concluída na branch sem estar integrada em develop/main. Cada entrega registra PR, validação e limites. CI verde não é teste de GPU.
