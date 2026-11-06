@@ -68,3 +68,12 @@ A pausa DRM por troca de VT remove temporariamente a saída neste hardware. O co
 ### Idioma da sessão e do terminal
 
 O iniciador C importa LANG de /etc/locale.conf quando a variável não foi fornecida pelo login. Usa C.UTF-8 se não há valor válido no arquivo; LANG e categorias LC_* já fornecidos pelo usuário são preservados. Não executa o conteúdo desse arquivo. A mudança garante idioma/UTF-8 aos filhos da sessão, sem modificar regras PAM ou habilitar source_profile. Sessões já abertas mantêm seu ambiente até novo login.
+
+
+### Menu de sessão e energia
+
+O botão no canto direito da barra superior abre **Sair da sessão**, **Reiniciar** e **Desligar**. Cada opção abre uma confirmação com aviso para salvar o trabalho; Cancelar/Fechar não executa a ação. Sair termina somente a sessão identificada por XDG_SESSION_ID; no login greetd, retorna à tela de autenticação. Reiniciar/desligar usam `systemctl --no-ask-password --check-inhibitors=yes`, respeitando autorização e bloqueios do sistema. Não usa sudo, força ou alteração de PAM/PolicyKit. Falhas aparecem no menu e os detalhes seguem para o log do shell. Ainda não há agente gráfico de autenticação: se o sistema exigir autenticação adicional, a ação pode ser recusada.
+
+A sessão já aberta usa um shell supervisionado: encerrá-lo também encerra o compositor. Para disponibilizar somente o novo botão sem fechar aplicativos, `jlinux-shell --power-panel` desenha um botão overlay no canto superior direito e seu menu, sem criar compositor, dock, wallpaper ou reservar área adicional. É um modo de transição para atualizar a sessão existente; no próximo login, o shell normal já inclui o menu e o processo transitório termina junto com o compositor antigo. Deve herdar XDG_SESSION_ID, XDG_RUNTIME_DIR e WAYLAND_DISPLAY da sessão gráfica correta. O log da ativação transitória fica em `power-menu.log` no runtime privado dessa sessão.
+
+Referências de comportamento: [loginctl](https://www.freedesktop.org/software/systemd/man/262/loginctl.html) e [systemctl](https://www.freedesktop.org/software/systemd/man/latest/systemctl.html).

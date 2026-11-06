@@ -84,6 +84,7 @@ if foot.found() and wtype.found()
     test('files-headless', find_program('scripts/smoke-files.py'), args: [compositor, files, pointer_test, wtype], timeout: 30)
     test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
     test('shell-headless', shell_smoke, args: [compositor, shell, pointer_test], timeout: 20)
+    test('power-menu-headless', find_program('scripts/smoke-power.py'), args: [compositor, shell, pointer_test], timeout: 35)
   endif
   test('window-frame-input', find_program('scripts/smoke-window-frame.py'), args: [compositor, pointer_test, foot, wtype], timeout: 35)
   terminal_test = find_program('scripts/smoke-terminal.py')
