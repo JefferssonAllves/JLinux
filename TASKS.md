@@ -312,3 +312,7 @@ Dezenove testes release passaram nesta base. ASan/UBSan e empacotamento registra
 WM-SNAP substitui WM-AUTO por decisão do usuário. Removidos algoritmo de divisão principal/pilha, estado/lista exclusivos desse modo, JLINUX_TILING e atalhos de proporção/principal/flutuante. Janelas livres não são reorganizadas ao abrir/fechar. Soltar arraste nos 12 px das bordas esquerda/direita encaixa na metade da área útil. Topo/baixo não encaixam. Puxar para fora restaura tamanho anterior; resize continua manual; limites do aplicativo respeitados. Mantidos maximização, fullscreen, workspaces e diálogos existentes.
 
 21 testes locais release e ASan/UBSan passaram, incluindo ambos os lados com barra/dock, restauração, ausência de efeito no topo, ausência de rearranjo ao abrir/fechar e mínimo incompatível com meia tela. Teste de tiling removido/substituído; regressões de limites/transientes preservadas. Sem benchmark ou VT. Base instalada com volume/dock/tema preservada; pacote/ativação registrados na conclusão. Estado atual em docs/window-management.md prevalece sobre os registros históricos de WM-AUTO.
+
+### WINDOW-PINK-INSTALLED
+
+Aplicar contorno discretamente rosado sobre a base do pacote instalado 6df67d0, preservando encaixe lateral. Mudança restrita ao stop violeta do contorno. Sem recarregamento ao vivo: o processo existente não oferece essa função. Ativação no próximo login, sem encerrar a sessão atual.
