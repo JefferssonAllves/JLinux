@@ -97,3 +97,7 @@ Quatorze testes locais release e ASan/UBSan passaram. Teste da moldura passa a c
 O toolkit nativo aplica 93% do tamanho nominal dos textos (aproximadamente 7% menor), compartilhado por shell, molduras, Arquivos e greeter. Não configura fontes do terminal nem de aplicativos externos. O material compartilhado usa tonalização azul-preta mais escura e menor reflexão ampla sobre as superfícies, com contornos azuis/violetas mais saturados e intensos. A espessura dos contornos permanece igual. Arquivos recebe também um gradiente de fundo mais escuro; wallpaper e ícones permanecem preservados.
 
 Os controles independentes de tint/reflection continuam respeitados. São novos valores padrão compilados, sem editor de tema ou recarga ao vivo. Não comprovam fidelidade às fotos nem desempenho de GPU. Prévias do shell, Arquivos e moldura foram inspecionadas; comparação antes/depois de Arquivos na mesma resolução mostrou a redução da fonte e o escurecimento das superfícies.
+
+## Consolidação aplicada aos pedidos mais recentes
+
+A integração `feature/apply-pending-updates` reúne o cabeçalho preto translúcido (88%), contorno nítido (1,6 px), halo reduzido (2,2 px a 18%) e o rosado de #54 — RGB (.84, .24, .91) no stop antes violeta. A barra superior ocupa toda a largura no topo, com cantos retos e 16 px de fade abaixo dos 36 px de controles. Dock e rótulos de menus removidos permanecem ausentes. Inventário e precedência dos pedidos em [applied-updates.md](applied-updates.md); versões anteriores descritas acima são histórico.

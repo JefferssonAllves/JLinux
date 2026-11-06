@@ -68,3 +68,7 @@ Sombreamento interno das molduras: `JLINUX_GLASS_SHADOW=0/1` (padrão ligado) co
 ### Acabamento contínuo atual das janelas
 
 O pedido de borda neon discreta substitui os quatro pontos de brilho da moldura: gradiente azul/violeta, traço de 0,85 px e halo interno recortado de 2,8 px. A geometria segue 3 px nas laterais/inferior. REFLECTION controla esse acabamento; SHADOW permanece independente. Material de janela não chama os reflexos pontuais do dock/painel; esses componentes permanecem intactos. Renderização continua por eventos, em faixas estreitas, sem loop novo.
+
+## Integração do material pendente
+
+`jlinux_glass_panel_paint` aplica a máscara de 16 px ao material compartilhado, com grupo Cairo restrito ao painel; a reserva superior fica em 52 px e somente os 36 px de controles recebem entrada. `jlinux_glass_window_tint` substitui o preenchimento genérico do cabeçalho quando TINT está ativo, preservando transparência e os quatro buffers estreitos da moldura. REFLECTION controla separadamente o contorno mais nítido e seu toque rosado. São os helpers já validados nas branches visuais, agora combinados com a base instalada sem dock; não há novo loop ou blur de janelas.

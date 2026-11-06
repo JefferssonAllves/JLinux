@@ -73,7 +73,7 @@ def main():
                         wait_for(lambda: log().count("Janela maximizada:") > iteration,
                                  [server, client], "maximização sem reserva lateral")
                         sizes = re.findall(r"Janela maximizada: .* \((\d+)x(\d+) em (\d+),(\d+)\)", log())
-                        assert tuple(map(int, sizes[-1])) == (1274, 631, 3, 86), sizes[-1]
+                        assert tuple(map(int, sizes[-1])) == (1274, 629, 3, 88), sizes[-1]
 
                     stop(client)
                     assert client.returncode == 0, f"Shell encerrou com erro: {client.returncode}"
