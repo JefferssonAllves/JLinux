@@ -105,9 +105,9 @@ static void activate(struct app *app) {
 }
 static void paint(struct app *app, cairo_t *cr) {
     cairo_pattern_t *background = cairo_pattern_create_linear(0, 0, app->width, app->height);
-    cairo_pattern_add_color_stop_rgb(background, 0, .15, .20, .29);
-    cairo_pattern_add_color_stop_rgb(background, .55, .105, .145, .22);
-    cairo_pattern_add_color_stop_rgb(background, 1, .15, .16, .25);
+    cairo_pattern_add_color_stop_rgb(background, 0, .095, .13, .21);
+    cairo_pattern_add_color_stop_rgb(background, .55, .065, .09, .16);
+    cairo_pattern_add_color_stop_rgb(background, 1, .09, .095, .18);
     cairo_set_source(cr, background); cairo_paint(cr); cairo_pattern_destroy(background);
     struct ui_rect toolbar = {12, 12, app->width - 24, 50};
     struct jlinux_glass material = app->glass; material.reflection = false;
