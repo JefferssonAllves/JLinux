@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include <linux/input-event-codes.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,7 @@ static void global(void *data, struct wl_registry *registry, uint32_t name, cons
 static void removed(void *data, struct wl_registry *registry, uint32_t name) { (void)data; (void)registry; (void)name; }
 int main(int argc, char **argv) {
     if (argc != 3 && argc != 5) { return 2; }
+    bool scroll = argc == 5 && !strcmp(argv[1], "--scroll");
     struct wl_display *display = wl_display_connect(NULL);
     if (!display) { return 1; }
     struct globals globals = {0};
@@ -31,9 +33,14 @@ int main(int argc, char **argv) {
     if (wl_display_roundtrip(display) < 0) { return 1; }
     struct timespec pause = {.tv_nsec = 150000000};
     nanosleep(&pause, NULL);
-    zwlr_virtual_pointer_v1_motion_absolute(pointer, 1, (uint32_t)atoi(argv[1]), (uint32_t)atoi(argv[2]), 1280, 720);
+    zwlr_virtual_pointer_v1_motion_absolute(pointer, 1, (uint32_t)atoi(argv[scroll ? 2 : 1]), (uint32_t)atoi(argv[scroll ? 3 : 2]), 1280, 720);
     zwlr_virtual_pointer_v1_frame(pointer);
     if (wl_display_roundtrip(display) < 0) { return 1; }
+    if (scroll) {
+        zwlr_virtual_pointer_v1_axis(pointer, 2, WL_POINTER_AXIS_VERTICAL_SCROLL, wl_fixed_from_int(atoi(argv[4])));
+        zwlr_virtual_pointer_v1_frame(pointer);
+        if (wl_display_roundtrip(display) < 0) { return 1; }
+    } else {
     zwlr_virtual_pointer_v1_button(pointer, 2, BTN_LEFT, WL_POINTER_BUTTON_STATE_PRESSED);
     zwlr_virtual_pointer_v1_frame(pointer);
     if (argc == 5) {
@@ -44,6 +51,7 @@ int main(int argc, char **argv) {
     zwlr_virtual_pointer_v1_button(pointer, 3, BTN_LEFT, WL_POINTER_BUTTON_STATE_RELEASED);
     zwlr_virtual_pointer_v1_frame(pointer);
     if (wl_display_roundtrip(display) < 0) { return 1; }
+    }
     zwlr_virtual_pointer_v1_destroy(pointer);
     zwlr_virtual_pointer_manager_v1_destroy(globals.manager);
     wl_seat_destroy(globals.seat);
