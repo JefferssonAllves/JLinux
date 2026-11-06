@@ -327,3 +327,9 @@ Dezenove testes release passaram nesta base. ASan/UBSan e empacotamento registra
 - **VISUAL-BLACK-HEADER · implementado na branch:** base preto-azulada a 88% no cabeçalho, controlada por TINT e desenhada no lugar do material anterior. Reflexos de corpo reduzidos; contorno ciano/azul/violeta mais saturado, traço de 1,6 px e halo interno de 2,2 px a 18%. Borda física de 3 px, foco e controles preservados; nenhum novo timer, buffer ou passe.
 - Validação local: 22 testes release passaram (21 cenários da suíte final mais repetição direcionada do teste de moldura após corrigir uma asserção de amostragem de alfa). Teste de pixels verifica cabeçalho escuro/translúcido, independência de TINT e maior intensidade de cor na linha do que no halo; `git diff --check` passou. Prévias de moldura/Arquivos inspecionadas antes/depois e prévia temporária de moldura a 1670×941 comparada à referência principal, sem afirmar fidelidade integral.
 - Base temporária `feature/flush-top-panel`, PR #47, preservando a barra reta com fade. Sem instalação ou reinício da sessão ativa, sem teste de VT/DRM, benchmark ou nova execução de sanitizers; ownership/ciclo de vida não alterados. CI remoto e avaliação física pendentes no registro.
+
+### WINDOW-SOFT-PINK — prévia nativa
+
+- Implementado um ajuste localizado do stop violeta do contorno das janelas para um rosa discreto, preservando azul/ciano e controles de efeitos.
+- Compilação release e window-frame-lifecycle passaram; prévia nativa inspecionada.
+- Não instalado nem ativado na sessão atual; comparação visual no desktop e atualização do pacote pendentes. Base: feature/black-window-headers.

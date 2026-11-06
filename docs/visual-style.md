@@ -118,3 +118,7 @@ O novo pedido escurece o fundo do cabeçalho: preto levemente azulado com opacid
 O traço de contorno passa de 0,85 para 1,6 px, com halo interno reduzido de 2,8 para 2,2 px e opacidade de 40% para 18%. A borda física continua em 3 px. A intenção é uma linha colorida mais nítida, com menos luz difusa; não aumenta a moldura nem adiciona blur. O material de reflexos também é usado pela barra de Arquivos e pelo login. A barra superior reta com fade e o dock continuam com seu material anterior.
 
 Prévias de moldura/Arquivos inspecionadas antes/depois; uma prévia temporária a 1670×941 foi comparada à primeira referência, sem afirmar reprodução integral das fotos. Não é captura da sessão ativa. O conteúdo de aplicativos externos permanece sob controle deles.
+
+### Toque rosado discreto no contorno
+
+A branch feature/window-soft-pink-rim ajusta somente o stop violeta do contorno das janelas de RGB (.78, .12, 1) para (.84, .24, .91), mantendo o restante azul/ciano e a mesma espessura/opacidade. Prévia nativa validada; não ativada na sessão em andamento.

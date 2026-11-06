@@ -151,7 +151,7 @@ void jlinux_glass_window_reflections(cairo_t *cr, struct ui_rect rect, double ra
         double alpha = pass ? 1 : .18;
         cairo_pattern_add_color_stop_rgba(edge, 0, .08, .82, 1, alpha);
         cairo_pattern_add_color_stop_rgba(edge, .32, .08, .52, 1, alpha);
-        cairo_pattern_add_color_stop_rgba(edge, .66, .78, .12, 1, alpha);
+        cairo_pattern_add_color_stop_rgba(edge, .66, .84, .24, .91, alpha);
         cairo_pattern_add_color_stop_rgba(edge, 1, .24, .64, 1, alpha);
         rounded(cr, rect, radius); cairo_set_source(cr, edge);
         cairo_set_line_width(cr, pass ? 1.6 : 2.2); cairo_stroke(cr);
