@@ -249,3 +249,11 @@ FILES-02 implementado: barra lateral Pessoal/Downloads/Documentos/Imagens/Vídeo
 Quatorze testes locais release e ASan/UBSan passaram. Teste headless ampliado abre os cinco locais com HOME/configuração isolados, nomes personalizados com espaços/acentos, verifica argumentos do aplicativo associado e tentativa de pasta ausente. Prévia com arquivos fictícios inspecionada. Sem benchmark, teste de VT ou confirmação visual física. Empacotamento/ativação pendentes neste registro. Alteração local concorrente em src/shell/main.c preservada fora desta entrega.
 
 **FILES-02 · instalado:** pacote `0.5.0.r47.g0578b80-1`, fonte 0578b80, compilado do GitHub com 14 testes aprovados no makepkg e instalado via pacman. Gerenciador instalado reaberto com sidebar na sessão existente e permaneceu ativo. Esta entrega não reiniciou compositor/shell nem realizou troca de VT. PR #33, base temporária feature/window-neon-rim, sem merge. CI e avaliação visual pelo usuário pendentes neste registro. Alterações concorrentes de shell/empacotamento preservadas fora dos commits desta entrega.
+
+## Organização automática — feature/automatic-tiling
+
+- **WM-TILE · implementado na branch:** principal + pilha, ordem estável independente do foco, divisão ajustável, flutuante por janela e modo manual por variável de ambiente. Cálculo por eventos, três passagens O(n), sem alocações no rearranjo; geometrias iguais não são reenviadas.
+- **WM-03 · parcial:** nove espaços, troca/envio e recuperação de foco; diálogos xdg-parent acompanham o envio do pai. Regras persistentes, configuração e indicador no shell continuam pendentes.
+- Tela cheia xdg ganha árvore acima dos layers top e abaixo dos overlays, sem molduras; maximização continua separada e restaura para o layout.
+- Validação local: 16 testes release e 16 ASan/UBSan em headless/Pixman; `git diff --check`. Evidência e limites: `docs/window-management.md`. Testes headless com clientes reais não comprovam velocidade em GPU nem equivalência visual. PERF-01 continua pendente; há plano de comparação manual/automático no documento.
+- Instalação ativa preservada: pacote observado `jlinux-desktop-git 0.5.0.r50.g023034a-1`; esta branch não foi instalada e a sessão greetd não foi reiniciada. Nenhum teste de VT/DRM.
