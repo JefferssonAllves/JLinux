@@ -110,3 +110,11 @@ O pedido mais recente substitui a cápsula flutuante da barra: largura total da 
 A superfície e a reserva de área útil passam a 52 px. Só os 36 px de controles recebem entrada; a faixa de transição não captura cliques. Dock permanece com sua forma e material, centralizado na área abaixo dessa nova reserva. Menus de energia/volume e botões transitórios mantêm suas posições anteriores.
 
 BLUR, TINT e REFLECTION continuam independentes. O fundo de vidro ainda amostra somente o wallpaper em cache, não janelas. A máscara usa um grupo Cairo temporário restrito à barra quando há redesenho; não adiciona timer ou animação. Não há medição de desempenho nesta mudança.
+
+### Cabeçalho mais preto e borda mais definida
+
+O novo pedido escurece o fundo do cabeçalho: preto levemente azulado com opacidade de 88%, mantendo transparência e cantos existentes. A tonalização pertence a TINT e substitui a pintura anterior nesse trecho, sem passe adicional. REFLECTION deixa reflexos mais discretos no corpo para destacar o contorno ciano/azul/violeta saturado.
+
+O traço de contorno passa de 0,85 para 1,6 px, com halo interno reduzido de 2,8 para 2,2 px e opacidade de 40% para 18%. A borda física continua em 3 px. A intenção é uma linha colorida mais nítida, com menos luz difusa; não aumenta a moldura nem adiciona blur. O material de reflexos também é usado pela barra de Arquivos e pelo login. A barra superior reta com fade e o dock continuam com seu material anterior.
+
+Prévias de moldura/Arquivos inspecionadas antes/depois; uma prévia temporária a 1670×941 foi comparada à primeira referência, sem afirmar reprodução integral das fotos. Não é captura da sessão ativa. O conteúdo de aplicativos externos permanece sob controle deles.

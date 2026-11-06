@@ -69,3 +69,7 @@ O pedido de borda neon discreta substitui os quatro pontos de brilho da moldura:
 ### Barra superior retangular com base em degradê
 
 `jlinux_glass_panel_paint` reutiliza o material existente com os limites fora da área recortada, evitando contorno visível. Um grupo Cairo de 52 px de altura recebe máscara de opacidade: 36 px para conteúdo e 16 px de fade. É composição no redesenho do shell, não animação nem passe de blur novo. O cache do wallpaper continua compartilhado com o dock. A amostragem bilinear agora prolonga os pixels da borda do cache (`CAIRO_EXTEND_PAD`) para não criar transparência acidental no topo da saída.
+
+### Tonalização do cabeçalho das janelas
+
+`jlinux_glass_window_tint` preenche o mesmo recorte arredondado do cabeçalho com preto azulado translúcido. É selecionado no lugar da tonalização genérica quando TINT está ativo; laterais/inferior mantêm o material anterior. Desativar TINT remove essa base mesmo com REFLECTION/SHADOW independentes. Recursos, quatro faixas da moldura e redesenho por eventos permanecem iguais.
