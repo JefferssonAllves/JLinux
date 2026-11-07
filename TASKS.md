@@ -445,3 +445,5 @@ CONTROL-VOLUME — instalado `0.5.0.r102.gf84be4a-1` via pacman, 23 arquivos sem
 Implementados limite superior do arraste e da elevação visual, prévia de área inteira ao levar o ponteiro à barra e maximização ao soltar, com restauração de tamanho. Reutiliza maximização/área útil existentes; preserva encaixe lateral e fullscreen solicitado pelo aplicativo. Base dependente de feature/control-volume-slider (#78).
 
 30 testes locais release passaram, incluindo encaixe normal, movimento reduzido e fechamento na posição limitada. Pacote/instalação serão registrados na conclusão. Sem substituir sessão, testes de VT ou benchmark físico.
+
+TOP-BAR-SNAP — instalado `0.5.0.r104.g299b482-1`, 23 arquivos sem ausências. 30/30 testes locais release e 30/30 do pacote; CI do código 299b482 aprovado. PR #79 enviado, sem merge. Backup/versão em docs/arch-installation.md. Sessão preservada; ativação no próximo login. Sem teste físico DRM/VT ou benchmark.
