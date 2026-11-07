@@ -91,7 +91,7 @@ void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width)
     for(int i=0;i<3;i++){cairo_set_source_rgb(cr,.74,.79,.89);icon(cr,i,28+i*38,34);}
     double field_width=MAX(1,width-250);
     rounded(cr,133,15,field_width,38,9);cairo_set_source_rgba(cr,.04,.06,.10,.85);cairo_fill_preserve(cr);
-    cairo_set_source_rgba(cr,.43,.51,.73,chrome->editing?.8:.24);cairo_set_line_width(cr,1);cairo_stroke(cr);
+    cairo_set_source_rgba(cr,chrome->error?.9:.43,chrome->error?.38:.51,chrome->error?.43:.73,chrome->editing||chrome->error?.8:.24);cairo_set_line_width(cr,1);cairo_stroke(cr);
     if(chrome->editing && chrome->glass.reflection){
         cairo_pattern_t *rim=cairo_pattern_create_linear(140,0,width-120,0);
         cairo_pattern_add_color_stop_rgba(rim,0,.30,.60,.96,.65);cairo_pattern_add_color_stop_rgba(rim,1,.77,.44,.81,.7);
@@ -99,14 +99,14 @@ void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width)
     }
     /* The status dot indicates editing, not a security guarantee about the site. */
     cairo_set_source_rgba(cr,.51,.60,.85,chrome->editing?1:.5);cairo_arc(cr,147,34,2,0,2*G_PI);cairo_fill(cr);
-    const char *text=chrome->address[0]?chrome->address:"Pesquise no Google ou digite um endereço";
+    const char *text=chrome->error?chrome->message:chrome->address[0]?chrome->address:"Pesquise no Google ou digite um endereço";
     PangoLayout *layout=text_layout(cr,text,14);int text_width;pango_layout_get_pixel_size(layout,&text_width,NULL);
     double available=MAX(1,field_width-36),left=159;
-    if(chrome->editing && chrome->address[0]){left-=MAX(0,text_width-available+3);}
+    if(chrome->editing && !chrome->error && chrome->address[0]){left-=MAX(0,text_width-available+3);}
     cairo_save(cr);cairo_rectangle(cr,158,20,available,28);cairo_clip(cr);
-    if(chrome->editing && chrome->selected && chrome->address[0]){cairo_set_source_rgba(cr,.30,.43,.80,.45);cairo_rectangle(cr,left,24,text_width,21);cairo_fill(cr);}
+    if(chrome->editing && !chrome->error && chrome->selected && chrome->address[0]){cairo_set_source_rgba(cr,.30,.43,.80,.45);cairo_rectangle(cr,left,24,text_width,21);cairo_fill(cr);}
     cairo_set_source_rgb(cr,chrome->address[0]?.88:.49,chrome->address[0]?.92:.55,chrome->address[0]?.99:.68);cairo_move_to(cr,left,25);pango_cairo_show_layout(cr,layout);
-    if(chrome->editing && chrome->caret_visible && !chrome->selected){double caret=left+(chrome->address[0]?text_width:0)+.5;cairo_set_source_rgb(cr,.84,.91,1);cairo_set_line_width(cr,1.3);cairo_move_to(cr,caret,25);cairo_line_to(cr,caret,44);cairo_stroke(cr);}
+    if(chrome->editing && !chrome->error && chrome->caret_visible && !chrome->selected){double caret=left+(chrome->address[0]?text_width:0)+.5;cairo_set_source_rgb(cr,.84,.91,1);cairo_set_line_width(cr,1.3);cairo_move_to(cr,caret,25);cairo_line_to(cr,caret,44);cairo_stroke(cr);}
     cairo_restore(cr);g_object_unref(layout);
     cairo_set_source_rgb(cr,.76,.82,.94);
     if(chrome->download_status[0]){ui_text(cr,chrome->download_status,width-105,25,12,false,0xcbd8f0);}else{icon(cr,3,width-85,34);}
