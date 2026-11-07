@@ -33,13 +33,14 @@ struct app {
     int status, profile_lock;
 };
 static void new_tab(struct app *app, const char *uri);
+static void changed_title(WebKitWebView *web, GParamSpec *spec, gpointer data);
 static void open_downloads(void);
 static void select_tab(struct app *app, guint index);
 static void close_tab(struct app *app, guint index);
 static gboolean quit(gpointer data) { g_main_loop_quit(((struct app *)data)->loop); return G_SOURCE_CONTINUE; }
 static void notice(struct app *app, const char *message) {
     g_strlcpy(app->chrome.message, message, sizeof(app->chrome.message));
-    if (app->whatsapp) { g_printerr("WhatsApp: %s\n", message); }
+    if (app->whatsapp) { g_printerr("WhatsApp: %s\n", message); if (app->web) { changed_title(app->web,NULL,app); } }
     if (!app->probe) { browser_chrome_update(&app->chrome); }
 }
 static void web_notice(struct app *app, WebKitWebView *web, const char *message) {
@@ -181,7 +182,7 @@ static void changed_title(WebKitWebView *web, GParamSpec *spec, gpointer data) {
     browser_chrome_update(&app->chrome);
     if (web == app->web) {
         const char *title = webkit_web_view_get_title(web);
-        char *label = app->whatsapp ? g_strdup("WhatsApp") : g_strdup_printf("%s — JLinux Browser", title && *title ? title : "Nova aba");
+        char *label = app->whatsapp ? g_strdup_printf("WhatsApp%s%s",app->chrome.message[0] ? " — " : "",app->chrome.message) : g_strdup_printf("%s — JLinux Browser", title && *title ? title : "Nova aba");
         wpe_toplevel_set_title(app->toplevel, label); g_free(label);
     }
 }
@@ -200,6 +201,7 @@ static void js_finished(GObject *object, GAsyncResult *result, gpointer data) {
 static void load_changed(WebKitWebView *web, WebKitLoadEvent event, gpointer data) {
     struct app *app = data;
     if (event == WEBKIT_LOAD_STARTED) {
+        if (app->whatsapp) { app->chrome.message[0]=0; changed_title(web,NULL,app); }
         if (app->probe) { app->load_started = g_get_monotonic_time(); }
         g_object_set_data(G_OBJECT(web), "jlinux-notice", NULL);
     }

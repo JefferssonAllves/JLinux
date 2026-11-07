@@ -6,7 +6,7 @@ Abra `jlinux-whatsapp` ou o atalho WhatsApp do catálogo de aplicativos. No celu
 
 O perfil fica em `$XDG_DATA_HOME/jlinux/whatsapp` (padrão ~/.local/share/jlinux/whatsapp), separado do navegador, e o cache em `$XDG_CACHE_HOME/jlinux/whatsapp/webkit`. Diretórios privados 0700, cookies persistentes e armazenamento web reaproveitam a implementação validada do navegador. Um lock impede instâncias concorrentes do mesmo perfil, para evitar duplicação de renderizadores; um segundo lançamento informa que o app já está aberto, sem trazer a janela à frente. Fechar a janela encerra o app; não há cliente em segundo plano.
 
-O sandbox e a recusa de erros TLS são preservados. Apenas HTTPS web.whatsapp.com (ou seus blobs) pode ocupar o conteúdo principal sem barra de endereço; links HTTP/HTTPS externos acionados pelo usuário vão para o navegador padrão. Câmera, microfone e localização continuam recusados, conforme o suporte atual do navegador. O ícone W é próprio e não uma reprodução do logotipo oficial.
+O sandbox e a recusa de erros TLS são preservados. Apenas HTTPS web.whatsapp.com (ou seus blobs) pode ocupar o conteúdo principal sem barra de endereço; links HTTP/HTTPS externos acionados pelo usuário vão para o navegador padrão. Avisos de erro aparecem no título da moldura nativa e no log, mesmo sem barra de navegação. Câmera, microfone e localização continuam recusados, conforme o suporte atual do navegador. O ícone W é próprio e não uma reprodução do logotipo oficial.
 
 ## Memória: resultado e limites
 
