@@ -438,4 +438,19 @@ Testes direcionados de backend e entrada headless com áudio simulado passaram; 
 
 WINDOW-MOTION-SYNC — instalado `0.5.0.r99.g161ba52-1`, preservando a instalação concorrente do relógio Glass 9613200. Pacote 30/30 e integridade confirmados; regressão passou também com `/usr/bin/jlinux-compositor`. PR #76 agora depende de feature/glass-clock-panel (#75). Sessão preservada, ativação no próximo login. Backup/source/limites em docs/arch-installation.md.
 
+## Seleção de janelas com Super+Tab — feature/window-overview
+
+WM-OVERVIEW implementado: grade Glass do espaço atual, miniaturas clicáveis, foco por Enter, navegação Tab/setas/páginas/roda e cancelamento com Esc/clique vazio. Até nove por página com proporção preservada e título. Teclado/cliques bloqueados para o fundo; alterações de mapeamento fecham a visão antes de invalidar referências. Dock/overlays ficam ocultos e são restaurados ao sair.
+
+Blur real usa uma composição da saída central, redução GPU para 1/4 por eixo, leitura e box blur CPU em cache. Miniaturas reutilizam buffers; nenhuma recaptura ao paginar e nenhum timer de overview. BLUR=0 evita captura; falha de captura usa fundo escuro com aviso. Mantém efeitos independentes e recursos pertencentes ao compositor. Base atual instalada de volume/movimento preservada por integração local, sem merge de PR.
+
+Validação e limites em docs/window-overview.md: testes locais release/ASan e GPU headless Radeon, prévia de componentes com dados fictícios e custo descritivo de preparação (sem afirmar latência de apresentação ou desempenho físico). Resultados finais e pacote registrados na conclusão. Sem VT, reinício de sessão ou captura persistida do desktop do usuário.
 CONTROL-VOLUME — instalado `0.5.0.r102.gf84be4a-1` via pacman, 23 arquivos sem ausências. 30/30 testes locais release e 30/30 no pacote; CI do código f84be4a aprovado. PR #78 enviado, sem merge. Backup/versão em docs/arch-installation.md. Sessão preservada; ativação no próximo login. Prévia conferida; fluidez física não medida.
+
+## TOP-BAR-SNAP — feature/top-bar-window-snap
+
+Implementados limite superior do arraste e da elevação visual, prévia de área inteira ao levar o ponteiro à barra e maximização ao soltar, com restauração de tamanho. Reutiliza maximização/área útil existentes; preserva encaixe lateral e fullscreen solicitado pelo aplicativo. Base dependente de feature/control-volume-slider (#78).
+
+30 testes locais release passaram, incluindo encaixe normal, movimento reduzido e fechamento na posição limitada. Pacote/instalação serão registrados na conclusão. Sem substituir sessão, testes de VT ou benchmark físico.
+
+Integração final preserva a instalação 299b482 (restrição de arraste/topo), além de volume contínuo e relógio Glass. 33 testes release e 33 ASan/UBSan passaram nessa base. A roda em página única e hover no item já selecionado não reconstroem cartões. Teste de página única adicionado. Primeiro pacote a9226fb não instalado, para preservar a atualização concorrente do desktop.

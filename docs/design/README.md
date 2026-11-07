@@ -72,3 +72,9 @@ As prévias nativas de moldura e Arquivos acima foram atualizadas: sem pontos fo
 ## Prévia consolidada dos pedidos atuais
 
 As prévias de shell, moldura e Arquivos agora combinam barra reta com fade, cabeçalho preto e bordas com toque rosado, sem dock e sem menus à esquerda. São desenhos nativos dos componentes, não capturas da sessão instalada. A geometria atual segue os pedidos posteriores às fotos. Inventário da consolidação em [applied-updates.md](../applied-updates.md).
+
+## Visão de janelas
+
+![Prévia nativa de componentes do overview](window-overview.png)
+
+Gerada pelo teste de renderer com conteúdo ilustrativo e blur desativado. Mostra grade, títulos e seleção Glass; não é captura de aplicativos reais ou do pipeline de captura/desfoque. Esse pipeline foi testado separadamente em headless/Pixman e GLES2.

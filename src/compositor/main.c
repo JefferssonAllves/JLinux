@@ -306,7 +306,7 @@ int main(void) {
     wl_signal_add(&desktop.layout->events.change, &desktop.layout_change);
     struct wlr_layer_shell_v1 *shell = wlr_layer_shell_v1_create(desktop.display, 4);
     desktop.interaction = interaction_create(desktop.display, desktop.backend, desktop.layout,
-        desktop.scene, desktop.windows, desktop.fullscreens, desktop.session);
+        desktop.scene, desktop.windows, desktop.fullscreens, desktop.layer_trees[3], desktop.session);
     if (!shell || !desktop.interaction) { goto cleanup; }
     desktop.new_layer.notify = add_shell_surface;
     wl_signal_add(&shell->events.new_surface, &desktop.new_layer);

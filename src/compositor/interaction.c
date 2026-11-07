@@ -2,6 +2,7 @@
 #include "interaction.h"
 #include "../renderer/window-frame.h"
 #include "../renderer/window-effects.h"
+#include "../renderer/overview.h"
 #include "../animation/transition.h"
 #include <time.h>
 #include <wlr/types/wlr_output.h>
@@ -86,7 +87,11 @@ struct interaction {
     struct wl_display *display;
     struct wlr_session *session;
     struct wlr_scene *scene;
-    struct wlr_scene_tree *windows, *fullscreens;
+    struct wlr_scene_tree *windows, *fullscreens, *overlays;
+    struct window_overview overview;
+    struct view *overview_views[OVERVIEW_PAGE];
+    size_t overview_total, overview_selected;
+    bool overview_overlays_enabled, overview_button;
     struct wlr_output_layout *layout;
     struct wlr_seat *seat;
     struct wlr_cursor *cursor;
@@ -139,7 +144,12 @@ static void apply_visual(struct view *view, double now) {
     for (unsigned i = 0; i < 4; i++) {
         wlr_scene_buffer_set_opacity(view->frame.parts[i], visible * (view->owner->focused == view ? 1 : .72));
     }
-    wlr_scene_node_set_position(&view->visual->node, 0, view->owner->reduced_motion ? 0 : (int)((1-visible)*12-lift*3));
+    int offset_y = view->owner->reduced_motion ? 0 : (int)((1-visible)*12-lift*3);
+    if (!view->is_fullscreen && view->owner->has_workarea) {
+        int minimum = view->owner->workarea.y + JLINUX_FRAME_HEADER - view->tree->node.y;
+        if (offset_y < minimum) { offset_y = minimum; }
+    }
+    wlr_scene_node_set_position(&view->visual->node, 0, offset_y);
     window_aura_opacity(&view->aura, view->owner->focused == view, lift, visible);
     for (unsigned i = 0; i < 4; i++) {
         wlr_scene_node_set_enabled(&view->aura.shadow[i]->node, !view->is_fullscreen);
@@ -147,7 +157,7 @@ static void apply_visual(struct view *view, double now) {
     }
 }
 bool interaction_animate(struct interaction *state) {
-    if (!state) { return false; }
+    if (!state || state->overview.tree) { return false; }
     double now = animation_time(); bool active = false;
     struct view *view;
     wl_list_for_each(view, &state->views, link) {
@@ -230,6 +240,70 @@ static void focus(struct interaction *state, struct view *view) {
         keyboard ? &keyboard->modifiers : &empty);
 }
 
+static void overview_close(struct interaction *state,bool accept){
+    if(!state->overview.tree){return;}
+    struct view *target=accept?state->overview_views[state->overview_selected%OVERVIEW_PAGE]:state->focused;
+    window_overview_finish(&state->overview);
+    memset(state->overview_views,0,sizeof(state->overview_views));
+    wlr_scene_node_set_enabled(&state->overlays->node,state->overview_overlays_enabled);
+    if(target&&target->mapped&&target->workspace==state->workspace){focus(state,target);}
+    else{wlr_seat_keyboard_clear_focus(state->seat);}
+    schedule_animation(state);wlr_log(WLR_INFO,"%s","Visão de janelas fechada");
+}
+static bool overview_eligible(struct view *view){return view->mapped&&view->workspace==view->owner->workspace;}
+static bool overview_page(struct interaction *state,size_t selected){
+    size_t page=selected/OVERVIEW_PAGE;
+    if(!window_overview_page(&state->overview,state->overview_total,page)){overview_close(state,false);return false;}
+    memset(state->overview_views,0,sizeof(state->overview_views));
+    struct view *view;size_t index=0;
+    wl_list_for_each(view,&state->views,link){
+        if(!overview_eligible(view)){continue;}
+        if(index>=page*OVERVIEW_PAGE&&index<(page+1)*OVERVIEW_PAGE){
+            size_t slot=index%OVERVIEW_PAGE;state->overview_views[slot]=view;
+            if(!window_overview_add(&state->overview,slot,view->xdg->title,view->visual,view->frame_width,view->frame_height)){overview_close(state,false);return false;}
+        }index++;
+    }
+    state->overview_selected=selected;window_overview_select(&state->overview,selected%OVERVIEW_PAGE);
+    wlr_log(WLR_INFO,"Página de janelas: %zu",page+1);return true;
+}
+static void overview_move(struct interaction *state,int direction){
+    if(!state->overview_total){return;}
+    size_t distance=(size_t)(direction<0?-direction:direction)%state->overview_total;
+    size_t selected=direction<0?(state->overview_selected+state->overview_total-distance)%state->overview_total:(state->overview_selected+distance)%state->overview_total;
+    if(selected/OVERVIEW_PAGE!=state->overview.page){overview_page(state,selected);}
+    else{state->overview_selected=selected;window_overview_select(&state->overview,selected%OVERVIEW_PAGE);}
+    schedule_animation(state);
+}
+static void overview_page_step(struct interaction *state,int direction){
+    size_t pages=(state->overview_total+OVERVIEW_PAGE-1)/OVERVIEW_PAGE;if(pages<2){return;}
+    size_t page=(state->overview.page+pages+(direction>0?1:pages-1))%pages;
+    overview_page(state,page*OVERVIEW_PAGE);schedule_animation(state);
+}
+static void overview_open(struct interaction *state){
+    if(state->overview.tree){overview_move(state,1);return;}
+    struct wlr_output *output=wlr_output_layout_get_center_output(state->layout);if(!output){return;}
+    end_grab(state);struct view *view;state->overview_total=0;
+    wl_list_for_each(view,&state->views,link){
+        cancel_snap(view);
+        if(overview_eligible(view)){
+            view->visibility=(struct transition){.from=1,.to=1};view->lift=(struct transition){0};apply_visual(view,animation_time());state->overview_total++;
+        }
+    }
+    struct closing_window *closing,*next;
+    wl_list_for_each_safe(closing,next,&state->closing,link){window_snapshot_destroy(closing->snapshot);wl_list_remove(&closing->link);free(closing);}
+    state->hint_visibility=(struct transition){0};window_hint_apply(&state->hint,state->hint_box,0);
+    state->overview_overlays_enabled=state->overlays->node.enabled;
+    wlr_scene_node_set_enabled(&state->overlays->node,false);
+    struct wlr_box bounds;wlr_output_layout_get_box(state->layout,output,&bounds);
+    double started=animation_time();
+    if(!window_overview_create(&state->overview,state->scene,output,bounds,state->glass)){
+        wlr_scene_node_set_enabled(&state->overlays->node,state->overview_overlays_enabled);return;
+    }
+    if(!overview_page(state,0)){return;}
+    wlr_seat_keyboard_clear_focus(state->seat);wlr_seat_pointer_clear_focus(state->seat);
+    schedule_animation(state);
+    wlr_log(WLR_INFO,"Visão de janelas aberta: %zu janelas, desfoque=%d, preparação=%.3f ms",state->overview_total,state->overview.blurred,(animation_time()-started)*1000);
+}
 static void focus_available(struct interaction *state) {
     struct view *view;
     wl_list_for_each(view, &state->views, link) {
@@ -319,7 +393,7 @@ static void arrange(struct interaction *state) {
         wlr_scene_node_set_enabled(&view->tree->node, view->mapped && view->workspace == state->workspace);
     }
 }
-static bool snap_target(struct interaction *state, struct wlr_box *target) {
+static bool snap_target(struct interaction *state, struct wlr_box *target, bool *top) {
     struct view *view = state->grabbed;
     if (!view || state->resizing || view->maximized || view->is_fullscreen) { return false; }
     struct wlr_output *output = wlr_output_layout_get_center_output(state->layout);
@@ -327,6 +401,9 @@ static bool snap_target(struct interaction *state, struct wlr_box *target) {
     struct wlr_box bounds, area;
     wlr_output_layout_get_box(state->layout, output, &bounds);
     if (state->cursor->y < bounds.y || state->cursor->y >= bounds.y + bounds.height || !maximize_area(view, &area)) { return false; }
+    *top = state->cursor->x >= bounds.x && state->cursor->x < bounds.x + bounds.width &&
+        (state->cursor->y <= bounds.y + 12 || (state->has_workarea && state->cursor->y < state->workarea.y));
+    if (*top) { *target = area; return true; }
     bool left = state->cursor->x <= bounds.x + 12;
     bool right = state->cursor->x >= bounds.x + bounds.width - 12;
     if (!left && !right) { return false; }
@@ -342,7 +419,8 @@ static bool snap_target(struct interaction *state, struct wlr_box *target) {
 }
 static void preview_snap(struct interaction *state) {
     struct wlr_box area;
-    bool visible = snap_target(state, &area);
+    bool top;
+    bool visible = snap_target(state, &area, &top);
     if (visible) {
         state->hint_box = (struct wlr_box){area.x-JLINUX_FRAME_BORDER, area.y-JLINUX_FRAME_HEADER,
             area.width+2*JLINUX_FRAME_BORDER, area.height+JLINUX_FRAME_HEADER+JLINUX_FRAME_BORDER};
@@ -354,11 +432,17 @@ static void preview_snap(struct interaction *state) {
         if (visible) { wlr_log(WLR_INFO, "Prévia de encaixe: %dx%d em %d,%d", state->hint_box.width, state->hint_box.height, state->hint_box.x, state->hint_box.y); }
     }
 }
-static void snap_side(struct interaction *state) {
+static void apply_snap(struct interaction *state) {
     struct view *view = state->grabbed;
     struct wlr_box area;
-    if (!snap_target(state, &area)) {
+    bool top;
+    if (!snap_target(state, &area, &top)) {
         if (view && !state->resizing) { view->snap_restore = (struct wlr_box){0}; }
+        return;
+    }
+    if (top) {
+        set_maximized(view, true);
+        view->restore.width = state->width; view->restore.height = state->height;
         return;
     }
     if (!view->snapped && !view->snap_restore.width) { view->snap_restore = (struct wlr_box){0, 0, state->width, state->height}; }
@@ -420,6 +504,7 @@ static void parent_changed(struct wl_listener *listener, void *data) {
     else if (view->owner->focused == view) { focus_available(view->owner); }
 }
 static void change_workspace(struct interaction *state, unsigned workspace, bool move) {
+    overview_close(state,false);
     struct view *pending; wl_list_for_each(pending, &state->views, link) { cancel_snap(pending); }
     if (move) {
         if (!state->focused) { return; }
@@ -442,6 +527,7 @@ static void title_changed(struct wl_listener *listener, void *data) {
 static void view_mapped(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, map);
+    overview_close(view->owner,false);
     update_frame(view);
     view->mapped = true;
     parent_changed(&view->parent, NULL);
@@ -459,6 +545,7 @@ static void view_mapped(struct wl_listener *listener, void *data) {
 static void view_unmapped(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, unmap);
+    overview_close(view->owner,false);
     cancel_snap(view);
     if (view->mapped && view->workspace == view->owner->workspace && !view->owner->reduced_motion) {
         struct closing_window *closing = calloc(1, sizeof(*closing));
@@ -572,6 +659,7 @@ static void fullscreen_requested(struct wl_listener *listener, void *data) {
 static void view_destroyed(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, destroy);
+    overview_close(view->owner,false);
     cancel_snap(view);
     if (view->owner->grabbed == view) { end_grab(view->owner); }
     if (view->owner->focused == view) { focus(view->owner, NULL); }
@@ -705,6 +793,20 @@ static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t mo
     if (state->session && symbol >= XKB_KEY_XF86Switch_VT_1 && symbol <= XKB_KEY_XF86Switch_VT_12) {
         wlr_session_change_vt(state->session, symbol - XKB_KEY_XF86Switch_VT_1 + 1); return true;
     }
+
+    if(state->overview.tree){
+        if(symbol==XKB_KEY_Escape){overview_close(state,false);}
+        else if(symbol==XKB_KEY_Return||symbol==XKB_KEY_KP_Enter){overview_close(state,true);}
+        else if(symbol==XKB_KEY_Tab||symbol==XKB_KEY_ISO_Left_Tab){overview_move(state,(modifiers&WLR_MODIFIER_SHIFT)?-1:1);}
+        else if(symbol==XKB_KEY_Right){overview_move(state,1);}
+        else if(symbol==XKB_KEY_Down){overview_move(state,state->overview.count<=3?(int)state->overview.count:state->overview.count==4?2:3);}
+        else if(symbol==XKB_KEY_Left){overview_move(state,-1);}
+        else if(symbol==XKB_KEY_Up){overview_move(state,state->overview.count<=3?-(int)state->overview.count:state->overview.count==4?-2:-3);}
+        else if(symbol==XKB_KEY_Page_Down){overview_page_step(state,1);}
+        else if(symbol==XKB_KEY_Page_Up){overview_page_step(state,-1);}
+        return true;
+    }
+    if((modifiers&WLR_MODIFIER_LOGO)&&symbol==XKB_KEY_Tab){overview_open(state);return true;}
     if ((modifiers & WLR_MODIFIER_LOGO) && symbol >= XKB_KEY_1 && symbol <= XKB_KEY_9) {
         change_workspace(state, symbol - XKB_KEY_1, modifiers & WLR_MODIFIER_SHIFT); return true;
     }
@@ -758,7 +860,7 @@ static void key_event(struct wl_listener *listener, void *data) {
     if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         if (super) {
             uint32_t mods = wlr_keyboard_get_modifiers(keyboard->device);
-            keyboard->dock_requested = !(mods & (WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_SHIFT));
+            keyboard->dock_requested = !keyboard->owner->overview.tree && !(mods & (WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_SHIFT));
             update_dock(keyboard->owner);
         } else { cancel_super(keyboard->owner); }
     } else if (super) {
@@ -876,6 +978,11 @@ static struct view *surface_at(struct interaction *state, struct wlr_surface **s
     return node ? node->data : NULL;
 }
 static void pointer_moved(struct interaction *state, uint32_t time) {
+    if(state->overview.tree){
+        int hit=window_overview_hit(&state->overview,state->cursor->x,state->cursor->y);
+        if(hit>=0&&state->overview_selected!=state->overview.page*OVERVIEW_PAGE+(size_t)hit){state->overview_selected=state->overview.page*OVERVIEW_PAGE+(size_t)hit;window_overview_select(&state->overview,(size_t)hit);}
+        return;
+    }
     if (state->grabbed) {
         int dx = (int)(state->cursor->x - state->start_x);
         int dy = (int)(state->cursor->y - state->start_y);
@@ -891,7 +998,11 @@ static void pointer_moved(struct interaction *state, uint32_t time) {
             }
             wlr_xdg_toplevel_set_size(state->grabbed->xdg, width, height);
         } else {
-            wlr_scene_node_set_position(&state->grabbed->tree->node, state->window_x + dx, state->window_y + dy);
+            int y = state->window_y + dy;
+            if (state->has_workarea && y < state->workarea.y + JLINUX_FRAME_HEADER) {
+                y = state->workarea.y + JLINUX_FRAME_HEADER;
+            }
+            wlr_scene_node_set_position(&state->grabbed->tree->node, state->window_x + dx, y);
         }
         preview_snap(state);
         return;
@@ -922,9 +1033,22 @@ static void absolute_event(struct wl_listener *listener, void *data) {
 static void button_event(struct wl_listener *listener, void *data) {
     struct interaction *state = wl_container_of(listener, state, button);
     struct wlr_pointer_button_event *event = data;
+    if(state->overview.tree||state->overview_button){
+        if(event->button==BTN_LEFT){
+            if(event->state==WL_POINTER_BUTTON_STATE_PRESSED){state->overview_button=true;}
+            else{
+                state->overview_button=false;
+                if(state->overview.tree){
+                    int hit=window_overview_hit(&state->overview,state->cursor->x,state->cursor->y);
+                    if(hit>=0){state->overview_selected=state->overview.page*OVERVIEW_PAGE+(size_t)hit;}
+                    overview_close(state,hit>=0);
+                }
+            }
+        }return;
+    }
     if (state->grab_button) {
         if (event->state == WL_POINTER_BUTTON_STATE_RELEASED && event->button == state->grab_button) {
-            snap_side(state);
+            apply_snap(state);
             end_grab(state);
             pointer_moved(state, event->time_msec);
         }
@@ -982,6 +1106,7 @@ static void axis_event(struct wl_listener *listener, void *data) {
     struct interaction *state = wl_container_of(listener, state, axis);
     cancel_super(state);
     struct wlr_pointer_axis_event *event = data;
+    if(state->overview.tree){if(event->orientation==WL_POINTER_AXIS_VERTICAL_SCROLL&&event->delta){overview_page_step(state,event->delta>0?1:-1);}return;}
     wlr_seat_pointer_notify_axis(state->seat, event->time_msec, event->orientation,
         event->delta, event->delta_discrete, event->source, event->relative_direction);
 }
@@ -1018,7 +1143,7 @@ static size_t listeners(struct interaction *state, struct wl_listener **items) {
 }
 struct interaction *interaction_create(struct wl_display *display,
     struct wlr_backend *backend, struct wlr_output_layout *layout,
-    struct wlr_scene *scene, struct wlr_scene_tree *windows, struct wlr_scene_tree *fullscreens, struct wlr_session *session) {
+    struct wlr_scene *scene, struct wlr_scene_tree *windows, struct wlr_scene_tree *fullscreens, struct wlr_scene_tree *overlays, struct wlr_session *session) {
     struct interaction *state = calloc(1, sizeof(*state));
     if (!state) { return NULL; }
     if (!jlinux_glass_settings(&state->glass)) { free(state); return NULL; }
@@ -1026,7 +1151,7 @@ struct interaction *interaction_create(struct wl_display *display,
     if (reduced && strcmp(reduced, "0") && strcmp(reduced, "1")) { free(state); return NULL; }
     state->reduced_motion = reduced && !strcmp(reduced, "1");
     state->session = session;
-    state->display = display; state->scene = scene; state->windows = windows; state->fullscreens = fullscreens; state->layout = layout;
+    state->display = display; state->scene = scene; state->windows = windows; state->fullscreens = fullscreens; state->overlays=overlays; state->layout = layout;
     wl_list_init(&state->views); wl_list_init(&state->keyboards); wl_list_init(&state->pointers); wl_list_init(&state->closing);
     struct wl_listener *items[13];
     size_t count = listeners(state, items);
@@ -1070,6 +1195,7 @@ struct interaction *interaction_create(struct wl_display *display,
 void interaction_set_workarea(struct interaction *state, const struct wlr_box *area) {
     if (!state || area->width <= 0 || area->height <= 0) { return; }
     if (state->has_workarea && memcmp(&state->workarea, area, sizeof(*area)) == 0) { return; }
+    overview_close(state,false);
     end_grab(state);
     state->hint_visibility = (struct transition){0};
     wlr_scene_node_set_enabled(&state->hint.tree->node, false);
@@ -1087,6 +1213,7 @@ void interaction_set_workarea(struct interaction *state, const struct wlr_box *a
 }
 void interaction_destroy(struct interaction *state) {
     if (!state) { return; }
+    window_overview_finish(&state->overview);
     struct wl_listener *items[13];
     size_t count = listeners(state, items);
     for (size_t i = 0; i < count; i++) { wl_list_remove(&items[i]->link); }

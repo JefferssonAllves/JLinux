@@ -20,6 +20,14 @@ static struct effect_buffer *buffer_new(int width,int height){
     wlr_buffer_init(&b->base,&impl,width,height);return b;
 }
 static bool no_input(struct wlr_scene_buffer *buffer,double *x,double *y){(void)buffer;(void)x;(void)y;return false;}
+struct wlr_scene_buffer *window_image_create(struct wlr_scene_tree *parent,cairo_surface_t *image){
+    if(cairo_surface_status(image)!=CAIRO_STATUS_SUCCESS){return NULL;}
+    struct effect_buffer *buffer=calloc(1,sizeof(*buffer));if(!buffer){return NULL;}
+    buffer->image=cairo_surface_reference(image);cairo_surface_flush(image);
+    wlr_buffer_init(&buffer->base,&impl,cairo_image_surface_get_width(image),cairo_image_surface_get_height(image));
+    struct wlr_scene_buffer *node=wlr_scene_buffer_create(parent,&buffer->base);wlr_buffer_drop(&buffer->base);
+    if(node){node->point_accepts_input=no_input;}return node;
+}
 bool window_aura_create(struct window_aura *aura,struct wlr_scene_tree *parent){
     for(int i=0;i<4;i++){
         aura->shadow[i]=wlr_scene_buffer_create(parent,NULL);aura->glow[i]=wlr_scene_buffer_create(parent,NULL);

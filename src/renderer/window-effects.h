@@ -11,6 +11,7 @@ struct window_aura {
 bool window_aura_create(struct window_aura *aura,struct wlr_scene_tree *parent);
 bool window_aura_update(struct window_aura *aura,int width,int height,struct jlinux_glass effects);
 void window_aura_opacity(struct window_aura *aura,bool focused,double lift,double visible);
+struct wlr_scene_buffer *window_image_create(struct wlr_scene_tree *parent,cairo_surface_t *image);
 struct window_snapshot;
 struct window_snapshot *window_snapshot_create(struct wlr_scene_tree *source,struct wlr_scene_tree *parent);
 void window_snapshot_geometry(struct window_snapshot *snapshot,struct wlr_box from,struct wlr_box to,double progress);
