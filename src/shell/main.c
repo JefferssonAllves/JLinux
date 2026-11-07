@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include "../effects/glass.h"
 #include "../animation/transition.h"
+#include "../renderer/dock-transform.h"
 #include "../renderer/blur.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -150,9 +151,10 @@ static void paint(struct surface *surface, cairo_t *cr) {
         for (int i = 0; i < 10; i++) { app->futurista.hover[i] = transition_value(&app->dock_hover[i], now); }
         if (!app->showing_controls) {
             cairo_save(cr);
-            struct ui_rect box = futurista_dock_bounds(width,height);
-            cairo_rectangle(cr,box.x,box.y,box.width,box.height+25); cairo_clip(cr);
-            cairo_translate(cr, 0, (1 - progress) * 24);
+            struct ui_rect box = futurista_dock_bounds(width, height);
+            cairo_rectangle(cr, box.x, box.y, box.width, box.height); cairo_clip(cr);
+            cairo_matrix_t matrix; jlinux_dock_transform(&matrix, width, height, progress);
+            cairo_transform(cr, &matrix);
             cairo_push_group(cr);
         }
         futurista_overlay(&app->futurista, cr, width, height, app->showing_controls);
@@ -473,9 +475,14 @@ static void launcher_action(struct app *app, int hit) {
 }
 static int launcher_hit(struct app *app) {
     if (app->dock_closing) { return -1; }
-    double y = app->pointer_y;
-    if (!app->showing_controls) { y -= (1 - transition_value(&app->dock_open, animation_now())) * 24; }
-    return futurista_hit(app->pointer_x,y,app->launcher.width,app->launcher.height,app->showing_controls);
+    double x = app->pointer_x, y = app->pointer_y;
+    if (!app->showing_controls) {
+        cairo_matrix_t matrix;
+        jlinux_dock_transform(&matrix, app->launcher.width, app->launcher.height, transition_value(&app->dock_open, animation_now()));
+        if (cairo_matrix_invert(&matrix) != CAIRO_STATUS_SUCCESS) { return -1; }
+        cairo_matrix_transform_point(&matrix, &x, &y);
+    }
+    return futurista_hit(x,y,app->launcher.width,app->launcher.height,app->showing_controls);
 }
 static void update_launcher_selection(struct app *app) {
     if(app->pointer_surface != &app->launcher){return;}

@@ -377,3 +377,9 @@ Dock visível enquanto Super fica pressionada; keyup ou remoção do teclado ocu
 ### DOCK-ANGULAR-SELECTION
 
 Seleção por ângulo em toda a área abaixo da barra enquanto Super está pressionada, mesmo fora do círculo; centro confirma o último setor. Região de entrada e retomada da animação ampliadas, atualização na entrada/movimento do ponteiro compartilhada. Base instalada 66b04f1 preservada, incluindo animações/movimento reduzido. Três testes locais passaram: futurista-headless, dock-reduced-motion e shell-headless, incluindo hover externo confirmado pelo centro e clique externo direto. Sem benchmark ou teste físico nesta mudança.
+
+## Dock expandindo do centro — feature/dock-center-reveal
+
+DOCK-CENTER remove entrada vertical e aplica expansão 18%→100% com fade, ancorada no centro da tela. Hit testing inverte a mesma matriz e mantém seleção angular. Novo halo azul-violeta independente em effects/, controlado por REFLECTION, e elevação de até 4 px no hover; animation/ mantém tempo e renderer/ a transformação. Nenhum loop adicional: callbacks existentes somente durante transições. Movimento reduzido preservado.
+
+24 testes locais release e ASan/UBSan passaram antes do refinamento final de clip; repetição relevante e pacote registrados na conclusão. Teste novo verifica centro fixo, escala final, inversa e halo zero/positivo. Prévia do estado final inspecionada. Sem benchmark ou teste físico de GPU/VT. Shell ativo preservado; ativação no próximo login.
