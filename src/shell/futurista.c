@@ -704,7 +704,7 @@ int futurista_hit(double x, double y, int width, int height, bool control_panel)
         if (r < 132) {
             return 10;
         }
-        if (r >= 176 && r <= 345) {
+        if (r >= 132) {
             double a = atan2(dy, dx) * 180 / pi + 108;
             while (a < 0) {
                 a += 360;

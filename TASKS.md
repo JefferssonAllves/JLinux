@@ -373,3 +373,7 @@ Dock visível enquanto Super fica pressionada; keyup ou remoção do teclado ocu
 - Fechar remove entrada de mouse imediatamente; hit testing desconta deslocamento. Dois buffers por superfície preservados; grupo Cairo limitado ao dock. SHM/CPU continua sendo o backend; sem benchmark ou alegação de fluidez física.
 - Testes unitários: início/meio/fim, reversão contínua, faixa dos valores e duração zero. Headless: Super esquerda/direita, clique segurando, desconexão de teclado, reabertura rápida, movimento sem clique e modo reduzido. Três testes direcionados passaram em release e ASan/UBSan (detect_leaks=0). Prévia estática do estado final inspecionada; animação física pendente.
 - Uma execução paralela da suíte falhou em window-side-snap; repetição isolada passou. Validação final da suíte/pacote registrada após conclusão. Base fix/hold-super-dock (#64), mantendo o pacote instalado mais recente. Sem reinício/VT na sessão de trabalho.
+
+### DOCK-ANGULAR-SELECTION
+
+Seleção por ângulo em toda a área abaixo da barra enquanto Super está pressionada, mesmo fora do círculo; centro confirma o último setor. Região de entrada e retomada da animação ampliadas, atualização na entrada/movimento do ponteiro compartilhada. Base instalada 66b04f1 preservada, incluindo animações/movimento reduzido. Três testes locais passaram: futurista-headless, dock-reduced-motion e shell-headless, incluindo hover externo confirmado pelo centro e clique externo direto. Sem benchmark ou teste físico nesta mudança.

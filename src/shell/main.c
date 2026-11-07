@@ -234,13 +234,6 @@ static void configure(void *data, struct zwlr_layer_surface_v1 *layer, uint32_t 
     /* Keep the last usable buffer while an output has no drawable extent. */
     if (!width || !height) { return; }
     surface->width = (int)width; surface->height = (int)height;
-    if(surface==&surface->app->launcher && !surface->app->showing_controls){
-        struct ui_rect box=futurista_dock_bounds(width,height);
-        struct wl_region *input=wl_compositor_create_region(surface->app->compositor);
-        if(!input){surface->app->running=false;return;}
-        wl_region_add(input,(int)box.x,(int)box.y,(int)box.width+1,(int)box.height+25);
-        wl_surface_set_input_region(surface->wl,input);wl_region_destroy(input);
-    }
     surface->configured = true; surface->dirty = true;
 }
 static void closed(void *data, struct zwlr_layer_surface_v1 *layer) {
@@ -484,6 +477,15 @@ static int launcher_hit(struct app *app) {
     if (!app->showing_controls) { y -= (1 - transition_value(&app->dock_open, animation_now())) * 24; }
     return futurista_hit(app->pointer_x,y,app->launcher.width,app->launcher.height,app->showing_controls);
 }
+static void update_launcher_selection(struct app *app) {
+    if(app->pointer_surface != &app->launcher){return;}
+    int hit=launcher_hit(app);
+    if(hit>=0 && hit<10 && hit!=app->futurista.selected){
+        app->futurista.selected=hit;
+        if(!app->showing_controls){dock_select(app,hit);}
+        app->launcher.dirty=true;
+    }
+}
 static void pointer_enter(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *wl, wl_fixed_t x, wl_fixed_t y) {
     struct app *app = data;
     struct wl_cursor *cursor = app->cursor_theme ? wl_cursor_theme_get_cursor(app->cursor_theme, "left_ptr") : NULL;
@@ -498,6 +500,7 @@ static void pointer_enter(void *data, struct wl_pointer *pointer, uint32_t seria
     app->pointer_surface = NULL;
     for (size_t i = 0; i < 4; i++) { if (surfaces[i]->wl == wl) { app->pointer_surface = surfaces[i]; } }
     app->pointer_x = wl_fixed_to_double(x); app->pointer_y = wl_fixed_to_double(y);
+    update_launcher_selection(app);
 }
 static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *wl) {
     (void)pointer; (void)serial; (void)wl;
@@ -507,10 +510,7 @@ static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t seria
 static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y) {
     (void)pointer; (void)time;
     struct app *app = data; app->pointer_x = wl_fixed_to_double(x); app->pointer_y = wl_fixed_to_double(y);
-    if(app->pointer_surface==&app->launcher){
-        int hit=launcher_hit(app);
-        if(hit>=0 && hit<10 && hit!=app->futurista.selected){app->futurista.selected=hit;if(!app->showing_controls){dock_select(app,hit);}app->launcher.dirty=true;}
-    }
+    update_launcher_selection(app);
 }
 static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
     (void)pointer; (void)serial; (void)time;
@@ -691,10 +691,9 @@ int main(int argc, char **argv) {
                     if(app.launcher.wl && !app.showing_controls && app.dock_closing){
                         app.dock_closing=false;
                         transition_target(&app.dock_open,1,animation_now(),app.reduced_motion?0:.20);
-                        struct ui_rect box=futurista_dock_bounds(app.launcher.width,app.launcher.height);
                         struct wl_region *input=wl_compositor_create_region(app.compositor);
                         if(!input){goto cleanup;}
-                        wl_region_add(input,(int)box.x,(int)box.y,(int)box.width+1,(int)box.height+25);
+                        wl_region_add(input,0,PANEL_BODY_HEIGHT,8192,8192);
                         wl_surface_set_input_region(app.launcher.wl,input);wl_region_destroy(input);app.launcher.dirty=true;
                     } else if(!app.launcher.wl || app.showing_controls){toggle_launcher(&app,false);}
                 }

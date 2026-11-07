@@ -43,12 +43,18 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
                 held.wait(timeout=4);processes.remove(held)
                 wait(lambda:log().count('Dock circular fechado.')>closed,processes,'release hides dock')
                 opened=log().count('Dock circular aberto.')
-                held=subprocess.Popen([wtype,'-P',key,'-s','1600','-p',key],env=env)
+                held=subprocess.Popen([wtype,'-P',key,'-s','2400','-p',key],env=env)
                 processes.append(held)
                 wait(lambda:log().count('Dock circular aberto.')>opened,processes,'hold for mouse selection')
                 mapped=log().count('Janela mapeada: JLinux Terminal')
-                mouse(round(986*1280/1672),round(263*720/941))
-                wait(lambda:log().count('Janela mapeada: JLinux Terminal')>mapped,processes,'click while holding opens Foot')
+                if iteration==0:
+                    # This point is beyond the old dock bounding box. Hover must select Foot;
+                    # clicking the center then confirms that selection rather than the click angle.
+                    subprocess.run([pointer,'940','90','--motion'],env=env,check=True,timeout=4)
+                    mouse(640,365)
+                else:
+                    mouse(940,90)  # Direct click in the same angular sector outside the dock.
+                wait(lambda:log().count('Janela mapeada: JLinux Terminal')>mapped,processes,'angular hover/outer click opens Foot')
                 held.wait(timeout=4);processes.remove(held)
                 keys('-M','logo','-k','q','-m','logo')
                 mapped=log().count('Janela mapeada: JLinux Terminal')
