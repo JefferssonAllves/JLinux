@@ -145,3 +145,12 @@ A URL mostra ponteiro de texto ao passar o mouse e caret piscante ao digitar. O 
 Ao focar a barra pela primeira vez nesta execução, `webkit_network_session_prefetch_dns` antecipa somente a resolução de `www.google.com`, sem enviar o texto digitado, sem carregar resultados e sem abrir uma página oculta. A API está disponível na biblioteca instalada. Pode reduzir o passo inicial quando o DNS não está em cache; não foi medido um ganho percentual de pesquisa na rede do usuário. O cache normal do WebKit já estava ativado e não foi ampliado. Perfis persistentes, bloqueador, downloads, vídeos e o app WhatsApp são preservados.
 
 Validação: 13 testes locais release passaram com navegador habilitado/shell desabilitado. Incluem perfil/login, downloads, bloqueio, vídeo e WhatsApp. Dois testes direcionados passaram também com ASan/UBSan (`detect_leaks=0`): layout/caret e navegação Wayland, incluindo clique na última de sete abas comprimidas. O teste de layout percorre 1–256 abas em larguras de 240–1920 px, verifica limites, hit testing e diferença de pixels com/sem caret. Inspeção das duas prévias nativas concluída; teste visual físico/HiDPI e benchmark da busca continuam pendentes.
+
+
+### Instalação do cabeçalho — 07/11/2026
+
+Pacote efetivamente instalado: `jlinux-browser-git 0.1.0.r64.gec7ef34-1`, commit **ec7ef34**, branch `feature/browser-modern-tabs`, PR #73 (base #69). Receita Arch executou os 13 testes novamente; todos passaram. Donos/permissões do pacote conferidos; `pacman -Qkk` confirmou 17 arquivos e zero alterações. Teste Wayland completo também passou usando os binários instalados `/usr/bin/jlinux-compositor` e `/usr/bin/jlinux-browser`, em runtime headless isolado.
+
+Backup dos arquivos anteriores r63/ed57981 e banco do pacote em `/var/backups/jlinux-browser-before-modern-ec7ef34/`; novo pacote em `/var/cache/pacman/pkg/jlinux-browser-git-0.1.0.r64.gec7ef34-1-x86_64.pkg.tar.zst`. Dados do perfil, cookies e armazenamento dos sites não foram modificados por scripts de instalação. O navegador ativo PID 732 manteve o inode/executável anterior, agora `(deleted)` em `/proc`; este PID é evidência deste boot, não instrução para sessões futuras. Ativação ao fechar e reabrir o navegador. Nenhum app ou sessão gráfica foi encerrado.
+
+Prévias copiadas para `~/Imagens/JLinux-browser-header-ec7ef34.png` e `~/Imagens/JLinux-browser-tabs-ec7ef34.png`. Teste unitário de layout também passou com `ASAN_OPTIONS=detect_leaks=1`; teste físico/HiDPI e medição comparativa da busca continuam pendentes.

@@ -295,3 +295,6 @@ Consumo baixíssimo não atingido: ensaio headless GLES2 com conta não vinculad
 Implementadas abas proporcionais com reticências e “+” após a última, hit testing compartilhado, cabeçalho escuro com reflexo de foco e controles vetoriais, I-beam na URL e caret piscante limitado à edição com foco. DNS do Google antecipado uma vez por execução ao focar endereço; nenhum texto de busca é enviado antecipadamente. Cache existente não ampliado; dados de login preservados. Base ed57981/r63 instalada, mantendo WhatsApp.
 
 Evidência local: 13 testes release passaram; 2 direcionados com ASan/UBSan passaram. Layout cobre 1–256 abas e 240–1920 px; Wayland clica na última aba comprimida e preserva conteúdo/histórico. Prévias nativas inspecionadas em docs/design/browser-modern-{header,tabs}.png. Sem medição de ganho de rede ou GPU física. Instalação/commit serão registrados após pacote; PR dependente de feature/whatsapp-app (#69), sem integração autorizada.
+
+
+BROWSER-MODERN-TABS — pacote `0.1.0.r64.gec7ef34-1` instalado; check() 13/13 e integridade pacman confirmados. Fluxo Wayland completo passou com binários instalados em runtime headless. LeakSanitizer do teste de layout passou. Backup/ativação em docs/browser.md; navegador atual preservado, reabrir para ativar. Código e documentação enviados no PR #73, sem merge.
