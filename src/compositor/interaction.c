@@ -275,7 +275,7 @@ static void overview_move(struct interaction *state,int direction){
     schedule_animation(state);
 }
 static void overview_page_step(struct interaction *state,int direction){
-    size_t pages=(state->overview_total+OVERVIEW_PAGE-1)/OVERVIEW_PAGE;if(!pages){return;}
+    size_t pages=(state->overview_total+OVERVIEW_PAGE-1)/OVERVIEW_PAGE;if(pages<2){return;}
     size_t page=(state->overview.page+pages+(direction>0?1:pages-1))%pages;
     overview_page(state,page*OVERVIEW_PAGE);schedule_animation(state);
 }
@@ -980,7 +980,7 @@ static struct view *surface_at(struct interaction *state, struct wlr_surface **s
 static void pointer_moved(struct interaction *state, uint32_t time) {
     if(state->overview.tree){
         int hit=window_overview_hit(&state->overview,state->cursor->x,state->cursor->y);
-        if(hit>=0){state->overview_selected=state->overview.page*OVERVIEW_PAGE+(size_t)hit;window_overview_select(&state->overview,(size_t)hit);}
+        if(hit>=0&&state->overview_selected!=state->overview.page*OVERVIEW_PAGE+(size_t)hit){state->overview_selected=state->overview.page*OVERVIEW_PAGE+(size_t)hit;window_overview_select(&state->overview,(size_t)hit);}
         return;
     }
     if (state->grabbed) {

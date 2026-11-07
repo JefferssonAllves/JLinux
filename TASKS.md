@@ -452,3 +452,5 @@ CONTROL-VOLUME — instalado `0.5.0.r102.gf84be4a-1` via pacman, 23 arquivos sem
 Implementados limite superior do arraste e da elevação visual, prévia de área inteira ao levar o ponteiro à barra e maximização ao soltar, com restauração de tamanho. Reutiliza maximização/área útil existentes; preserva encaixe lateral e fullscreen solicitado pelo aplicativo. Base dependente de feature/control-volume-slider (#78).
 
 30 testes locais release passaram, incluindo encaixe normal, movimento reduzido e fechamento na posição limitada. Pacote/instalação serão registrados na conclusão. Sem substituir sessão, testes de VT ou benchmark físico.
+
+Integração final preserva a instalação 299b482 (restrição de arraste/topo), além de volume contínuo e relógio Glass. 33 testes release e 33 ASan/UBSan passaram nessa base. A roda em página única e hover no item já selecionado não reconstroem cartões. Teste de página única adicionado. Primeiro pacote a9226fb não instalado, para preservar a atualização concorrente do desktop.

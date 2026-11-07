@@ -24,7 +24,7 @@ A bateria local inclui renderer/ownership, teclado, clique, páginas, roda, aus�
 
 Teste adicional em headless/GLES2 no AMD Radeon Graphics (radeonsi, renoir, ACO), Mesa e wlroots 0.20.2 confirmou captura/desfoque e seleção sem trocar VT ou controlar uma saída DRM física. Ambiente: Ryzen 7 5700U, kernel 7.2.14-arch1-1, 1280×720, alimentação externa online; frequência/carga de outros processos não foram controladas.
 
-Observação de preparação (captura/cache + construção da grade), quatro aberturas com dez janelas por perfil, executadas sequencialmente em release:
+Observação de preparação na implementação a9226fb (captura/cache + construção da grade), quatro aberturas com dez janelas por perfil, executadas sequencialmente em release:
 
 | Perfil | Mediana | Mínimo–máximo |
 | --- | --- | --- |

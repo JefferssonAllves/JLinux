@@ -63,6 +63,9 @@ with tempfile.TemporaryDirectory(prefix='jlinux-overview-') as directory:
    closed=log().count('Visão de janelas fechada')
    command('unmap',7);wait(lambda:log().count('Visão de janelas fechada')>closed,processes,'unmap closes overview')
    show()
+   pages_before=log().count('Página de janelas:')
+   subprocess.run([pointer,'--scroll','640','390','15'],env=env,check=True,timeout=4)
+   assert log().count('Página de janelas:')==pages_before,'single page was unnecessarily rebuilt'
    stop(client);processes.remove(client)
    show()  # No windows remains usable and dismissible.
    keys('-k','Escape')
