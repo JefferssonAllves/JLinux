@@ -89,4 +89,4 @@ Interface Futurista nativa, evidências e limites: [docs/futurista.md](docs/futu
 
 ## Visão de janelas
 
-**Super+Tab** abre miniaturas das janelas do espaço atual sobre o desktop desfocado. Clique ou Enter seleciona; Esc cancela. Tab/setas navegam e a roda troca páginas. Veja [controles, recursos e validação](docs/window-overview.md).
+**Dois toques rápidos em Super** abrem miniaturas das janelas do espaço atual sobre o desktop desfocado. Clique ou Enter seleciona; Esc cancela. Tab/setas navegam e a roda troca páginas. Veja [controles, recursos e validação](docs/window-overview.md).

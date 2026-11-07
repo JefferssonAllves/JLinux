@@ -27,7 +27,7 @@ static struct window windows[12];
 static struct wl_seat *seat;
 static struct wl_keyboard *keyboard;
 static void input_map(void *data,struct wl_keyboard *keys,uint32_t format,int fd,uint32_t size){(void)data;(void)keys;(void)format;(void)size;close(fd);}
-static void input_enter(void *data,struct wl_keyboard *keys,uint32_t serial,struct wl_surface *surface,struct wl_array *held){(void)data;(void)keys;(void)serial;(void)surface;(void)held;}
+static void input_enter(void *data,struct wl_keyboard *keys,uint32_t serial,struct wl_surface *surface,struct wl_array *held){(void)data;(void)keys;(void)serial;(void)surface;(void)held;puts("keyboard-focus");fflush(stdout);}
 static void input_leave(void *data,struct wl_keyboard *keys,uint32_t serial,struct wl_surface *surface){(void)data;(void)keys;(void)serial;(void)surface;}
 static void input_key(void *data,struct wl_keyboard *keys,uint32_t serial,uint32_t time,uint32_t key,uint32_t state){(void)data;(void)keys;(void)serial;(void)time;printf("key %u %u\n",key,state);fflush(stdout);}
 static void input_mods(void *data,struct wl_keyboard *keys,uint32_t serial,uint32_t depressed,uint32_t latched,uint32_t locked,uint32_t group){(void)data;(void)keys;(void)serial;(void)depressed;(void)latched;(void)locked;(void)group;}

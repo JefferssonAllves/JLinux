@@ -1,8 +1,8 @@
-# Visão de janelas — Super+Tab
+# Visão de janelas — dois toques em Super
 
-Super+Tab abre uma visão das janelas do espaço de trabalho atual. Ela permanece aberta depois de soltar Super para permitir a seleção por mouse. Clique em uma miniatura ou use Enter para focar a janela escolhida. Esc ou clique no espaço vazio cancela e restaura o foco anterior.
+Dois toques rápidos em Super abrem uma visão das janelas do espaço de trabalho atual. Ela permanece aberta depois de soltar Super para permitir a seleção por mouse. Clique em uma miniatura ou use Enter para focar a janela escolhida. Esc ou clique no espaço vazio cancela e restaura o foco anterior.
 
-- Tab/Super+Tab e Shift+Tab percorrem as janelas; setas navegam na grade.
+- Tab e Shift+Tab percorrem as janelas; setas navegam na grade.
 - Page Up/Page Down ou roda do mouse mudam de página.
 - Até nove miniaturas por página, centralizadas e mantendo proporção. Uma janela isolada tem miniatura limitada a 560×330, em vez de preencher a tela.
 - As miniaturas mostram os buffers existentes no momento em que a página é construída. Não são vídeos atualizados continuamente.
@@ -40,3 +40,11 @@ WLR_RENDERER=gles2 WLR_RENDER_DRM_DEVICE=/dev/dri/renderD128 scripts/smoke-overv
 ```
 
 O caminho do render node depende da máquina. O teste normal usa Pixman; a variante overview-no-blur confirma que nenhuma captura é realizada com o efeito desativado. Instalar o pacote não troca o compositor ativo: a função entra no próximo login.
+
+## Duplo toque e abertura suave
+
+O atalho anterior Super+Tab deixa de abrir a visão. Cada toque em Super deve durar até 250 ms; o segundo deve começar até 350 ms depois de soltar o primeiro. A detecção usa o relógio monotônico do compositor, por teclado, e aceita Super esquerda ou direita. Outra tecla, clique ou rolagem cancela a sequência. Pressões longas não contam como toques e continuam mostrando o dock pelo comportamento anterior. Desconectar o teclado descarta a sequência pendente. Dois toques enquanto a visão está aberta também a fecham.
+
+A entrada faz fade do fundo/cabeçalho/cartões e acomoda as miniaturas em 8 px durante 160 ms/smoothstep. Os buffers e o fundo em cache são reutilizados; não há captura, rasterização de texto ou timer extra por quadro. O renderer recebe apenas o progresso do motor de animação e o hit test acompanha a posição visual. JLINUX_REDUCED_MOTION=1 aplica o estado final imediatamente. A saída continua imediata para selecionar a janela sem atraso.
+
+Testes determinísticos cobrem duplo toque, duração/intervalo inválidos, cancelamento, repetição de keydown e wrap do contador. Headless cobre o atalho antigo desativado, ambas as teclas Super, pressão longa, toques espaçados, cancelar animação com Esc, alternância com o novo gesto, isolamento de entrada/foco e preservação do dock. O estado visual final da prévia permanece igual. Limiares são valores compilados, sem editor de preferências novo.

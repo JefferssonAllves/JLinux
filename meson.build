@@ -17,7 +17,7 @@ cairo = dependency('cairo')
 pango = dependency('pangocairo')
 pixman = dependency('pixman-1')
 fontconfig = dependency('fontconfig')
-compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/window-effects.c', 'src/renderer/overview.c', 'src/renderer/blur.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
+compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/compositor/super-tap.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/window-effects.c', 'src/renderer/overview.c', 'src/renderer/blur.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
   dependencies: [wlroots, wayland, xkb, cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
 frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
   'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
@@ -35,6 +35,8 @@ panel_test = executable('jlinux-test-glass-panel', 'tests/glass-panel.c', 'src/e
 test('glass-panel-fade', panel_test)
 transition_test = executable('jlinux-test-transition', 'tests/transition.c', 'src/animation/transition.c', dependencies: math)
 test('animation-transition', transition_test)
+super_tap_test = executable('jlinux-test-super-tap', 'tests/super-tap.c', 'src/compositor/super-tap.c')
+test('double-super-gesture', super_tap_test)
 battery_test = executable('jlinux-test-battery', 'tests/battery.c', 'src/shell/battery.c')
 test('battery-status', battery_test)
 dock_visual_test = executable('jlinux-test-dock-visual', 'tests/dock-visual.c', 'src/renderer/dock-transform.c', 'src/effects/dock.c', dependencies: [cairo, math])

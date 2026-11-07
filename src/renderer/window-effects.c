@@ -105,8 +105,11 @@ struct window_snapshot *window_snapshot_create(struct wlr_scene_tree *source,str
     wlr_scene_node_for_each_buffer(&source->node,clone_buffer,s);
     if(s->failed||!s->count){window_snapshot_destroy(s);return NULL;}return s;
 }
-void window_snapshot_apply(struct window_snapshot *s,double visible,int offset_y){
+void window_snapshot_opacity(struct window_snapshot *s,double visible){
     struct snapshot_part *p;wl_list_for_each(p,&s->parts,link){wlr_scene_buffer_set_opacity(p->node,p->opacity*visible);}
+}
+void window_snapshot_apply(struct window_snapshot *s,double visible,int offset_y){
+    window_snapshot_opacity(s,visible);
     wlr_scene_node_set_position(&s->tree->node,s->base_x,s->base_y+offset_y);
 }
 void window_snapshot_geometry(struct window_snapshot *s,struct wlr_box from,struct wlr_box to,double progress){

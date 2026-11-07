@@ -21,7 +21,8 @@ with tempfile.TemporaryDirectory(prefix='jlinux-overview-') as directory:
  def keys(*args):subprocess.run([wtype,'-s','100',*args],env=env,check=True,timeout=5)
  def show():
   before=log().count('Visão de janelas aberta:')
-  keys('-M','logo','-k','Tab','-m','logo')
+  super_key='Super_R' if before%2 else 'Super_L'
+  keys('-k',super_key,'-s','80','-k',super_key)
   wait(lambda:log().count('Visão de janelas aberta:')>before,processes,'overview opens')
   if env.get('JLINUX_GLASS_BLUR')!='0':assert re.findall(r'desfoque=([01])',log())[-1]=='1','real blur capture failed'
  def active(index):
@@ -38,14 +39,33 @@ with tempfile.TemporaryDirectory(prefix='jlinux-overview-') as directory:
    for i in range(10):
     command('create',i);wait(lambda i=i:f'Janela mapeada: Layout-{i} ' in log(),processes,'map')
    time.sleep(.25)
+   before=log().count('Visão de janelas aberta:')
+   keys('-M','logo','-k','Tab','-m','logo')
+   assert log().count('Visão de janelas aberta:')==before,'old Super+Tab still opens overview'
+   keys('-k','Super_L','-M','logo','-k','Tab','-m','logo','-s','80','-k','Super_L')
+   assert log().count('Visão de janelas aberta:')==before,'a Super shortcut failed to cancel the primed tap'
+   keys('-k','Super_L','-s','500','-k','Super_L')
+   assert log().count('Visão de janelas aberta:')==before,'slow taps triggered overview'
+   keys('-P','Super_L','-s','300','-p','Super_L','-s','80','-k','Super_L')
+   assert log().count('Visão de janelas aberta:')==before,'holding Super counted as a tap'
    show()
    assert '10 janelas' in log()
+   closed_before=log().count('Visão de janelas fechada')
+   subprocess.run([wtype,'-k','Escape'],env=env,check=True,timeout=4)
+   wait(lambda:log().count('Visão de janelas fechada')>closed_before,processes,'cancel opening fade')
+   show()
+   closed_before=log().count('Visão de janelas fechada')
+   keys('-k','Super_L','-s','80','-k','Super_L')
+   wait(lambda:log().count('Visão de janelas fechada')>closed_before,processes,'double Super toggles overview closed')
+   show()
    captured=log().count('Visão de janelas aberta:')
    readbacks=log().count('Fundo da visão capturado:')
    if env.get('JLINUX_GLASS_BLUR')=='0':assert readbacks==0
    inputs=len(re.findall(r'^key ',client_log.read_text(),re.M))
+   focus_events=client_log.read_text().count('keyboard-focus')
    keys('x')
    assert len(re.findall(r'^key ',client_log.read_text(),re.M))==inputs,'overview keys leaked to the client'
+   assert client_log.read_text().count('keyboard-focus')==focus_events,'new keyboard restored focus behind overview'
    keys('-k','Page_Down');wait(lambda:'Página de janelas: 2' in log(),processes,'page 2')
    subprocess.run([pointer,'--scroll','640','390','-15'],env=env,check=True,timeout=4)
    wait(lambda:log().count('Página de janelas: 1')>=2,processes,'wheel returns to first page')

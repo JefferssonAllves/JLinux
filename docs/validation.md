@@ -273,3 +273,9 @@ Validação e limites em docs/window-overview.md: testes locais release/ASan e G
 Integração final preserva a instalação 299b482 (restrição de arraste/topo), além de volume contínuo e relógio Glass. 33 testes release e 33 ASan/UBSan passaram nessa base. A roda em página única e hover no item já selecionado não reconstroem cartões. Teste de página única adicionado. Primeiro pacote a9226fb não instalado, para preservar a atualização concorrente do desktop.
 
 **WM-OVERVIEW · instalado em 07/11/2026:** pacote `0.5.0.r109.gc4753d0-1`, fonte c4753d0, compilado do GitHub com 33 testes aprovados no makepkg e instalado pelo pacman. 33 testes locais release e ASan/UBSan passaram na base integrada; teste adicional final em headless/GLES2 no Radeon real passou com blur e navegação. Preservados 299b482 e ajustes anteriores. Compositor da sessão atual preservado; Super+Tab entra no próximo login. Sem logout/reinício/VT; apresentação na saída física, energia e multimonitor permanecem não validados. PR #80, base feature/top-bar-window-snap, sem merge; CI pendente no registro.
+
+## Miniaturas por duplo Super — feature/double-super-overview
+
+OVERVIEW-GESTURE implementado: Super+Tab removido como gatilho, substituído por dois toques rápidos em Super (até 250 ms por toque, intervalo release→press até 350 ms). Estado por teclado, relógio monotônico do compositor, descarte em tecla/clique/roda/desconexão. Pressão longa mantém dock; clique no dock não é cancelado pelo reconhecedor. Segundo duplo toque fecha a visão.
+
+Entrada de 160 ms com fade e acomodação de 8 px, usando o motor e agendamento de frames existentes; sem recaptura ou rasterização por frame. Movimento reduzido imediato, hit testing acompanha a posição animada. Conectar teclado durante a visão não restaura foco no aplicativo ao fundo. Testes de gesto/renderer e integração ampliados; resultados finais/instalação na conclusão. Sem teste físico de gesto/fluidez ou benchmark novo.

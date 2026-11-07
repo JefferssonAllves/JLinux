@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "interaction.h"
+#include "super-tap.h"
 #include "../renderer/window-frame.h"
 #include "../renderer/window-effects.h"
 #include "../renderer/overview.h"
@@ -65,6 +66,7 @@ struct keyboard {
     struct wlr_keyboard *device;
     bool intercepted[KEY_CNT];
     bool dock_requested;
+    struct super_tap super_tap;
     struct wl_list link;
     struct wl_listener key, modifiers, destroy;
 };
@@ -89,6 +91,7 @@ struct interaction {
     struct wlr_scene *scene;
     struct wlr_scene_tree *windows, *fullscreens, *overlays;
     struct window_overview overview;
+    struct transition overview_reveal;
     struct view *overview_views[OVERVIEW_PAGE];
     size_t overview_total, overview_selected;
     bool overview_overlays_enabled, overview_button;
@@ -157,7 +160,11 @@ static void apply_visual(struct view *view, double now) {
     }
 }
 bool interaction_animate(struct interaction *state) {
-    if (!state || state->overview.tree) { return false; }
+    if (!state) { return false; }
+    if(state->overview.tree){
+        double now=animation_time();window_overview_apply(&state->overview,transition_value(&state->overview_reveal,now));
+        return transition_active(&state->overview_reveal,now);
+    }
     double now = animation_time(); bool active = false;
     struct view *view;
     wl_list_for_each(view, &state->views, link) {
@@ -300,6 +307,8 @@ static void overview_open(struct interaction *state){
         wlr_scene_node_set_enabled(&state->overlays->node,state->overview_overlays_enabled);return;
     }
     if(!overview_page(state,0)){return;}
+    state->overview_reveal=(struct transition){0};animate(state,&state->overview_reveal,1,.16);
+    window_overview_apply(&state->overview,transition_value(&state->overview_reveal,animation_time()));
     wlr_seat_keyboard_clear_focus(state->seat);wlr_seat_pointer_clear_focus(state->seat);
     schedule_animation(state);
     wlr_log(WLR_INFO,"Visão de janelas aberta: %zu janelas, desfoque=%d, preparação=%.3f ms",state->overview_total,state->overview.blurred,(animation_time()-started)*1000);
@@ -806,7 +815,6 @@ static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t mo
         else if(symbol==XKB_KEY_Page_Up){overview_page_step(state,-1);}
         return true;
     }
-    if((modifiers&WLR_MODIFIER_LOGO)&&symbol==XKB_KEY_Tab){overview_open(state);return true;}
     if ((modifiers & WLR_MODIFIER_LOGO) && symbol >= XKB_KEY_1 && symbol <= XKB_KEY_9) {
         change_workspace(state, symbol - XKB_KEY_1, modifiers & WLR_MODIFIER_SHIFT); return true;
     }
@@ -843,7 +851,7 @@ static void update_dock(struct interaction *state) {
 static void cancel_super(struct interaction *state) {
     struct keyboard *keys;
     bool was_visible=false;
-    wl_list_for_each(keys, &state->keyboards, link) { was_visible|=keys->dock_requested;keys->dock_requested = false; }
+    wl_list_for_each(keys, &state->keyboards, link) { was_visible|=keys->dock_requested;keys->dock_requested = false;super_tap_cancel(&keys->super_tap); }
     if(was_visible){update_dock(state);}
 }
 
@@ -857,15 +865,22 @@ static void key_event(struct wl_listener *listener, void *data) {
     for (int i = 0; i < count; i++) {
         super |= symbols[i] == XKB_KEY_Super_L || symbols[i] == XKB_KEY_Super_R;
     }
+    uint32_t tap_time=super?(uint32_t)(uint64_t)(animation_time()*1000):0;
     if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         if (super) {
             uint32_t mods = wlr_keyboard_get_modifiers(keyboard->device);
-            keyboard->dock_requested = !keyboard->owner->overview.tree && !(mods & (WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_SHIFT));
+            bool plain=!(mods&(WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT|WLR_MODIFIER_SHIFT));
+            if(plain){super_tap_press(&keyboard->super_tap,tap_time);}else{super_tap_cancel(&keyboard->super_tap);}
+            keyboard->dock_requested = !keyboard->owner->overview.tree && plain;
             update_dock(keyboard->owner);
         } else { cancel_super(keyboard->owner); }
     } else if (super) {
         keyboard->dock_requested = false;
         update_dock(keyboard->owner);
+        if(super_tap_release(&keyboard->super_tap,tap_time)){
+            if(keyboard->owner->overview.tree){overview_close(keyboard->owner,false);}else{overview_open(keyboard->owner);}
+            handled=true;
+        }
     }
     if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         for (int index = 0; index < count; index++) {
@@ -878,7 +893,7 @@ static void key_event(struct wl_listener *listener, void *data) {
         }
         if (event->keycode < KEY_CNT) { keyboard->intercepted[event->keycode] = handled; }
     } else if (event->keycode < KEY_CNT) {
-        handled = keyboard->intercepted[event->keycode];
+        handled |= keyboard->intercepted[event->keycode];
         keyboard->intercepted[event->keycode] = false;
     }
     if (!handled) {
@@ -928,7 +943,7 @@ static void add_keyboard(struct interaction *state, struct wlr_keyboard *device,
     wl_list_insert(state->keyboards.prev, &keyboard->link);
     wlr_seat_set_keyboard(state->seat, device);
     update_capabilities(state);
-    if (state->focused) { focus(state, state->focused); }
+    if (state->focused && !state->overview.tree) { focus(state, state->focused); }
     wlr_log(WLR_INFO, "Teclado conectado: %s", device->base.name);
 }
 static void pointer_removed(struct wl_listener *listener, void *data) {
@@ -1033,6 +1048,7 @@ static void absolute_event(struct wl_listener *listener, void *data) {
 static void button_event(struct wl_listener *listener, void *data) {
     struct interaction *state = wl_container_of(listener, state, button);
     struct wlr_pointer_button_event *event = data;
+    if(event->state==WL_POINTER_BUTTON_STATE_PRESSED){struct keyboard *keys;wl_list_for_each(keys,&state->keyboards,link){super_tap_cancel(&keys->super_tap);}}
     if(state->overview.tree||state->overview_button){
         if(event->button==BTN_LEFT){
             if(event->state==WL_POINTER_BUTTON_STATE_PRESSED){state->overview_button=true;}

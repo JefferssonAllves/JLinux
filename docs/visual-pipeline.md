@@ -89,3 +89,7 @@ O controlador fornece progresso smoothstep de 220 ms pelo motor existente. rende
 ### Visão de janelas
 
 renderer/overview.c realiza captura reduzida/desfoque em cache e cartões usando helpers existentes; interaction.c possui o modo modal, referências às views e seleção. Cada página possui no máximo nove snapshots e o fundo é capturado somente ao abrir. A composição para captura usa renderer/allocator da saída e sincronização implícita já adotada pelo compositor. Captura, texturas temporárias e estado de output são liberados antes de retornar; buffers dos cartões seguem referências wlroots. Não há caminho de pixels pelo shell ou serviço externo. Blur desativado não captura nem mantém cache exclusivo. A visão não adiciona relógio ou loop de animação.
+
+### Entrada da visão por duplo Super
+
+Gestos ficam em compositor/super-tap.c, com estado por teclado e tempo fornecido pelo compositor. A abertura usa transition.c por 160 ms. renderer/overview.c aplica progresso a posições/opacidades de nós existentes; o fundo não é recapturado. window_snapshot_opacity reutiliza opacidades originais sem alterar a geometria das miniaturas. Movimento reduzido não remove os materiais; nenhuma animação adiciona seu próprio loop.

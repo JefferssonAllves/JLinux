@@ -55,7 +55,7 @@ static void clear_cards(struct window_overview *view){
     if(view->header){wlr_scene_node_destroy(&view->header->node);view->header=NULL;}
 }
 bool window_overview_create(struct window_overview *view,struct wlr_scene *scene,struct wlr_output *output,struct wlr_box bounds,struct jlinux_glass glass){
-    *view=(struct window_overview){.bounds=bounds,.glass=glass};
+    *view=(struct window_overview){.bounds=bounds,.glass=glass,.progress=1};
     if(bounds.width<320||bounds.height<360||bounds.width>8192||bounds.height>8192){return false;}
     cairo_surface_t *image=glass.blur?capture(scene,output,bounds.width,bounds.height):NULL;view->blurred=image!=NULL;
     if(!image){image=cairo_image_surface_create(CAIRO_FORMAT_ARGB32,1,1);}
@@ -66,6 +66,7 @@ bool window_overview_create(struct window_overview *view,struct wlr_scene *scene
     wlr_scene_node_set_position(&view->tree->node,bounds.x,bounds.y);
     struct wlr_scene_buffer *background=window_image_create(view->tree,image);cairo_surface_destroy(image);
     if(!background){window_overview_finish(view);return false;}
+    view->background=background;
     wlr_scene_buffer_set_dest_size(background,bounds.width,bounds.height);
     if(glass.blur){pixman_region32_t opaque;pixman_region32_init_rect(&opaque,0,0,bounds.width,bounds.height);wlr_scene_buffer_set_opaque_region(background,&opaque);pixman_region32_fini(&opaque);}
     return true;
@@ -116,12 +117,23 @@ bool window_overview_add(struct window_overview *view,size_t index,const char *t
     }
     return true;
 }
+void window_overview_apply(struct window_overview *view,double progress){
+    if(progress<0){progress=0;}if(progress>1){progress=1;}view->progress=progress;
+    if(view->background){wlr_scene_buffer_set_opacity(view->background,progress);}
+    if(view->header){wlr_scene_buffer_set_opacity(view->header,progress);}
+    for(size_t i=0;i<view->count;i++){
+        struct overview_card *card=&view->cards[i];
+        if(card->frame){wlr_scene_buffer_set_opacity(card->frame,(i==view->selected?1:.48)*progress);}
+        if(card->tree){wlr_scene_node_set_position(&card->tree->node,card->box.x,card->box.y+(int)lround((1-progress)*8));}
+        if(card->snapshot){window_snapshot_opacity(card->snapshot,progress);}
+    }
+}
 void window_overview_select(struct window_overview *view,size_t index){
-    for(size_t i=0;i<view->count;i++){if(view->cards[i].frame){wlr_scene_buffer_set_opacity(view->cards[i].frame,i==index?1:.48);}}
+    view->selected=index;window_overview_apply(view,view->progress);
 }
 int window_overview_hit(struct window_overview *view,double x,double y){
     x-=view->bounds.x;y-=view->bounds.y;
-    for(size_t i=0;i<view->count;i++){if(wlr_box_contains_point(&view->cards[i].box,x,y)){return (int)i;}}return -1;
+    for(size_t i=0;i<view->count;i++){struct wlr_box box=view->cards[i].box;if(view->cards[i].tree){box.x=view->cards[i].tree->node.x;box.y=view->cards[i].tree->node.y;}if(wlr_box_contains_point(&box,x,y)){return (int)i;}}return -1;
 }
 void window_overview_finish(struct window_overview *view){
     clear_cards(view);if(view->tree){wlr_scene_node_destroy(&view->tree->node);}*view=(struct window_overview){0};
