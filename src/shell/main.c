@@ -400,7 +400,7 @@ static void reset_child_signals(gpointer data) {
 }
 static void launch_item(struct app *app, int index) {
     static const char *commands[] = {"firefox", "foot",         "code",         "spotify", "jlinux-files",
-                                     NULL,      "jlinux-files", "jlinux-files", "foot",    "steam"};
+                                     NULL,      "jlinux-files", "jlinux-files", "foot",    "jlinux-whatsapp"};
     if (index < 0 || index >= 10) {
         return;
     }

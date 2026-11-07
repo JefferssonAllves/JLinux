@@ -391,3 +391,7 @@ DOCK-CENTER remove entrada vertical e aplica expansão 18%→100% com fade, anco
 PANEL-COMPACT implementado: barra 36 px de largura total e cantos retos; logo/texto JLinux e ícone/hit area de volume removidos. Relógio/bateria/ajustes redimensionados. Raio de carregamento depende do status Charging da fonte que forneceu capacity; percentuais inválidos resultam em bateria desconhecida. Volume permanece no centro de controle. Sem novo timer; política de uma bateria preservada.
 
 25 testes locais release passaram; ASan/UBSan e instalação registrados na conclusão. Novo teste usa sysfs fictício para estados de carga/descarga/cheia/ausente e capacidade inválida. Regressões de área útil, snap e clique no espaço do volume antigo atualizadas. Prévia inspecionada com Charging/75% ilustrativos; sysfs real informava Charging na inspeção, sem confundir com prévia. Sem reinício da sessão, benchmark ou teste físico visual. Próximo login ativa a barra compilada.
+
+## WhatsApp no lugar do Steam — feature/whatsapp-dock
+
+Décimo item do dock circular troca nome/ícone/ação de Steam para WhatsApp. Ícone vetorial nativo verde com balão e telefone; inicia jlinux-whatsapp já instalado. Layout, animações, seleção angular e demais aplicativos preservados. Teste headless clica no setor com comando WhatsApp simulado, sem iniciar sessão/mensagens reais. Base feature/dock-center-reveal; validação/instalação registradas após conclusão.
