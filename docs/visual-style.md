@@ -109,3 +109,10 @@ Por pedido do usuário, a tela de Downloads “Central de Controle JLinux Futuri
 ## Barra superior compacta atual
 
 O pedido atual prevalece sobre o formato arredondado da referência Futurista: 36 px, largura total, cantos retos, sem marca JLinux e sem ícone de volume. Hora centralizada, bateria com porcentagem e raio de carregamento condicionado ao estado real; ajustes mantidos. Dock radial e animação de expansão central preservados.
+
+
+### Movimento e profundidade das janelas
+
+Entrada/saída curtas com fade e deslocamento vertical; arraste com elevação discreta e halo azul-violeta externo. Sombra difusa escura separa janelas sobrepostas, sem alterar o conteúdo dos aplicativos. Nas bordas laterais, contorno violeta com preenchimento translúcido indica a metade disponível abaixo da barra antes de soltar. Movimento reduzido mantém os estados finais e materiais estáticos. Tempos e controles independentes em [visual-pipeline.md](visual-pipeline.md).
+
+[Prévia dos componentes nativos](design/window-transitions.png), 1280×720: renderização das mesmas tiras de moldura/halo/prévia, com conteúdo de janela ilustrativo. Não é captura da sessão física nem comprova fluidez em GPU; não altera as referências principais do usuário.

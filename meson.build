@@ -16,12 +16,16 @@ math = meson.get_compiler('c').find_library('m')
 cairo = dependency('cairo')
 pango = dependency('pangocairo')
 fontconfig = dependency('fontconfig')
-compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
+compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/window-effects.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
   dependencies: [wlroots, wayland, xkb, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
 frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
   'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
   dependencies: [wlroots, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
 test('window-frame-lifecycle', frame_test)
+window_effects_test = executable('jlinux-test-window-effects', 'tests/window-effects.c',
+  'src/renderer/window-effects.c', 'src/effects/window.c', 'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
+  dependencies: [wlroots, wayland, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
+test('window-effects-lifecycle', window_effects_test)
 panel_test = executable('jlinux-test-glass-panel', 'tests/glass-panel.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
   dependencies: [cairo, pango, fontconfig, math])
 test('glass-panel-fade', panel_test)
@@ -106,6 +110,8 @@ if foot.found() and wtype.found()
   if get_option('shell')
     layout_client = executable('jlinux-test-layout-client', 'tests/layout-client.c', client_xdg_header, client_xdg_code,
       dependencies: client_dep)
+    test('window-transitions', find_program('scripts/smoke-window-transitions.py'), args: [compositor, layout_client], timeout: 20)
+    test('window-reduced-motion', find_program('scripts/smoke-window-transitions.py'), args: [compositor, layout_client], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 20)
     test('window-layout-constraints', find_program('scripts/smoke-layout-constraints.py'), args: [compositor, layout_client, wtype, pointer_test], timeout: 25)
   endif
   test('window-side-snap', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], timeout: 40)

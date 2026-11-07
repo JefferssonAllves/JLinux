@@ -49,7 +49,7 @@ Um efeito que amostra o fundo pode exigir composição e impedir direct scanout 
 
 Nesta entrega, renderer.c passou a possuir a criação/limpeza do renderizador e alocador wlroots e a apresentação/frame-done, extraídas de compositor/main.c. O comportamento gráfico existente foi preservado.
 
-animation/ implementa a primeira transição escalar smoothstep, reversível, usada na abertura/fechamento e destaque do dock; o chamador fornece tempo monotônico e o shell agenda frames Wayland somente durante a transição. Isso não implementa animações de janelas ou adaptação de efeitos. effects/glass.c agora compõe o primeiro material do painel/dock em Cairo: amostragem do wallpaper, tonalização e reflexos estáticos de borda. renderer/blur.c executa um box blur separável em imagem ARGB32 reduzida a 1/4 por dimensão. O shell mantém esse fundo em cache até a resolução mudar; hover e relógio não recalculam o blur.
+animation/ implementa a primeira transição escalar smoothstep, reversível, usada na abertura/fechamento e destaque do dock; o chamador fornece tempo monotônico e o shell agenda frames Wayland somente durante a transição. O compositor também usa essa transição nas janelas; adaptação automática de efeitos permanece pendente. effects/glass.c agora compõe o primeiro material do painel/dock em Cairo: amostragem do wallpaper, tonalização e reflexos estáticos de borda. renderer/blur.c executa um box blur separável em imagem ARGB32 reduzida a 1/4 por dimensão. O shell mantém esse fundo em cache até a resolução mudar; hover e relógio não recalculam o blur.
 
 Limite explícito: o fundo amostrado é apenas o wallpaper procedural do shell, não janelas de outros clientes. Não há refração, sombra difusa, shaders Glass ou adaptação automática. A rasterização permanece em CPU; este caminho inicial não substitui o futuro pipeline GPU do compositor. As referências do usuário continuam sendo a meta, sem fidelidade completa.
 
@@ -72,3 +72,12 @@ O pedido de borda neon discreta substitui os quatro pontos de brilho da moldura:
 ## Integração do material pendente
 
 `jlinux_glass_panel_paint` aplica a máscara de 16 px ao material compartilhado, com grupo Cairo restrito ao painel; a reserva superior fica em 52 px e somente os 36 px de controles recebem entrada. `jlinux_glass_window_tint` substitui o preenchimento genérico do cabeçalho quando TINT está ativo, preservando transparência e os quatro buffers estreitos da moldura. REFLECTION controla separadamente o contorno mais nítido e seu toque rosado. São os helpers já validados nas branches visuais, agora combinados com a base instalada sem dock; não há novo loop ou blur de janelas.
+
+
+### Transições de janelas
+
+`interaction.c` amostra `animation/transition.c` pelo relógio monotônico nos frames das saídas. Entrada: fade e deslocamento de 12 px em 180 ms. Durante arraste: elevação de 3 px e halo em 120 ms, retorno em 150 ms; a posição lógica acompanha o cursor diretamente. Saída: cópia de nós de cena mantendo referências aos buffers, fade/deslocamento de 8 px em 160 ms. Captura antes do listener de unmap da cena; os recursos temporários pertencem ao compositor, sem ponteiros ao cliente, e são liberados ao terminar, trocar workspace ou destruir o estado. `wlr_buffer_finish` encerra buffers próprios antes de liberar Cairo.
+
+O encaixe compartilha um único cálculo de área entre prévia e posicionamento, respeitando reserva da barra e limites do cliente. A prévia cresce 12 px por borda e aparece em 160 ms; saída em 120 ms. Somente soltar altera o tamanho da janela. Prévia e ghosts não recebem entrada. Não há timer/polling de animação: um novo frame é solicitado enquanto há transições ativas. `JLINUX_REDUCED_MOTION=1` aplica os estados finais sem deslocamentos nem ghost, mantendo as escolhas estáticas de efeitos.
+
+`effects/window.c` pinta sombra suave e halo azul-violeta. `renderer/window-effects.c` mantém oito tiras externas estreitas em cache por tamanho/opções, sem imagem transparente do tamanho inteiro da janela. Sombra segue `JLINUX_GLASS_SHADOW`; halo segue `JLINUX_GLASS_REFLECTION`; cor segue `JLINUX_GLASS_TINT`. Fullscreen não recebe esses ornamentos. Isso não implementa blur/refração ao vivo. Os snapshots usam sincronização implícita, conforme os protocolos atualmente publicados; suporte a fences deverá preceder a publicação de explicit-sync.

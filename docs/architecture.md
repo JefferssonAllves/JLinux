@@ -99,3 +99,6 @@ Metas iniciais: estabelecer PSS da sessão, CPU ociosa em 5 minutos, energia sob
 O pacote pacman instala os binários e uma entrada Wayland. Ativação do greetd é separada, com backup e TTY2. Contratos, recuperação e limites em docs/arch-installation.md. Inicialização completa/PAM físico devem ser relatados separadamente dos testes simulados.
 
 O dock lateral e sua lista/configuração de aplicativos foram removidos por pedido do usuário. O shell não enumera entradas .desktop nem depende de GIO; GLib permanece para o controle de áudio. A região útil ocupa toda a largura, respeitando apenas a reserva superior.
+
+
+As transições de janelas são orquestradas pelo compositor em frames de saída, reutilizando `animation/transition.c`. `renderer/window-effects.c` possui buffers de sombra/halo, prévia não interativa de encaixe e snapshots de saída com referências próprias; `effects/window.c` contém somente pintura do material. A posição lógica e a subárvore visual são separadas para não atrasar o cursor. Ver [visual-pipeline.md](visual-pipeline.md) para ownership, movimento reduzido e limites de sincronização.

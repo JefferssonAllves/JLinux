@@ -99,6 +99,16 @@ int main(void) {
                 if (parent >= 0) { assert(parent < 8 && windows[parent].top); xdg_toplevel_set_parent(window->top, windows[parent].top); }
             }
             assert(window->top);
+            if (!strcmp(command, "unmap")) {
+                wl_surface_attach(window->surface, NULL, 0, 0);
+                wl_surface_commit(window->surface); continue;
+            }
+            if (!strcmp(command, "remap")) {
+                char title[32]; snprintf(title, sizeof(title), "Layout-%d", id);
+                xdg_toplevel_set_title(window->top, title);
+            }
+            if (!strcmp(command, "fullscreen")) { xdg_toplevel_set_fullscreen(window->top, NULL); }
+            if (!strcmp(command, "restore")) { xdg_toplevel_unset_fullscreen(window->top); }
             xdg_toplevel_set_min_size(window->top, minw, minh);
             xdg_toplevel_set_max_size(window->top, maxw, maxh);
             wl_surface_commit(window->surface);

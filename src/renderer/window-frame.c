@@ -8,6 +8,7 @@ struct frame_buffer {
 };
 static void destroy(struct wlr_buffer *base) {
     struct frame_buffer *buffer = wl_container_of(base, buffer, base);
+    wlr_buffer_finish(base);
     cairo_surface_destroy(buffer->image); free(buffer);
 }
 static bool access_pixels(struct wlr_buffer *base, uint32_t flags, void **data,

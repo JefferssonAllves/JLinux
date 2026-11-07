@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 spec = importlib.util.spec_from_file_location('helpers', Path(__file__).with_name('smoke-terminal.py'))
 h = importlib.util.module_from_spec(spec)
@@ -53,8 +54,19 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             h.stop(two)
             processes.remove(two)
             assert size() == original, 'closing another window resized the first'
-            mouse(x + 160, y - 18, 0, 240)
+            # Hold at the edge: the preview must precede the configure/drop.
+            drag = subprocess.Popen([pointer, str(x+160), str(y-18), '0', '240', '--hold'],
+                                    env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+            processes.append(drag)
+            assert drag.stdout.readline().strip() == 'drag held'
+            h.wait_for(lambda: 'Prévia de encaixe: 640x684 em 0,36' in log(), processes, 'snap preview before drop')
+            time.sleep(.22)
+            assert 'Janela encaixada:' not in log(), 'preview changed geometry before release'
+            drag.communicate('\n', timeout=4)
+            assert drag.returncode == 0
+            processes.remove(drag)
             h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x645 em 3,72)' in log(), processes, 'left half respecting panel without lateral reserve')
+
             half = size()
             assert half[1] < original[1]
             mouse(220, 54, 1279, 240)
@@ -69,6 +81,11 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             assert log().count('Janela encaixada:') == before, 'top edge snapped a window'
             h.stop(one)
             processes.remove(one)
+            if env.get('JLINUX_REDUCED_MOTION') != '1':
+                counts = list(map(int, re.findall(r'Fechamento animado: (\d+) buffers', log())))
+                assert counts and max(counts) >= 13, 'closing snapshot lost client buffers'
+            else:
+                assert 'Fechamento animado:' not in log()
             h.stop(panel)
             processes.remove(panel)
             h.stop(server)

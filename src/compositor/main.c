@@ -161,10 +161,12 @@ static void add_shell_surface(struct wl_listener *listener, void *data) {
 static void render_frame(struct wl_listener *listener, void *data) {
     (void)data;
     struct monitor *monitor = wl_container_of(listener, monitor, frame);
+    bool animating = interaction_animate(monitor->desktop->interaction);
     if (!jlinux_renderer_present(monitor->scene_output)) {
         wlr_log(WLR_ERROR, "Falha ao apresentar quadro em %s", monitor->output->name);
         return;
     }
+    if (animating) { wlr_output_schedule_frame(monitor->output); }
 }
 
 static void resize_output(struct wl_listener *listener, void *data) {

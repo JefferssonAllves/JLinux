@@ -1,5 +1,6 @@
 #ifndef JLINUX_INTERACTION_H
 #define JLINUX_INTERACTION_H
+#include <stdbool.h>
 struct wl_display;
 struct wlr_backend;
 struct wlr_session;
@@ -12,5 +13,6 @@ struct interaction *interaction_create(struct wl_display *display,
     struct wlr_backend *backend, struct wlr_output_layout *layout,
     struct wlr_scene *scene, struct wlr_scene_tree *windows, struct wlr_scene_tree *fullscreens, struct wlr_session *session);
 void interaction_set_workarea(struct interaction *interaction, const struct wlr_box *area);
+bool interaction_animate(struct interaction *interaction);
 void interaction_destroy(struct interaction *interaction);
 #endif
