@@ -5,6 +5,11 @@
 #define CHECK(t) do {if(!(t)){fprintf(stderr,"Falha: %s\n",#t);return 1;}}while(0)
 int main(int argc,char **argv){
     struct browser_chrome chrome={.tabs=g_ptr_array_new(),.glass={.reflection=true,.tint=true}};
+    chrome.editing = TRUE;
+    browser_chrome_set_fullscreen(&chrome, TRUE);
+    CHECK(chrome.fullscreen && !chrome.editing && !chrome.caret_timer && !chrome.idle);
+    browser_chrome_set_fullscreen(&chrome, FALSE);
+    CHECK(!chrome.fullscreen);
     const int widths[]={240,400,800,1000,1920};
     for(guint w=0;w<G_N_ELEMENTS(widths);w++){
         double previous=180;

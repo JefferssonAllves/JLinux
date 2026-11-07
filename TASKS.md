@@ -306,3 +306,9 @@ Corrigida saída de tamanho obrigatória da API de leitura do clipboard, antes n
 
 
 BROWSER-DIRECT-URL — instalado `0.1.0.r66.g38b9ed1-1`; check() 13/13 e integridade pacman confirmados. Colagem/navegação passou com navegador e compositor corrigidos instalados em runtime isolado. Perfil e processo existente preservados; reabrir para ativar. Backup/source em docs/browser.md. PR #77 enviado, sem merge.
+
+## BROWSER-FULLSCREEN — fix/browser-fullscreen
+
+Implementado fullscreen sem reserva de 100 px e sem abas/endereço; cabeçalho desmontado enquanto oculto, cursor de edição suspenso, restauração ao sair, F11 e Escape. Base dependente de fix/browser-direct-url (#77), sem mudança de compositor.
+
+Falha reproduzida como viewport 1280×620; teste integrado com desktop instalado passou em 1280×720, incluindo cliques sobre a antiga barra superior, saída DOM/Escape e restauração da navegação. 13/13 testes locais release passaram. Teste integrado separado do Meson por depender do compositor nativo recente; comando em docs/browser.md. Pacote/instalação registrados na conclusão. Sem benchmark, site externo ou teste físico DRM/VT.

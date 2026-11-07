@@ -31,13 +31,14 @@ struct browser_chrome {
     gboolean caret_visible, cursor_text;
     uint32_t pointer_serial;
     int in_flight;
-    gboolean editing, dirty, selected, error;
+    gboolean editing, dirty, selected, error, fullscreen;
     gboolean adblock_available, adblock_enabled;
     char address[BROWSER_ADDRESS_LIMIT + 1];
     char message[256];
     char download_status[40];
 };
 gboolean browser_chrome_init(struct browser_chrome *chrome, WPEView *view);
+void browser_chrome_set_fullscreen(struct browser_chrome *chrome, gboolean fullscreen);
 void browser_chrome_update(struct browser_chrome *chrome);
 void browser_chrome_finish(struct browser_chrome *chrome);
 void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width);

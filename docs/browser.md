@@ -168,3 +168,17 @@ Regressão Wayland copia uma URL real de textarea da página, com newline final,
 Correção instalada em 07/11/2026: `jlinux-browser-git 0.1.0.r66.g38b9ed1-1`, commit **38b9ed1**, branch `fix/browser-direct-url`, PR #77. Check() do pacote 13/13; proprietários/permissões conferidos; `pacman -Qkk`: 17 arquivos e zero alterações. Regressão Wayland com colagem de URL também passou com os binários instalados, inclusive em conjunto com o compositor corrigido r99/161ba52, em runtime headless isolado.
 
 Backup da instalação r64/ec7ef34 e banco local em `/var/backups/jlinux-browser-before-url-fix-38b9ed1/`; pacote novo em `/var/cache/pacman/pkg/jlinux-browser-git-0.1.0.r66.g38b9ed1-1-x86_64.pkg.tar.zst`. Perfil/cookies não foram alterados por scripts de instalação. O navegador existente (PID 759 neste boot) preservou seu inode; ativação ao fechar e reabrir. Não foi encerrado nenhum app ou sessão. O defeito de colagem foi reproduzido com URL controlada; a URL específica do relato continua sem informação para verificar compatibilidade particular do site.
+
+## Tela cheia da página e F11
+
+O navegador acompanha `WPEView::toplevel-state-changed`. Ao entrar em fullscreen, desmonta o buffer da sub-superfície de abas/endereço, interrompe o cursor de edição e deixa de reservar os 100 px do cabeçalho. Ao sair, volta a desenhar a barra e restaura a reserva. F11 alterna o estado da janela e Escape sai; pedidos HTML de fullscreen continuam tratados pelo WPE WebKit. A maximização permanece distinta: ela mantém os cabeçalhos e respeita a barra do sistema. Não há alteração no compositor nesta entrega: o desktop nativo instalado já coloca fullscreen acima da camada superior e remove sua moldura.
+
+Regressão reproduzida antes da correção: HTML fullscreen recebia 1280×620 em saída 1280×720. Após a correção, o teste integrado confirmou 1280×720, cliques da página em (10,10) e (1270,710), saída por Escape e pela API DOM, F11/Escape e navegação pelo endereço restaurado. Runtime temporário, conteúdo HTTP local e perfil descartável, sem usar contas/cookies pessoais. Os 13 testes release do navegador também passaram.
+
+O teste integrado depende do compositor/shell nativos recentes, diferentes da base antiga ainda usada para compilar o navegador. Executar explicitamente (não integra os 13 testes Meson desta branch):
+
+```sh
+scripts/smoke-web-fullscreen.py /usr/bin/jlinux-compositor /usr/bin/jlinux-shell build-native/jlinux-browser /usr/bin/wtype build-native/jlinux-test-pointer
+```
+
+Instalar não recarrega o navegador aberto: fechar e abrir o aplicativo ativa o novo código. Sem teste físico DRM/GPU ou validação de fullscreen em sites externos nesta entrega.

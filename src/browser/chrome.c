@@ -124,7 +124,7 @@ static void released(void *data, struct wl_buffer *wl) {
 static const struct wl_buffer_listener buffer_listener = {.release = released};
 static gboolean draw(gpointer data) {
     struct browser_chrome *chrome = data; chrome->idle = 0;
-    if (!chrome->surface) { return G_SOURCE_REMOVE; }
+    if (!chrome->surface || chrome->fullscreen) { return G_SOURCE_REMOVE; }
     if (chrome->in_flight >= 2) { return G_SOURCE_REMOVE; }
     int width = wpe_view_get_width(chrome->view);
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
@@ -163,12 +163,22 @@ static gboolean blink_caret(gpointer data) {
     chrome->caret_visible=!chrome->caret_visible;
     browser_chrome_update(chrome);return G_SOURCE_CONTINUE;
 }
+void browser_chrome_set_fullscreen(struct browser_chrome *chrome, gboolean fullscreen) {
+    if (chrome->fullscreen == fullscreen) { return; }
+    chrome->fullscreen = fullscreen;
+    chrome->editing = FALSE; chrome->pointer_inside = FALSE;
+    if (fullscreen && chrome->surface) {
+        wl_surface_attach(chrome->surface, NULL, 0, 0);
+        wl_surface_commit(chrome->surface);
+    }
+    browser_chrome_update(chrome);
+}
 void browser_chrome_update(struct browser_chrome *chrome) {
-    gboolean blink=chrome->editing && chrome->view && chrome->surface && wpe_view_get_has_focus(chrome->view);
+    gboolean blink=!chrome->fullscreen && chrome->editing && chrome->view && chrome->surface && wpe_view_get_has_focus(chrome->view);
     if(blink && !chrome->caret_timer){chrome->caret_visible=TRUE;chrome->caret_timer=g_timeout_add(530,blink_caret,chrome);}
     else if(!blink && chrome->caret_timer){g_source_remove(chrome->caret_timer);chrome->caret_timer=0;chrome->caret_visible=FALSE;}
     chrome->dirty = TRUE;
-    if (chrome->surface && !chrome->idle) { chrome->idle = g_idle_add(draw, chrome); }
+    if (!chrome->fullscreen && chrome->surface && !chrome->idle) { chrome->idle = g_idle_add(draw, chrome); }
 }
 static void update_cursor(struct browser_chrome *chrome, struct wl_pointer *pointer) {
     if(!chrome->pointer_inside || !chrome->cursor_theme){return;}

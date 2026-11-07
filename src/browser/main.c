@@ -104,6 +104,13 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         WPEModifiers modifiers = wpe_event_get_modifiers(event);
         gboolean ctrl = modifiers & WPE_MODIFIER_KEYBOARD_CONTROL;
         gboolean alt = modifiers & WPE_MODIFIER_KEYBOARD_ALT;
+        if (key == XKB_KEY_F11 || (key == XKB_KEY_Escape && chrome->fullscreen)) {
+            WPEToplevel *toplevel = wpe_view_get_toplevel(view);
+            if (wpe_toplevel_get_state(toplevel) & WPE_TOPLEVEL_STATE_FULLSCREEN) { wpe_toplevel_unfullscreen(toplevel); }
+            else { wpe_toplevel_fullscreen(toplevel); }
+            if (code < G_N_ELEMENTS(app->consumed)) { app->consumed[code] = TRUE; }
+            return TRUE;
+        }
         if (app->whatsapp) {
             if (ctrl && (key == XKB_KEY_q || key == XKB_KEY_w)) { quit(app); }
             else if (key == XKB_KEY_F5 || (ctrl && key == XKB_KEY_r)) { webkit_web_view_reload(app->web); }
@@ -125,7 +132,7 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         else if (key == XKB_KEY_F5 || (ctrl && (key == XKB_KEY_r || key == XKB_KEY_R))) { webkit_web_view_reload(app->web); }
         else if (alt && key == XKB_KEY_Left) { webkit_web_view_go_back(app->web); }
         else if (alt && key == XKB_KEY_Right) { webkit_web_view_go_forward(app->web); }
-        else if (!chrome->editing) { return FALSE; }
+        else if (chrome->fullscreen || !chrome->editing) { return FALSE; }
         else if (key == XKB_KEY_Escape) { focus_page(app); }
         else if (key == XKB_KEY_Return || key == XKB_KEY_KP_Enter) { navigate(app); }
         else if (ctrl && (key == XKB_KEY_a || key == XKB_KEY_A)) { chrome->selected = TRUE; browser_chrome_update(chrome); }
@@ -385,12 +392,19 @@ static void view_size_changed(WPEView *view, GParamSpec *spec, gpointer data) {
     WPEToplevel *toplevel = wpe_view_get_toplevel(view);
     if (!toplevel) { return; }
     int width, height; wpe_toplevel_get_size(toplevel, &width, &height);
-    height = MAX(1, height - (app->whatsapp ? 0 : BROWSER_CHROME_HEIGHT));
+    height = MAX(1, height - (app->whatsapp || (wpe_toplevel_get_state(toplevel) & WPE_TOPLEVEL_STATE_FULLSCREEN) ? 0 : BROWSER_CHROME_HEIGHT));
     if (width > 0 && (wpe_view_get_width(view) != width || wpe_view_get_height(view) != height)) {
         wpe_view_resized(view, width, height);
         return;
     }
     if (view == app->chrome.view) { browser_chrome_update(&app->chrome); }
+}
+static void toplevel_state_changed(WPEView *view, WPEToplevelState previous, gpointer data) {
+    (void)previous; struct app *app = data;
+    if (view == app->chrome.view) {
+        browser_chrome_set_fullscreen(&app->chrome, !!(wpe_view_get_toplevel_state(view) & WPE_TOPLEVEL_STATE_FULLSCREEN));
+    }
+    view_size_changed(view, NULL, app);
 }
 static gboolean timeout(gpointer data) {
     struct app *app = data; g_printerr("Tempo excedido no teste do motor web\n"); app->status = 1; quit(app); return G_SOURCE_CONTINUE;
@@ -447,6 +461,7 @@ static void new_tab(struct app *app, const char *uri) {
         // Clamp before WPE emits resized to WebKit, avoiding an intermediate full-window viewport.
         g_signal_connect(view, "notify::width", G_CALLBACK(view_size_changed), app);
         g_signal_connect(view, "notify::height", G_CALLBACK(view_size_changed), app);
+        g_signal_connect(view, "toplevel-state-changed", G_CALLBACK(toplevel_state_changed), app);
         wpe_view_set_toplevel(view, app->toplevel);
         view_size_changed(view, NULL, app);
         g_signal_connect(view, "event", G_CALLBACK(view_event), app);
