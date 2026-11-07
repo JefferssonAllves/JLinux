@@ -12,11 +12,12 @@
 #include <wlr/types/wlr_buffer.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/util/transform.h>
+#include <wlr/util/log.h>
 
 /* One composed frame per opening, downsampled before readback; no capture timer. */
 static cairo_surface_t *capture(struct wlr_scene *scene,struct wlr_output *output,int width,int height){
     struct wlr_scene_output *scene_output=wlr_scene_get_scene_output(scene,output);
-    if(!scene_output||width<1||height<1||output->width>8192||output->height>8192){return NULL;}
+    if(!scene_output||width<1||height<1||output->width<1||output->height<1||output->width>8192||output->height>8192){return NULL;}
     struct wlr_output_state state;wlr_output_state_init(&state);
     struct wlr_buffer *small=NULL;struct wlr_texture *texture=NULL,*sample=NULL;cairo_surface_t *image=NULL;
     wlr_output_lock_attach_render(output,true);
@@ -40,6 +41,7 @@ static cairo_surface_t *capture(struct wlr_scene *scene,struct wlr_output *outpu
     for(int y=0;y<h;y++){uint32_t *row=(uint32_t *)(cairo_image_surface_get_data(image)+y*cairo_image_surface_get_stride(image));for(int x=0;x<w;x++){row[x]|=0xff000000;}}
     cairo_surface_mark_dirty(image);
     if(!jlinux_blur(image,7)){cairo_surface_destroy(image);image=NULL;}
+    if(image){wlr_log(WLR_INFO,"Fundo da visão capturado: %dx%d",w,h);}
 done:
     if(sample){wlr_texture_destroy(sample);}if(texture){wlr_texture_destroy(texture);}if(small){wlr_buffer_drop(small);}
     wlr_output_state_finish(&state);return image;
@@ -110,6 +112,7 @@ bool window_overview_add(struct window_overview *view,size_t index,const char *t
     if(card->snapshot&&width>0&&height>0){
         double scale=fmin((card_w-40.)/(width+2*JLINUX_FRAME_BORDER),(card_h-64.)/(height+JLINUX_FRAME_HEADER+JLINUX_FRAME_BORDER));
         if(scale>0){window_snapshot_geometry(card->snapshot,(struct wlr_box){0,0,width,height},(struct wlr_box){(int)((card_w-width*scale)/2),16+(int)(JLINUX_FRAME_HEADER*scale),(int)fmax(1,width*scale),(int)fmax(1,height*scale)},1);}
+        else{window_snapshot_destroy(card->snapshot);card->snapshot=NULL;}
     }
     return true;
 }

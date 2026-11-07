@@ -86,3 +86,7 @@ Janelas abrem livres. Arraste pelo cabeçalho e solte na borda esquerda ou direi
 O dock lateral foi removido, incluindo lista de aplicativos fixados, configuração e modo de sobreposição. A área útil não tem reserva à esquerda. Arquivos, Terminal e Codex continuam disponíveis pelos comandos acima.
 
 Interface Futurista nativa, evidências e limites: [docs/futurista.md](docs/futurista.md).
+
+## Visão de janelas
+
+**Super+Tab** abre miniaturas das janelas do espaço atual sobre o desktop desfocado. Clique ou Enter seleciona; Esc cancela. Tab/setas navegam e a roda troca páginas. Veja [controles, recursos e validação](docs/window-overview.md).

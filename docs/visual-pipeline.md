@@ -85,3 +85,7 @@ O encaixe compartilha um único cálculo de área entre prévia e posicionamento
 ### Transição de geometria no encaixe lateral
 
 O controlador fornece progresso smoothstep de 220 ms pelo motor existente. renderer/window-effects.c interpola posição e tamanho das referências de buffers, sem relógio próprio ou novas imagens Cairo por quadro. O cliente recebe um único configure para o destino; conteúdo vivo fica oculto até o handoff final ou interrupção. Ghosts não recebem eventos; clicar outra janela não cancela as demais transições. Cada view possui seu snapshot e o libera em finalização, mudança de contexto, unmap/destroy e teardown. Redução de movimento ou falta de recursos usam o caminho imediato. Não altera os controles de sombra/reflexo nem introduz timer de animação.
+
+### Visão de janelas
+
+renderer/overview.c realiza captura reduzida/desfoque em cache e cartões usando helpers existentes; interaction.c possui o modo modal, referências às views e seleção. Cada página possui no máximo nove snapshots e o fundo é capturado somente ao abrir. A composição para captura usa renderer/allocator da saída e sincronização implícita já adotada pelo compositor. Captura, texturas temporárias e estado de output são liberados antes de retornar; buffers dos cartões seguem referências wlroots. Não há caminho de pixels pelo shell ou serviço externo. Blur desativado não captura nem mantém cache exclusivo. A visão não adiciona relógio ou loop de animação.

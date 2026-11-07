@@ -437,3 +437,11 @@ Implementado volume absoluto por clique/arraste com resposta visual imediata, li
 Testes direcionados de backend e entrada headless com áudio simulado passaram; prévia nativa inspecionada. Suite completa/pacote/instalação registrados na conclusão. Sem reiniciar a sessão ativa, testes de VT, benchmark ou confirmação física da fluidez.
 
 WINDOW-MOTION-SYNC — instalado `0.5.0.r99.g161ba52-1`, preservando a instalação concorrente do relógio Glass 9613200. Pacote 30/30 e integridade confirmados; regressão passou também com `/usr/bin/jlinux-compositor`. PR #76 agora depende de feature/glass-clock-panel (#75). Sessão preservada, ativação no próximo login. Backup/source/limites em docs/arch-installation.md.
+
+## Seleção de janelas com Super+Tab — feature/window-overview
+
+WM-OVERVIEW implementado: grade Glass do espaço atual, miniaturas clicáveis, foco por Enter, navegação Tab/setas/páginas/roda e cancelamento com Esc/clique vazio. Até nove por página com proporção preservada e título. Teclado/cliques bloqueados para o fundo; alterações de mapeamento fecham a visão antes de invalidar referências. Dock/overlays ficam ocultos e são restaurados ao sair.
+
+Blur real usa uma composição da saída central, redução GPU para 1/4 por eixo, leitura e box blur CPU em cache. Miniaturas reutilizam buffers; nenhuma recaptura ao paginar e nenhum timer de overview. BLUR=0 evita captura; falha de captura usa fundo escuro com aviso. Mantém efeitos independentes e recursos pertencentes ao compositor. Base atual instalada de volume/movimento preservada por integração local, sem merge de PR.
+
+Validação e limites em docs/window-overview.md: testes locais release/ASan e GPU headless Radeon, prévia de componentes com dados fictícios e custo descritivo de preparação (sem afirmar latência de apresentação ou desempenho físico). Resultados finais e pacote registrados na conclusão. Sem VT, reinício de sessão ou captura persistida do desktop do usuário.

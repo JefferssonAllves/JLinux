@@ -23,7 +23,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-overview-') as directory:
   before=log().count('Visão de janelas aberta:')
   keys('-M','logo','-k','Tab','-m','logo')
   wait(lambda:log().count('Visão de janelas aberta:')>before,processes,'overview opens')
-  if env.get('JLINUX_GLASS_BLUR')!='0':assert 'desfoque=1' in log(),'real blur capture failed'
+  if env.get('JLINUX_GLASS_BLUR')!='0':assert re.findall(r'desfoque=([01])',log())[-1]=='1','real blur capture failed'
  def active(index):
   flags=re.findall(rf'^active {index} ([01])$',client_log.read_text(),re.M)
   return flags and flags[-1]=='1'
@@ -41,13 +41,16 @@ with tempfile.TemporaryDirectory(prefix='jlinux-overview-') as directory:
    show()
    assert '10 janelas' in log()
    captured=log().count('Visão de janelas aberta:')
+   readbacks=log().count('Fundo da visão capturado:')
+   if env.get('JLINUX_GLASS_BLUR')=='0':assert readbacks==0
    inputs=len(re.findall(r'^key ',client_log.read_text(),re.M))
    keys('x')
    assert len(re.findall(r'^key ',client_log.read_text(),re.M))==inputs,'overview keys leaked to the client'
    keys('-k','Page_Down');wait(lambda:'Página de janelas: 2' in log(),processes,'page 2')
    subprocess.run([pointer,'--scroll','640','390','-15'],env=env,check=True,timeout=4)
    wait(lambda:log().count('Página de janelas: 1')>=2,processes,'wheel returns to first page')
-   assert log().count('Visão de janelas aberta:')==captured,'paging recaptured the background'
+   assert log().count('Visão de janelas aberta:')==captured
+   assert log().count('Fundo da visão capturado:')==readbacks,'paging recaptured the background'
    keys('-k','Escape')
    show()
    # MRU order 9..0. First card at 32,96 with 392x184 dimensions in a 3x3 grid.
@@ -67,7 +70,9 @@ with tempfile.TemporaryDirectory(prefix='jlinux-overview-') as directory:
    stop(server);processes.remove(server)
    assert server.returncode==0
    costs=re.findall(r'preparação=([0-9.]+) ms',log())
-   print('Overview preparation ms (headless/Pixman):',', '.join(costs))
+   print('Overview preparation ms (headless/'+env['WLR_RENDERER']+'):',', '.join(costs))
+   for line in log().splitlines():
+    if 'GL renderer:' in line or 'EGL vendor:' in line: print(line)
  except Exception:
   print(log(),file=sys.stderr);print(client_log.read_text() if client_log.exists() else '',file=sys.stderr);raise
  finally:

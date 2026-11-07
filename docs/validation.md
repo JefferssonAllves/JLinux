@@ -261,3 +261,11 @@ CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao
 
 
 A regressão de handoff prematuro também foi reproduzida separadamente no binário e43e58f, ignorando apenas a primeira asserção de recorte: o cliente com atraso de 650 ms voltava ao conteúdo vivo aos 220 ms. A base 9613200 (relógio Glass) foi incorporada antes da instalação para não regredir o desktop atualizado durante o trabalho. A suíte release repetiu 30/30 após essa integração; o ajuste final compartilha a geometria pendente entre arraste pelo cabeçalho e Super+arraste, com três regressões direcionadas passando. O pacote final repetiu 30/30.
+
+## Seleção de janelas com Super+Tab — feature/window-overview
+
+WM-OVERVIEW implementado: grade Glass do espaço atual, miniaturas clicáveis, foco por Enter, navegação Tab/setas/páginas/roda e cancelamento com Esc/clique vazio. Até nove por página com proporção preservada e título. Teclado/cliques bloqueados para o fundo; alterações de mapeamento fecham a visão antes de invalidar referências. Dock/overlays ficam ocultos e são restaurados ao sair.
+
+Blur real usa uma composição da saída central, redução GPU para 1/4 por eixo, leitura e box blur CPU em cache. Miniaturas reutilizam buffers; nenhuma recaptura ao paginar e nenhum timer de overview. BLUR=0 evita captura; falha de captura usa fundo escuro com aviso. Mantém efeitos independentes e recursos pertencentes ao compositor. Base atual instalada de volume/movimento preservada por integração local, sem merge de PR.
+
+Validação e limites em docs/window-overview.md: testes locais release/ASan e GPU headless Radeon, prévia de componentes com dados fictícios e custo descritivo de preparação (sem afirmar latência de apresentação ou desempenho físico). Resultados finais e pacote registrados na conclusão. Sem VT, reinício de sessão ou captura persistida do desktop do usuário.
