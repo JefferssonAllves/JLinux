@@ -116,3 +116,7 @@ O pedido atual prevalece sobre o formato arredondado da referência Futurista: 3
 Entrada/saída curtas com fade e deslocamento vertical; arraste com elevação discreta e halo azul-violeta externo. Sombra difusa escura separa janelas sobrepostas, sem alterar o conteúdo dos aplicativos. Nas bordas laterais, contorno violeta com preenchimento translúcido indica a metade disponível abaixo da barra antes de soltar. Movimento reduzido mantém os estados finais e materiais estáticos. Tempos e controles independentes em [visual-pipeline.md](visual-pipeline.md).
 
 [Prévia dos componentes nativos](design/window-transitions.png), 1280×720: renderização das mesmas tiras de moldura/halo/prévia, com conteúdo de janela ilustrativo. Não é captura da sessão física nem comprova fluidez em GPU; não altera as referências principais do usuário.
+
+### Data/hora com acabamento das molduras
+
+Bloco Glass de 28 px, raio de 5 px e texto central de 14 px. Preenchimento e contorno usam diretamente os helpers de janela, com tonalização, sombra e reflexão controladas separadamente. A barra externa segue retangular, com 36 px; bateria e ajustes mantidos.
