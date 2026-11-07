@@ -258,3 +258,6 @@ Base instalada e43e58f/r94; branch fix/window-motion-sync sobre feature/smooth-s
 CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao texto, cantos de 5 px e helpers existentes de tonalização, sombreado e reflexão das molduras. Fonte reduzida de 16 para 14 px e posição vertical ajustada à barra de 36 px. Cada efeito respeita o controle global correspondente. Nenhum timer, dependência ou lógica de animação novo.
 
 29 testes locais release passaram; prévia nativa inspecionada. Sem repetição de sanitizadores para esta alteração de layout que reutiliza helpers existentes; sem benchmark ou validação física visual. Pacote/ativação registrados na conclusão; shell ativo preservado, ativação no próximo login.
+
+
+A regressão de handoff prematuro também foi reproduzida separadamente no binário e43e58f, ignorando apenas a primeira asserção de recorte: o cliente com atraso de 650 ms voltava ao conteúdo vivo aos 220 ms. A base 9613200 (relógio Glass) foi incorporada antes da instalação para não regredir o desktop atualizado durante o trabalho. A suíte release repetiu 30/30 após essa integração; o ajuste final compartilha a geometria pendente entre arraste pelo cabeçalho e Super+arraste, com três regressões direcionadas passando. O pacote final repetiu 30/30.

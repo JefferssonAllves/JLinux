@@ -182,6 +182,9 @@ static void end_grab(struct interaction *state) {
     animate(state, &state->hint_visibility, 0, .12);
 }
 static void begin_grab(struct view *view) {
+    struct interaction *state = view->owner;
+    state->width = view->xdg->scheduled.width > 0 ? view->xdg->scheduled.width : view->frame_width;
+    state->height = view->xdg->scheduled.height > 0 ? view->xdg->scheduled.height : view->frame_height;
     view->visibility = (struct transition){.from=1, .to=1};
     apply_visual(view, animation_time());
     animate(view->owner, &view->lift, 1, .12);
@@ -956,8 +959,6 @@ static void button_event(struct wl_listener *listener, void *data) {
             state->grabbed = view; state->resizing = state->resize_edges != 0;
             state->start_x = state->cursor->x; state->start_y = state->cursor->y;
             state->window_x = view->tree->node.x; state->window_y = view->tree->node.y;
-            state->width = view->xdg->scheduled.width > 0 ? view->xdg->scheduled.width : view->frame_width;
-            state->height = view->xdg->scheduled.height > 0 ? view->xdg->scheduled.height : view->frame_height;
             begin_grab(view);
             return;
         }
@@ -971,7 +972,6 @@ static void button_event(struct wl_listener *listener, void *data) {
             state->grab_button = event->button;
             state->start_x = state->cursor->x; state->start_y = state->cursor->y;
             state->window_x = view->tree->node.x; state->window_y = view->tree->node.y;
-            state->width = view->xdg->base->geometry.width; state->height = view->xdg->base->geometry.height;
             begin_grab(view);
             return;
         }

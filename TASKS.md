@@ -435,3 +435,5 @@ CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao
 Implementado volume absoluto por clique/arraste com resposta visual imediata, limite 0–100% e coalescência do último valor pendente sem comandos paralelos. Removidos os quatro atalhos solicitados (Não perturbe, Economia de energia, Tela noturna e Captura de tela), com painel compactado. Dependência: fix/window-motion-sync, preservando relógio Glass e correções de janelas.
 
 Testes direcionados de backend e entrada headless com áudio simulado passaram; prévia nativa inspecionada. Suite completa/pacote/instalação registrados na conclusão. Sem reiniciar a sessão ativa, testes de VT, benchmark ou confirmação física da fluidez.
+
+WINDOW-MOTION-SYNC — instalado `0.5.0.r99.g161ba52-1`, preservando a instalação concorrente do relógio Glass 9613200. Pacote 30/30 e integridade confirmados; regressão passou também com `/usr/bin/jlinux-compositor`. PR #76 agora depende de feature/glass-clock-panel (#75). Sessão preservada, ativação no próximo login. Backup/source/limites em docs/arch-installation.md.
