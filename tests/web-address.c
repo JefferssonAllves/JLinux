@@ -25,5 +25,9 @@ int main(void) {
     g_assert_null(browser_address_uri(long_uri)); // Search prefix must also fit the URI limit.
     uri = browser_address_uri("https://example.org/?q=linux");
     g_assert_cmpstr(uri, ==, "https://example.org/?q=linux"); g_free(uri);
+    const char *whatsapp[] = {"https://web.whatsapp.com/", "https://WEB.WHATSAPP.COM:443/path", "blob:https://web.whatsapp.com/id"};
+    for (size_t i=0;i<G_N_ELEMENTS(whatsapp);i++) { g_assert_true(browser_whatsapp_uri(whatsapp[i])); }
+    const char *external[] = {"https://web.whatsapp.com.evil/", "https://evil/web.whatsapp.com", "http://web.whatsapp.com/", "https://web.whatsapp.com:8443/", "https://user:secret@web.whatsapp.com/", "file:///etc/passwd", "about:blank", NULL};
+    for (size_t i=0;i<G_N_ELEMENTS(external);i++) { g_assert_false(browser_whatsapp_uri(external[i])); }
     return 0;
 }

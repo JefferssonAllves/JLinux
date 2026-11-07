@@ -9,7 +9,7 @@ depends=('wpewebkit>=2.54' 'wayland' 'libxkbcommon' 'cairo' 'pango' 'fontconfig'
 makedepends=('git' 'base-devel' 'meson' 'ninja' 'pkgconf' 'wayland-protocols' 'wlroots0.20')
 checkdepends=('python' 'wtype' 'foot' 'openssl' 'ffmpeg')
 optdepends=('pipewire-pulse: servidor de áudio' 'wireplumber: seleção de dispositivos de áudio' 'gst-plugins-bad: formatos de mídia adicionais')
-source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/browser-persistent-login')
+source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/whatsapp-app')
 sha256sums=('SKIP')
 
 pkgver() {
@@ -28,6 +28,9 @@ check() {
 
 package() {
     install -Dm755 build/jlinux-browser "$pkgdir/usr/bin/jlinux-browser"
+    ln -s jlinux-browser "$pkgdir/usr/bin/jlinux-whatsapp"
+    install -Dm644 "$srcdir/JLinux/data/applications/org.jlinux.WhatsApp.desktop" "$pkgdir/usr/share/applications/org.jlinux.WhatsApp.desktop"
+    install -Dm644 "$srcdir/JLinux/data/icons/org.jlinux.WhatsApp.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.jlinux.WhatsApp.svg"
     install -Dm644 "$srcdir/JLinux/data/browser/COPYING.AdAway" "$pkgdir/usr/share/licenses/$pkgname/COPYING.AdAway"
     install -Dm644 "$srcdir/JLinux/data/browser/README.md" "$pkgdir/usr/share/licenses/$pkgname/AdAway-attribution.md"
     install -Dm644 "$srcdir/JLinux/data/applications/org.jlinux.Browser.desktop" "$pkgdir/usr/share/applications/org.jlinux.Browser.desktop"

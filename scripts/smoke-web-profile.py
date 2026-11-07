@@ -34,6 +34,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.end_headers();self.wfile.write(body)
 
 compositor,browser=map(lambda p:str(Path(p).resolve()),sys.argv[1:3])
+sandbox=subprocess.run(["bwrap","--unshare-user","--ro-bind","/","/","true"],capture_output=True)
+if sandbox.returncode:
+    print("SKIP: namespaces indisponíveis; sandbox preservada")
+    sys.exit(77)
 processes=[]
 with tempfile.TemporaryDirectory(prefix='jlinux-profile-') as directory:
     root=Path(directory)
