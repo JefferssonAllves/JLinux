@@ -429,3 +429,9 @@ Evidência: escape de conteúdo reproduzido na versão instalada; teste com buff
 CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao texto, cantos de 5 px e helpers existentes de tonalização, sombreado e reflexão das molduras. Fonte reduzida de 16 para 14 px e posição vertical ajustada à barra de 36 px. Cada efeito respeita o controle global correspondente. Nenhum timer, dependência ou lógica de animação novo.
 
 29 testes locais release passaram; prévia nativa inspecionada. Sem repetição de sanitizadores para esta alteração de layout que reutiliza helpers existentes; sem benchmark ou validação física visual. Pacote/ativação registrados na conclusão; shell ativo preservado, ativação no próximo login.
+
+## CONTROL-VOLUME — feature/control-volume-slider
+
+Implementado volume absoluto por clique/arraste com resposta visual imediata, limite 0–100% e coalescência do último valor pendente sem comandos paralelos. Removidos os quatro atalhos solicitados (Não perturbe, Economia de energia, Tela noturna e Captura de tela), com painel compactado. Dependência: fix/window-motion-sync, preservando relógio Glass e correções de janelas.
+
+Testes direcionados de backend e entrada headless com áudio simulado passaram; prévia nativa inspecionada. Suite completa/pacote/instalação registrados na conclusão. Sem reiniciar a sessão ativa, testes de VT, benchmark ou confirmação física da fluidez.

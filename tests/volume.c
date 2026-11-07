@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "../src/shell/volume.h"
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include <unistd.h>
 #define CHECK(x) do { if (!(x)) { fprintf(stderr, "Falha: %s\n", #x); return 1; } } while (0)
@@ -17,5 +18,13 @@ int main(void) {
         if (i == 1) { CHECK(v.level == 0 && v.muted); }
         CHECK(v.fd == -1 && !v.pid);
     }
+    struct volume pending = {.pid = 123, .available = true};
+    CHECK(!volume_set(&pending, NAN));
+    CHECK(!pending.pending);
+    CHECK(volume_set(&pending, .2) && pending.target == .2);
+    CHECK(volume_set(&pending, .73) && pending.target == .73 && pending.level == .73);
+    CHECK(volume_set(&pending, 2) && pending.target == 1);
+    CHECK(volume_set(&pending, -1) && pending.target == 0);
+    CHECK(pending.pid == 123 && pending.pending);
     return 0;
 }

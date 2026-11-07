@@ -61,3 +61,11 @@ A prévia futurista-dock-only.png usa 75% e estado Charging ilustrativos, não r
 ## Bloco Glass de data e hora
 
 Data/hora permanecem centralizadas pela largura medida em Pango, agora com fonte de 14 px (antes 16). O bloco tem 28 px de altura dentro da barra de 36, margem de 4 px acima/abaixo e cantos discretos de 5 px. Reutiliza tonalização escura/translúcida, sombra interna e contorno contínuo azul/rosado das janelas; TINT, SHADOW e REFLECTION permanecem independentes. Não há blur de janelas no relógio nem atualização contínua nova. O bloco continua informativo, sem calendário/menu novo. A prévia mostra o desenho nativo; avaliação na sessão física fica pendente até novo login.
+
+## Volume deslizante no painel de controle
+
+O trilho de volume aceita clique e arraste contínuo entre 0% e 100%, inclusive ao soltar além das pontas. O desenho acompanha a posição imediatamente; o backend wpctl executa um comando por vez e substitui posições pendentes pela mais recente, consultando o estado ao terminar. Falhas e timeout mantêm a indicação de áudio indisponível. O ícone mantém o comando de silenciar. O popup auxiliar conserva seus botões de passo de 5%.
+
+Não perturbe, Economia de energia, Tela noturna e Captura de tela foram removidos do desenho e das ações do painel. Os demais itens subiram 128 unidades, com redução equivalente da altura do painel. Brilho e conectividade mantêm as capacidades anteriores; esta mudança não implementa seus comandos.
+
+Validação: teste unitário cobre rejeição de NaN, limites e substituição de valores pendentes; teste headless com wpctl simulado verifica arraste nos dois sentidos, valor final e limite ao soltar fora do trilho, preservando testes de mute, passos, falha e timeout. Prévia nativa inspecionada; sem avaliação de fluidez na sessão física ou benchmark.

@@ -15,6 +15,7 @@ void futurista_wallpaper(struct futurista *scene, cairo_t *cr, int width, int he
 void futurista_panel(struct futurista *scene, cairo_t *cr, int width);
 void futurista_overlay(struct futurista *scene, cairo_t *cr, int width, int height, bool control_panel);
 /* -1 outside, 0..9 ring, 10 center, 20.. control actions. */
+double futurista_volume_at(double x, int width, int height);
 int futurista_hit(double x, double y, int width, int height, bool control_panel);
 struct ui_rect futurista_dock_bounds(int width, int height);
 void futurista_status(struct futurista *scene);
