@@ -408,3 +408,9 @@ Integração preserva o dock WhatsApp já instalado (15b821a). A repetição ide
 
 
 WINDOW-TRANSITIONS — instalado `0.5.0.r92.g5abb0af-1`, check() do pacote 28/28, integridade pacman confirmada e teste de transições com binário instalado passou. PR #72 enviado, sem merge. Sessão ativa preservada; nova versão no próximo login. Backup/commit/limites em docs/arch-installation.md.
+
+## Encaixe lateral com movimento suave — feature/smooth-side-snap
+
+WM-SMOOTH implementado: cópia dos buffers da janela interpola posição e tamanho até a metade escolhida em 220 ms/smoothstep, em vez de configurar o destino visual instantaneamente. Um único tamanho final enviado ao cliente. Usa snapshots/relógio/frame scheduling existentes; sem timer ou cópia de pixels por quadro. Cancelamento central libera snapshot e reativa visual em clique, nova posição, maximização/fullscreen, parent/workspace, unmap/destroy e teardown. Movimento reduzido/falta de snapshot mantêm fallback imediato.
+
+29 testes locais release e ASan/UBSan passaram; dois testes de encaixe repetidos em release após ampliar cobertura de desconexão durante a animação. Renderer verifica início/meio/fim e ownership dos buffers; headless verifica conclusão, geometria final, restauração, ausência de reorganização automática, modo reduzido e desconexão logo após drop. Sem benchmark ou teste físico de VT/GPU. Instalação/ativação registradas na conclusão abaixo; docs/window-management.md explicita imagem temporária e handoff ao conteúdo vivo.

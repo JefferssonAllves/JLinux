@@ -3,6 +3,7 @@
 #include "../effects/window.h"
 #include <drm_fourcc.h>
 #include <stdlib.h>
+#include <math.h>
 #include <wlr/interfaces/wlr_buffer.h>
 struct effect_buffer {struct wlr_buffer base;cairo_surface_t *image;};
 static void destroy_buffer(struct wlr_buffer *base){struct effect_buffer *b=wl_container_of(base,b,base);wlr_buffer_finish(base);cairo_surface_destroy(b->image);free(b);}
@@ -60,7 +61,7 @@ void window_aura_opacity(struct window_aura *aura,bool focused,double lift,doubl
         wlr_scene_buffer_set_opacity(aura->glow[i],visible*(focused?.45:.15)*(1-lift)+visible*lift);
     }
 }
-struct snapshot_part {struct wl_list link;struct wlr_scene_buffer *node;float opacity;};
+struct snapshot_part {struct wl_list link;struct wlr_scene_buffer *node;float opacity;int x,y,width,height;};
 struct window_snapshot {struct wlr_scene_tree *tree;struct wl_list parts;size_t count;int x,y,base_x,base_y;bool failed;};
 static void clone_buffer(struct wlr_scene_buffer *source,int x,int y,void *data){
     struct window_snapshot *s=data;if(s->failed||!source->buffer){return;}
@@ -78,7 +79,11 @@ static void clone_buffer(struct wlr_scene_buffer *source,int x,int y,void *data)
     wlr_scene_buffer_set_color_range(part->node,source->color_range);
     wlr_scene_buffer_set_opacity(part->node,part->opacity);
     wlr_scene_node_coords(&source->node,&x,&y);
-    wlr_scene_node_set_position(&part->node->node,x-s->x,y-s->y);
+    part->x=x-s->x;part->y=y-s->y;
+    bool rotated=source->transform==WL_OUTPUT_TRANSFORM_90||source->transform==WL_OUTPUT_TRANSFORM_270||source->transform==WL_OUTPUT_TRANSFORM_FLIPPED_90||source->transform==WL_OUTPUT_TRANSFORM_FLIPPED_270;
+    part->width=source->dst_width>0?source->dst_width:(rotated?source->buffer->height:source->buffer->width);
+    part->height=source->dst_height>0?source->dst_height:(rotated?source->buffer->width:source->buffer->height);
+    wlr_scene_node_set_position(&part->node->node,part->x,part->y);
     wl_list_insert(s->parts.prev,&part->link);s->count++;
 }
 struct window_snapshot *window_snapshot_create(struct wlr_scene_tree *source,struct wlr_scene_tree *parent){
@@ -95,6 +100,19 @@ struct window_snapshot *window_snapshot_create(struct wlr_scene_tree *source,str
 void window_snapshot_apply(struct window_snapshot *s,double visible,int offset_y){
     struct snapshot_part *p;wl_list_for_each(p,&s->parts,link){wlr_scene_buffer_set_opacity(p->node,p->opacity*visible);}
     wlr_scene_node_set_position(&s->tree->node,s->base_x,s->base_y+offset_y);
+}
+void window_snapshot_geometry(struct window_snapshot *s,struct wlr_box from,struct wlr_box to,double progress){
+    if(!s||from.width<1||from.height<1||to.width<1||to.height<1){return;}
+    if(progress<0){progress=0;}if(progress>1){progress=1;}
+    double sx=(from.width+(to.width-from.width)*progress)/from.width;
+    double sy=(from.height+(to.height-from.height)*progress)/from.height;
+    wlr_scene_node_set_position(&s->tree->node,(int)lround(from.x+(to.x-from.x)*progress),(int)lround(from.y+(to.y-from.y)*progress));
+    struct snapshot_part *p;wl_list_for_each(p,&s->parts,link){
+        int x=(int)lround(p->x*sx),y=(int)lround(p->y*sy);
+        int width=(int)lround((p->x+p->width)*sx)-x,height=(int)lround((p->y+p->height)*sy)-y;
+        wlr_scene_node_set_position(&p->node->node,x,y);
+        wlr_scene_buffer_set_dest_size(p->node,width>0?width:1,height>0?height:1);
+    }
 }
 size_t window_snapshot_count(struct window_snapshot *s){return s?s->count:0;}
 void window_snapshot_destroy(struct window_snapshot *s){

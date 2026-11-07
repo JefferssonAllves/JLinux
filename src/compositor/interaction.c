@@ -40,7 +40,9 @@ struct view {
     struct wlr_xdg_toplevel *xdg;
     struct wlr_scene_tree *tree, *visual, *content;
     struct window_aura aura;
-    struct transition visibility, lift;
+    struct transition visibility, lift, snap_progress;
+    struct window_snapshot *snap_visual;
+    struct wlr_box snap_from, snap_to;
     bool mapped, maximized, is_fullscreen;
     unsigned workspace;
     bool snapped;
@@ -124,6 +126,11 @@ static void animate(struct interaction *state, struct transition *transition, do
 static void buffer_opacity(struct wlr_scene_buffer *buffer, int x, int y, void *data) {
     (void)x; (void)y; wlr_scene_buffer_set_opacity(buffer, *(double *)data);
 }
+static void cancel_snap(struct view *view) {
+    if (!view->snap_visual) { return; }
+    window_snapshot_destroy(view->snap_visual); view->snap_visual = NULL;
+    wlr_scene_node_set_enabled(&view->visual->node, true);
+}
 static void apply_visual(struct view *view, double now) {
     double visible = transition_value(&view->visibility, now);
     double lift = transition_value(&view->lift, now);
@@ -144,6 +151,13 @@ bool interaction_animate(struct interaction *state) {
     struct view *view;
     wl_list_for_each(view, &state->views, link) {
         if (!view->mapped || view->workspace != state->workspace) { continue; }
+        if (view->snap_visual) {
+            if (!transition_active(&view->snap_progress, now)) {
+                cancel_snap(view); wlr_log(WLR_INFO, "%s", "Transição de encaixe concluída");
+            } else {
+                window_snapshot_geometry(view->snap_visual, view->snap_from, view->snap_to, transition_value(&view->snap_progress, now)); active = true;
+            }
+        }
         apply_visual(view, now);
         active |= transition_active(&view->visibility, now) || transition_active(&view->lift, now);
     }
@@ -243,6 +257,7 @@ static bool maximize_area(struct view *view, struct wlr_box *area) {
     return area->width > 0 && area->height > 0;
 }
 static void set_maximized(struct view *view, bool maximized) {
+    cancel_snap(view);
     if (!view->xdg->base->initialized || view->is_fullscreen) { return; }
     struct wlr_box area;
     if (maximized && !maximize_area(view, &area)) {
@@ -277,6 +292,7 @@ static void set_maximized(struct view *view, bool maximized) {
 }
 static void place(struct view *view, struct wlr_box box) {
     if (box.width < 1 || box.height < 1) { return; }
+    cancel_snap(view);
     wlr_scene_node_set_position(&view->tree->node, box.x, box.y);
     if (view->xdg->scheduled.width != box.width || view->xdg->scheduled.height != box.height) {
         wlr_xdg_toplevel_set_size(view->xdg, box.width, box.height);
@@ -333,7 +349,17 @@ static void snap_side(struct interaction *state) {
     if (!view->snapped && !view->snap_restore.width) { view->snap_restore = (struct wlr_box){0, 0, state->width, state->height}; }
     view->snapped = true;
     wlr_xdg_toplevel_set_tiled(view->xdg, WLR_EDGE_TOP | WLR_EDGE_BOTTOM | WLR_EDGE_LEFT | WLR_EDGE_RIGHT);
+    struct wlr_box from = {view->tree->node.x + view->visual->node.x, view->tree->node.y + view->visual->node.y, view->frame_width, view->frame_height};
+    /* Reuse buffers during the glide; send the client only its final size. */
+    struct window_snapshot *snapshot = !state->reduced_motion && from.width > 0 && from.height > 0 ? window_snapshot_create(view->visual, view->tree->node.parent) : NULL;
     place(view, area);
+    if (snapshot) {
+        view->snap_visual = snapshot; view->snap_from = from; view->snap_to = area;
+        view->snap_progress = (struct transition){0}; animate(state, &view->snap_progress, 1, .22);
+        window_snapshot_geometry(snapshot, from, area, 0);
+        wlr_scene_node_set_enabled(&view->visual->node, false);
+        wlr_log(WLR_INFO, "%s", "Transição de encaixe iniciada");
+    }
     wlr_log(WLR_INFO, "Janela encaixada: %s (%dx%d em %d,%d)", view->xdg->title ? view->xdg->title : "sem título", area.width, area.height, area.x, area.y);
 }
 static void detach_snap(struct view *view, bool resizing) {
@@ -359,6 +385,7 @@ static bool descendant(struct view *view, struct wlr_xdg_toplevel *parent) {
 static void parent_changed(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, parent), *parent;
+    cancel_snap(view);
     if (!view->xdg->parent) { return; }
     if (view->xdg->base->initialized) { wlr_xdg_toplevel_set_tiled(view->xdg, 0); }
     wl_list_for_each(parent, &view->owner->views, link) {
@@ -376,6 +403,7 @@ static void parent_changed(struct wl_listener *listener, void *data) {
     else if (view->owner->focused == view) { focus_available(view->owner); }
 }
 static void change_workspace(struct interaction *state, unsigned workspace, bool move) {
+    struct view *pending; wl_list_for_each(pending, &state->views, link) { cancel_snap(pending); }
     if (move) {
         if (!state->focused) { return; }
         struct view *view;
@@ -414,6 +442,7 @@ static void view_mapped(struct wl_listener *listener, void *data) {
 static void view_unmapped(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, unmap);
+    cancel_snap(view);
     if (view->mapped && view->workspace == view->owner->workspace && !view->owner->reduced_motion) {
         struct closing_window *closing = calloc(1, sizeof(*closing));
         if (closing) {
@@ -486,6 +515,7 @@ static void maximize_requested(struct wl_listener *listener, void *data) {
 static void fullscreen_requested(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, fullscreen);
+    cancel_snap(view);
     if (!view->xdg->base->initialized) { return; }
     bool enabled = view->xdg->requested.fullscreen;
     bool changed = view->is_fullscreen != enabled;
@@ -523,6 +553,7 @@ static void fullscreen_requested(struct wl_listener *listener, void *data) {
 static void view_destroyed(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, destroy);
+    cancel_snap(view);
     if (view->owner->grabbed == view) { end_grab(view->owner); }
     if (view->owner->focused == view) { focus(view->owner, NULL); }
     wl_list_remove(&view->link);
@@ -881,6 +912,7 @@ static void button_event(struct wl_listener *listener, void *data) {
         return;
     }
     if (event->state == WL_POINTER_BUTTON_STATE_PRESSED) {
+        struct view *pending; wl_list_for_each(pending, &state->views, link) { cancel_snap(pending); }
         double x, y;
         struct wlr_surface *surface;
         struct view *view = surface_at(state, &surface, &x, &y);
@@ -1050,6 +1082,7 @@ void interaction_destroy(struct interaction *state) {
     wl_list_for_each_safe(pointer, next_pointer, &state->pointers, link) {
         pointer_removed(&pointer->destroy, NULL);
     }
+    struct view *pending; wl_list_for_each(pending, &state->views, link) { cancel_snap(pending); }
     struct closing_window *closing, *next;
     wl_list_for_each_safe(closing, next, &state->closing, link) {
         window_snapshot_destroy(closing->snapshot); wl_list_remove(&closing->link); free(closing);
