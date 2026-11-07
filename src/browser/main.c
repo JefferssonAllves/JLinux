@@ -6,6 +6,8 @@
 #include <gst/gst.h>
 #include <locale.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <sys/file.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -23,12 +25,12 @@ struct app {
     WebKitNetworkSession *session;
     GPtrArray *downloads;
     struct browser_chrome chrome;
-    gboolean probe;
+    gboolean probe, whatsapp;
     gboolean media_available;
     WebKitUserContentFilter *filter;
     gboolean consumed[768];
     gint64 started, load_started;
-    int status;
+    int status, profile_lock;
 };
 static void new_tab(struct app *app, const char *uri);
 static void open_downloads(void);
@@ -37,6 +39,7 @@ static void close_tab(struct app *app, guint index);
 static gboolean quit(gpointer data) { g_main_loop_quit(((struct app *)data)->loop); return G_SOURCE_CONTINUE; }
 static void notice(struct app *app, const char *message) {
     g_strlcpy(app->chrome.message, message, sizeof(app->chrome.message));
+    if (app->whatsapp) { g_printerr("WhatsApp: %s\n", message); }
     if (!app->probe) { browser_chrome_update(&app->chrome); }
 }
 static void web_notice(struct app *app, WebKitWebView *web, const char *message) {
@@ -95,6 +98,13 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         WPEModifiers modifiers = wpe_event_get_modifiers(event);
         gboolean ctrl = modifiers & WPE_MODIFIER_KEYBOARD_CONTROL;
         gboolean alt = modifiers & WPE_MODIFIER_KEYBOARD_ALT;
+        if (app->whatsapp) {
+            if (ctrl && (key == XKB_KEY_q || key == XKB_KEY_w)) { quit(app); }
+            else if (key == XKB_KEY_F5 || (ctrl && key == XKB_KEY_r)) { webkit_web_view_reload(app->web); }
+            else { return FALSE; }
+            if (code < G_N_ELEMENTS(app->consumed)) { app->consumed[code] = TRUE; }
+            return TRUE;
+        }
         if (ctrl && (key == XKB_KEY_l || key == XKB_KEY_L)) { show_address(app); }
         else if (ctrl && (modifiers & WPE_MODIFIER_KEYBOARD_SHIFT) && (key == XKB_KEY_b || key == XKB_KEY_B)) { toggle_blocker(app); }
         else if (ctrl && (key == XKB_KEY_j || key == XKB_KEY_J)) { open_downloads(); }
@@ -171,7 +181,7 @@ static void changed_title(WebKitWebView *web, GParamSpec *spec, gpointer data) {
     browser_chrome_update(&app->chrome);
     if (web == app->web) {
         const char *title = webkit_web_view_get_title(web);
-        char *label = g_strdup_printf("%s — JLinux Browser", title && *title ? title : "Nova aba");
+        char *label = app->whatsapp ? g_strdup("WhatsApp") : g_strdup_printf("%s — JLinux Browser", title && *title ? title : "Nova aba");
         wpe_toplevel_set_title(app->toplevel, label); g_free(label);
     }
 }
@@ -208,15 +218,38 @@ static gboolean load_failed(WebKitWebView *web, WebKitLoadEvent event, const cha
     else { web_notice(app, web, "Não foi possível abrir a página. Confira o endereço e a conexão."); }
     return TRUE;
 }
+static void external_opened(GObject *source, GAsyncResult *result, gpointer data) {
+    (void)source; (void)data; GError *error=NULL;
+    if (!g_app_info_launch_default_for_uri_finish(result,&error)) {
+        g_printerr("Não foi possível abrir o link externo: %s\n",error->message); g_clear_error(&error);
+    }
+}
+static void open_external(const char *uri) {
+    if (browser_uri_allowed(uri) && (g_str_has_prefix(uri,"https://") || g_str_has_prefix(uri,"http://"))) {
+        g_app_info_launch_default_for_uri_async(uri,NULL,NULL,external_opened,NULL);
+    }
+}
 static gboolean policy(WebKitWebView *web, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, gpointer data) {
     (void)web; struct app *app = data;
+    if (app->whatsapp && type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE
+        && webkit_response_policy_decision_is_main_frame_main_resource(WEBKIT_RESPONSE_POLICY_DECISION(decision))) {
+        const char *uri=webkit_uri_response_get_uri(webkit_response_policy_decision_get_response(WEBKIT_RESPONSE_POLICY_DECISION(decision)));
+        if (!browser_whatsapp_uri(uri)) { webkit_policy_decision_ignore(decision); return TRUE; }
+    }
     if (type == WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION) {
+        if (app->whatsapp) {
+            WebKitNavigationAction *action=webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
+            if (webkit_navigation_action_is_user_gesture(action)) { open_external(webkit_uri_request_get_uri(webkit_navigation_action_get_request(action))); }
+        }
         webkit_policy_decision_ignore(decision);
         web_notice(app, web, "Janelas adicionais ainda não estão disponíveis."); return TRUE;
     }
     if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
         WebKitNavigationAction *action = webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
         const char *uri = webkit_uri_request_get_uri(webkit_navigation_action_get_request(action));
+        if (app->whatsapp && !browser_whatsapp_uri(uri) && webkit_navigation_action_is_user_gesture(action)) {
+            webkit_policy_decision_ignore(decision); open_external(uri); return TRUE;
+        }
         // Blob URLs stay in the creating page's WebKit origin; address-bar input remains HTTP/HTTPS only.
         gboolean blob = uri && strlen(uri) <= BROWSER_ADDRESS_LIMIT
             && (g_str_has_prefix(uri, "blob:https://") || g_str_has_prefix(uri, "blob:http://"))
@@ -340,7 +373,7 @@ static void view_size_changed(WPEView *view, GParamSpec *spec, gpointer data) {
     WPEToplevel *toplevel = wpe_view_get_toplevel(view);
     if (!toplevel) { return; }
     int width, height; wpe_toplevel_get_size(toplevel, &width, &height);
-    height = MAX(1, height - BROWSER_CHROME_HEIGHT);
+    height = MAX(1, height - (app->whatsapp ? 0 : BROWSER_CHROME_HEIGHT));
     if (width > 0 && (wpe_view_get_width(view) != width || wpe_view_get_height(view) != height)) {
         wpe_view_resized(view, width, height);
         return;
@@ -369,7 +402,8 @@ static void select_tab(struct app *app, guint index) {
     app->chrome.view = webkit_web_view_get_wpe_view(web);
     app->chrome.adblock_enabled = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(web), "jlinux-adblock"));
     wpe_view_set_visible(app->chrome.view, TRUE);
-    show_address(app); changed_title(web, NULL, app);
+    if (!app->whatsapp) { show_address(app); }
+    changed_title(web, NULL, app);
     const char *message = g_object_get_data(G_OBJECT(web), "jlinux-notice");
     if (message) { notice(app, message); }
 }
@@ -428,16 +462,27 @@ static void close_tab(struct app *app, guint index) {
     }
     g_object_unref(web);
 }
-static WebKitNetworkSession *network_session(gboolean probe) {
+static WebKitNetworkSession *network_session(gboolean probe, gboolean whatsapp, int *lock) {
     if (probe) { return webkit_network_session_new_ephemeral(); }
-    char *data = g_build_filename(g_get_user_data_dir(), "jlinux", "browser", NULL);
-    char *cache = g_build_filename(g_get_user_cache_dir(), "jlinux", "browser", "webkit", NULL);
+    char *data = g_build_filename(g_get_user_data_dir(), "jlinux", whatsapp ? "whatsapp" : "browser", NULL);
+    char *cache = g_build_filename(g_get_user_cache_dir(), "jlinux", whatsapp ? "whatsapp" : "browser", "webkit", NULL);
     const char *directories[] = {data, cache};
     for (guint i = 0; i < G_N_ELEMENTS(directories); i++) {
         struct stat st;
         if (g_mkdir_with_parents(directories[i], 0700) || lstat(directories[i], &st)
             || !S_ISDIR(st.st_mode) || st.st_uid != getuid() || chmod(directories[i], 0700)) {
             g_printerr("Não foi possível preparar o perfil privado do navegador.\n");
+            g_free(data); g_free(cache); return NULL;
+        }
+    }
+    if (whatsapp) {
+        char *path = g_build_filename(data,"instance.lock",NULL);
+        *lock = open(path,O_CREAT|O_RDWR|O_CLOEXEC|O_NOFOLLOW,0600); g_free(path);
+        struct stat st;
+        if (*lock < 0 || fstat(*lock,&st) || !S_ISREG(st.st_mode) || st.st_uid != getuid()
+            || (st.st_mode & 0777) != 0600 || flock(*lock,LOCK_EX|LOCK_NB)) {
+            g_printerr("WhatsApp já está aberto ou o perfil não pode ser bloqueado.\n");
+            if (*lock >= 0) { close(*lock); *lock = -1; }
             g_free(data); g_free(cache); return NULL;
         }
     }
@@ -450,12 +495,12 @@ static WebKitNetworkSession *network_session(gboolean probe) {
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
     if (argc == 2 && !strcmp(argv[1], "--help")) {
-        g_print("Uso: jlinux-browser [URL ou busca] | --probe URL | --preview arquivo.png\nCtrl+J Downloads; Ctrl+L endereço; Ctrl+T nova aba; Ctrl+W fechar aba; Ctrl+Tab alternar; Ctrl+Shift+B alternar bloqueio de anúncios nesta aba; Ctrl+Q sair.\n"); return 0;
+        g_print("Uso: jlinux-browser [URL ou busca] | --whatsapp | --probe URL | --preview arquivo.png\nCtrl+J Downloads; Ctrl+L endereço; Ctrl+T nova aba; Ctrl+W fechar aba; Ctrl+Tab alternar; Ctrl+Shift+B alternar bloqueio de anúncios nesta aba; Ctrl+Q sair.\n"); return 0;
     }
     if (g_getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS")) {
         g_printerr("Remova WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: a sandbox é obrigatória.\n"); return 1;
     }
-    struct app app = {.started = g_get_monotonic_time()};
+    struct app app = {.started = g_get_monotonic_time(), .profile_lock = -1};
     wl_list_init(&app.chrome.buffers);
     if (!jlinux_glass_settings(&app.chrome.glass)) { return 1; }
     if (argc == 3 && !strcmp(argv[1], "--preview")) {
@@ -466,11 +511,17 @@ int main(int argc, char **argv) {
         cairo_status_t result = cairo_surface_write_to_png(image, argv[2]); cairo_surface_destroy(image);
         ui_finish(); return result == CAIRO_STATUS_SUCCESS ? 0 : 1;
     }
+    app.whatsapp = (argc == 2 && !strcmp(argv[1],"--whatsapp")) || g_str_has_suffix(argv[0],"/jlinux-whatsapp") || !strcmp(argv[0],"jlinux-whatsapp");
+    if (app.whatsapp) {
+        if (argc > 2 || (argc == 2 && strcmp(argv[1],"--whatsapp"))) { g_printerr("Uso: jlinux-whatsapp\n"); return 2; }
+        g_set_prgname("org.jlinux.WhatsApp"); g_set_application_name("WhatsApp");
+        webkit_web_context_set_cache_model(webkit_web_context_get_default(), WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
+    }
     app.probe = argc == 3 && !strcmp(argv[1], "--probe");
     if (argc > 2 && !app.probe) {
-        g_printerr("Uso: jlinux-browser [URL ou busca] | --probe URL | --preview arquivo.png\n"); return 2;
+        g_printerr("Uso: jlinux-browser [URL ou busca] | --whatsapp | --probe URL | --preview arquivo.png\n"); return 2;
     }
-    char *uri = browser_address_uri(app.probe ? argv[2] : argc == 2 ? argv[1] : "about:blank");
+    char *uri = browser_address_uri(app.whatsapp ? "https://web.whatsapp.com/" : app.probe ? argv[2] : argc == 2 ? argv[1] : "about:blank");
     if (!uri) { g_printerr("Endereço inválido: use HTTP ou HTTPS.\n"); return 2; }
     configure_audio();
     if (gst_init_check(NULL, NULL, NULL)) {
@@ -490,13 +541,13 @@ int main(int argc, char **argv) {
     }
     app.loop = g_main_loop_new(NULL, FALSE);
     app.display = display;
-    WebKitNetworkSession *session = network_session(app.probe);
+    WebKitNetworkSession *session = network_session(app.probe, app.whatsapp, &app.profile_lock);
     if (!session) { g_main_loop_unref(app.loop); g_object_unref(display); g_free(uri); return 1; }
     app.session = session;
     webkit_network_session_set_tls_errors_policy(session, WEBKIT_TLS_ERRORS_POLICY_FAIL);
     app.chrome.tabs = g_ptr_array_new_with_free_func(g_object_unref);
     const char *blocker = g_getenv("JLINUX_BROWSER_ADBLOCK");
-    if (!blocker || strcmp(blocker, "0")) {
+    if (!app.whatsapp && (!blocker || strcmp(blocker, "0"))) {
         app.filter = browser_blocker_load(&error);
         if (!app.filter) {
             g_printerr("Bloqueio de anúncios indisponível: %s\n", error ? error->message : "sem detalhes");
@@ -518,7 +569,7 @@ int main(int argc, char **argv) {
     g_signal_connect(display, "disconnected", G_CALLBACK(disconnected), &app);
     app.downloads = g_ptr_array_new_with_free_func(g_object_unref);
     g_signal_connect(session, "download-started", G_CALLBACK(download), &app);
-    if (!app.probe) {
+    if (!app.probe && !app.whatsapp) {
         app.chrome.clicked = chrome_clicked; app.chrome.clicked_data = &app;
         if (!browser_chrome_init(&app.chrome, view)) {
             g_printerr("Não foi possível criar a barra nativa Wayland.\n"); app.status = 1; goto cleanup;
@@ -527,6 +578,7 @@ int main(int argc, char **argv) {
         show_address(&app);
         if (strcmp(uri, "about:blank")) { g_strlcpy(app.chrome.address, uri, sizeof(app.chrome.address)); }
     }
+    if (app.whatsapp) { wpe_toplevel_set_title(app.toplevel, "WhatsApp"); }
     guint term = g_unix_signal_add(SIGTERM, quit, &app), interrupt = g_unix_signal_add(SIGINT, quit, &app);
     guint deadline = app.probe ? g_timeout_add_seconds(20, timeout, &app) : 0;
     g_main_loop_run(app.loop);
@@ -559,5 +611,6 @@ cleanup:
     }
     g_object_unref(display);
     g_main_loop_unref(app.loop); g_free(uri);
+    if (app.profile_lock >= 0) { close(app.profile_lock); }
     return app.status;
 }

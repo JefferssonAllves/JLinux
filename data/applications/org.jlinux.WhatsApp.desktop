@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=WhatsApp
+Comment=WhatsApp Web em janela própria do JLinux
+Exec=jlinux-whatsapp
+Icon=org.jlinux.WhatsApp
+Terminal=false
+Categories=Network;InstantMessaging;
+StartupNotify=true

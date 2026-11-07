@@ -281,3 +281,10 @@ Correção da política de navegação para imagens geradas pela página via Blo
 ### BROWSER-PERSISTENT-LOGIN
 
 Perfil normal persistente com cookies SQLite, localStorage e IndexedDB; cache separado e pastas 0700. Probe segue efêmero. Teste de reinício/remoção de cache, perfil isolado, cookie HttpOnly e diretório privado passou em release e ASan/UBSan. Cinco checks existentes de navegação/downloads, mídia, bloqueio, motor/TLS e endereços passaram. Login uma vez na nova versão; sessões expiradas/revogadas continuam sob controle dos sites. Sem conta real ou benchmark novo; ver docs/browser-profile.md.
+
+
+## WhatsApp em janela própria — feature/whatsapp-app
+
+Cliente C/WPE sobre o motor já instalado: executável/atalho próprios, janela sem abas/barra, perfil privado e persistente separado, lock de instância única, cache DOCUMENT_VIEWER, links externos no navegador padrão e navegação principal restrita à origem oficial. Sem Electron/outro motor empacotado. Tela de vinculação real verificada; conta não vinculada.
+
+Consumo baixíssimo não atingido: ensaio headless GLES2 com conta não vinculada ficou em 620–632 MiB PSS mediano (pico 705 MiB). Piloto de pressão agressiva rejeitado por redução não reprodutível e CPU maior. Métodos/dados em docs/whatsapp.md. Não prometer limite de RAM, chamadas, notificações, anexos ou uso pós-login sem validação. Testes/instalação registrados após conclusão. Base feature/browser-persistent-login; trabalho paralelo de memória do navegador preservado em outra árvore.

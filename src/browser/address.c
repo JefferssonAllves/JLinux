@@ -44,3 +44,17 @@ char *browser_address_uri(const char *text) {
     if (!browser_uri_allowed(uri)) { g_free(uri); return NULL; }
     return uri;
 }
+
+
+gboolean browser_whatsapp_uri(const char *uri) {
+    if (!uri) { return FALSE; }
+    if (g_str_has_prefix(uri,"blob:")) { uri += 5; }
+    if (!browser_uri_allowed(uri)) { return FALSE; }
+    GUri *parsed = g_uri_parse(uri,G_URI_FLAGS_NONE,NULL);
+    if (!parsed) { return FALSE; }
+    const char *host = g_uri_get_host(parsed), *scheme = g_uri_get_scheme(parsed);
+    gboolean allowed = host && scheme && !g_ascii_strcasecmp(scheme,"https")
+        && !g_ascii_strcasecmp(host,"web.whatsapp.com")
+        && (g_uri_get_port(parsed) == -1 || g_uri_get_port(parsed) == 443);
+    g_uri_unref(parsed); return allowed;
+}
