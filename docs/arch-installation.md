@@ -140,3 +140,9 @@ Backup dos arquivos anteriores e banco local em `/var/backups/jlinux-before-moti
 Instalado `jlinux-desktop-git 0.5.0.r102.gf84be4a-1`, fonte f84be4a, branch `feature/control-volume-slider`, PR #78 dependente de #76. Preserva a versão anterior 161ba52 e o relógio Glass. 30 testes release locais e 30 no check() do pacote passaram; CI do código f84be4a passou. Pacman confirmou 23 arquivos sem ausências e executáveis root:root 0755.
 
 Backup dos cinco executáveis anteriores e banco local do pacote em `/var/backups/jlinux-before-control-volume-f84be4a/`. Pacote construído em `/home/jlinux/.cache/jlinux-control-volume-package/`. Volume do centro de controle agora aceita clique/arraste contínuo; quatro atalhos removidos conforme docs/futurista.md. Sessão em execução preservada; **ativar saindo e entrando novamente**. Sem reinício de serviço, teste de VT, benchmark ou avaliação física da fluidez.
+
+## Limite superior e maximização por arraste — 07/11/2026
+
+Instalado `jlinux-desktop-git 0.5.0.r104.g299b482-1`, fonte 299b482, branch `feature/top-bar-window-snap`, PR #79 dependente de #78. Preserva o volume contínuo e a base f84be4a. Arraste mantém o cabeçalho abaixo da barra; soltar na barra maximiza na área útil. Tamanho anterior disponível ao restaurar.
+
+30 testes release locais e 30 no check() do pacote passaram; CI do código 299b482 aprovado. Pacman confirmou 23 arquivos sem ausências e compositor root:root 0755. Backup dos executáveis anteriores e banco local em `/var/backups/jlinux-before-top-snap-299b482/`; pacote em `/home/jlinux/.cache/jlinux-top-snap-package/`. Nenhuma sessão, serviço, VT ou parâmetro de kernel foi alterado. **Ativar saindo e entrando novamente**. Sem benchmark ou validação física da movimentação.

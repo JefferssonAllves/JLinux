@@ -79,11 +79,26 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             assert size() == half
             mouse(830, 54, 700, 240)
             assert size() == original, 'dragging away did not restore original dimensions'
-            # At the top edge, with x away from the sides, no snap/maximize occurs.
-            before = log().count('Janela encaixada:')
-            mouse(700, 240, 700, 0)
-            assert size() == original
-            assert log().count('Janela encaixada:') == before, 'top edge snapped a window'
+            # Moving the titlebar above the panel clamps the frame while held.
+            # Maximization is only committed on release; its preview preserves the panel.
+            maximized = log().count('Janela maximizada:')
+            drag = subprocess.Popen([pointer, '700', '240', '700', '20', '--hold'],
+                                    env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+            processes.append(drag)
+            assert drag.stdout.readline().strip() == 'drag held'
+            h.wait_for(lambda: 'Prévia de encaixe: 1280x684 em 0,36' in log(), processes, 'top preview')
+            time.sleep(.2)
+            assert log().count('Janela maximizada:') == maximized, 'maximized before release'
+            drag.communicate('\n', timeout=4)
+            assert drag.returncode == 0
+            processes.remove(drag)
+            h.wait_for(lambda: log().count('Janela maximizada:') > maximized, processes, 'top drop maximizes')
+            assert 'Janela maximizada: Snap-1 (1274x645 em 3,72)' in log()
+            full = size()
+            assert full[1] > original[1], 'top drop did not fill workarea'
+            # Restore dimensions and close using the clamped titlebar location.
+            subprocess.run([wtype, '-M', 'logo', '-k', 'Down', '-m', 'logo'], env=env, check=True, timeout=4)
+            assert size() == original, 'restore after top snap lost original dimensions'
             # Disconnect a client immediately after snapping, while the snapshot may still be alive.
             three, (_, _, x3, y3) = open_window(3)
             mouse(x3 + 160, y3 - 18, 0, 240)
@@ -91,6 +106,17 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             h.stop(three)
             processes.remove(three)
             assert server.poll() is None, 'disconnect during snap killed compositor'
+            # The pointer can remain below the panel while the grabbed header would cross it.
+            four, (w4, _, x4, y4) = open_window(4)
+            maximized = log().count('Janela maximizada:')
+            mouse(x4 + 160, y4 - 1, x4 + 160, 40)
+            time.sleep(.2)
+            assert log().count('Janela maximizada:') == maximized, 'maximized outside panel'
+            # The close button must remain in the header at y=36..72, not behind the panel.
+            mouse(x4 + w4 - 18, 54)
+            four.wait(timeout=4)
+            assert four.returncode in (0, 1), 'clamped window could not be closed'
+            processes.remove(four)
             h.stop(one)
             processes.remove(one)
             if env.get('JLINUX_REDUCED_MOTION') != '1':
