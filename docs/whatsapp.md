@@ -12,7 +12,7 @@ O sandbox e a recusa de erros TLS são preservados. Apenas HTTPS web.whatsapp.co
 
 **O objetivo de consumo baixíssimo não foi alcançado.** O cliente elimina interface e instâncias extras, mas a aplicação web do WhatsApp ainda pesa centenas de MiB. Não há evidência de que esta seja a opção de menor consumo entre todos os clientes existentes; ela reutiliza a infraestrutura já presente nesta instalação.
 
-Medições de 06/11/2026, WPE 2.54.2, build release, perfil novo e conta não vinculada. Duas execuções de 25 segundos por condição, amostragem de 0,5s, PSS de todos os processos descendentes (incluindo os iniciados por threads) e SwapPss quando registrado. A mediana usa os últimos oito segundos. Backend Wayland headless 1280×720, compositor GLES2 e driver GL padrão do cliente; não é medição DRM da sessão física nem contabilização de toda memória da GPU. O compositor fica fora da árvore medida. Outros aplicativos permaneceram na máquina; página remota, cache do sistema e processos compartilhados podem causar variação. A janela real do WhatsApp será aberta separadamente para vinculação manual.
+Medições de 06/11/2026, WPE 2.54.2, build release, perfil novo e conta não vinculada. Duas execuções de 25 segundos por condição, amostragem de 0,5s, PSS de todos os processos descendentes (incluindo os iniciados por threads) e SwapPss quando registrado. A mediana usa os últimos oito segundos. Backend Wayland headless 1280×720, compositor GLES2 e driver GL padrão do cliente; não é medição DRM da sessão física nem contabilização de toda memória da GPU. O compositor fica fora da árvore medida. O estado de alimentação e a memória completa da GPU não foram instrumentados. Outros aplicativos permaneceram na máquina; página remota, cache do sistema e processos compartilhados podem causar variação. A janela instalada do WhatsApp foi aberta separadamente para vinculação manual.
 
 | Condição | PSS mediano pré-login | Maior pico amostrado | CPU nos últimos 8s (100% = um núcleo) |
 | --- | --- | --- | --- |
@@ -30,3 +30,10 @@ scripts/measure-whatsapp.py build-native/jlinux-compositor build-native/jlinux-b
 ```
 
 Não executa login nem altera áudio/sessão de login. Usa perfis de teste descartáveis em compositor headless e preserva o sandbox. O estado depois de vincular, conversar, ver vídeos e manter horas em repouso não foi medido; esses resultados não representam teto de RAM nem comparação com Electron/Chromium. Referências: [WhatsApp Web](https://web.whatsapp.com/), [browsers suportados](https://faq.whatsapp.com/852892549070029/) e [política de pressão de memória do WebKit](https://webkitgtk.org/reference/webkit2gtk/unstable/struct.MemoryPressureSettings.html).
+
+
+## Instalação desta entrega
+
+Pacote `jlinux-browser-git 0.1.0.r63.ged57981-1`, fonte ed57981, instalado após 12 testes do makepkg aprovados. Contém o navegador e o link executável/atalho do WhatsApp, compartilhando o mesmo binário e as bibliotecas existentes. Nenhum segundo motor foi instalado. A alteração posterior 9bae08f ajusta apenas o comportamento dos testes em CI sem namespaces, sem mudar o runtime instalado. Binário/link e metadados desktop conferidos.
+
+O app instalado foi aberto na sessão gráfica existente (PID 46591 neste boot; log privado `/tmp/jlinux-whatsapp-live-yhhb3il9/app.log`), preservando compositor/shell e navegador já abertos. Login e mensagens reais ficam para o usuário; não foi escaneado QR code nem enviado conteúdo por esta entrega. No GitHub, testes de integração que exigem namespaces são sinalizados como skip quando o ambiente os proíbe; a sandbox não é desativada. Localmente os 12 testes foram executados e passaram. Não houve nova rodada de sanitizers nesta entrega.
