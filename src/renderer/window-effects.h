@@ -15,6 +15,7 @@ struct wlr_scene_buffer *window_image_create(struct wlr_scene_tree *parent,cairo
 struct window_snapshot;
 struct window_snapshot *window_snapshot_create(struct wlr_scene_tree *source,struct wlr_scene_tree *parent);
 void window_snapshot_geometry(struct window_snapshot *snapshot,struct wlr_box from,struct wlr_box to,double progress);
+void window_snapshot_opacity(struct window_snapshot *snapshot,double visible);
 void window_snapshot_apply(struct window_snapshot *snapshot,double visible,int offset_y);
 size_t window_snapshot_count(struct window_snapshot *snapshot);
 void window_snapshot_destroy(struct window_snapshot *snapshot);

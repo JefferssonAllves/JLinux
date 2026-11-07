@@ -31,6 +31,10 @@ int main(int argc,char **argv){
     CHECK(client->buffer->n_locks==10);
     CHECK(window_overview_hit(&view,180,180)==0);CHECK(window_overview_hit(&view,3,3)==-1);
     window_overview_select(&view,2);CHECK(view.cards[2].frame->opacity==1&&view.cards[0].frame->opacity<1);
+    window_overview_apply(&view,0);CHECK(view.background->opacity==0&&view.cards[2].frame->opacity==0);
+    CHECK(view.cards[2].tree->node.y==view.cards[2].box.y+8);
+    window_overview_apply(&view,.5);CHECK(view.cards[2].frame->opacity==.5&&view.cards[2].tree->node.y==view.cards[2].box.y+4);
+    window_overview_apply(&view,1);CHECK(view.cards[2].frame->opacity==1&&view.cards[2].tree->node.y==view.cards[2].box.y);
     CHECK(window_overview_page(&view,10,1));CHECK(client->buffer->n_locks==1);
     CHECK(window_overview_add(&view,0,"Outra página",source,640,400));
     CHECK(view.cards[0].box.width==560&&view.cards[0].box.height==330);
