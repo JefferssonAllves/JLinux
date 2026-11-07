@@ -372,23 +372,20 @@ static void app_icon(struct futurista *s, cairo_t *cr, int index, double x, doub
             text(cr, "‹/›", 12, 18, 34, true, 0xffffff);
         }
     } else if (index == 9) {
-        cairo_pattern_t *p = cairo_pattern_create_linear(0, 0, 0, 80);
-        cairo_pattern_add_color_stop_rgb(p, 0, .035, .07, .24);
-        cairo_pattern_add_color_stop_rgb(p, 1, 0, .40, .70);
-        circle(cr, 40, 40, 40);
-        cairo_set_source(cr, p);
-        cairo_fill(cr);
-        cairo_pattern_destroy(p);
-        cairo_set_source_rgb(cr, .95, .98, 1);
-        cairo_set_line_width(cr, 7);
-        cairo_move_to(cr, 8, 50);
-        cairo_line_to(cr, 29, 60);
-        cairo_line_to(cr, 57, 25);
-        cairo_stroke(cr);
-        circle(cr, 57, 24, 14);
-        cairo_stroke(cr);
-        circle(cr, 29, 59, 10);
-        cairo_stroke(cr);
+        circle(cr,40,40,40);
+        cairo_set_source_rgb(cr,.07,.66,.34); cairo_fill(cr);
+        cairo_set_source_rgb(cr,1,1,1); cairo_set_line_width(cr,4.5);
+        cairo_set_line_join(cr,CAIRO_LINE_JOIN_ROUND);
+        cairo_move_to(cr,16,53); cairo_line_to(cr,12,71); cairo_line_to(cr,30,64);
+        cairo_arc_negative(cr,40,38,28,1.94,2.59-2*pi); cairo_close_path(cr); cairo_stroke(cr);
+        cairo_move_to(cr,29,24);
+        cairo_curve_to(cr,25,24,24,28,26,35);
+        cairo_curve_to(cr,29,47,39,56,50,58);
+        cairo_curve_to(cr,55,59,59,54,57,50);
+        cairo_line_to(cr,47,44); cairo_line_to(cr,43,49);
+        cairo_curve_to(cr,37,46,33,40,31,35);
+        cairo_line_to(cr,35,31); cairo_line_to(cr,31,24);
+        cairo_close_path(cr); cairo_fill(cr);
     }
     cairo_restore(cr);
 }
@@ -688,7 +685,7 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     }
     static const char *names[] = {
         "Firefox", "Terminal", "Visual Studio Code", "Spotify", "Arquivos", "Configurações",
-        "Imagens", "Vídeos",   "Desenvolvimento",    "Steam"};
+        "Imagens", "Vídeos",   "Desenvolvimento",    "WhatsApp"};
     app_icon(s, cr, s->selected, 788, 385, 96);
     text(cr, names[s->selected], s->selected == 2 ? 747 : 796, 491, s->selected == 2 ? 18 : 25, true,
          0xffffff);

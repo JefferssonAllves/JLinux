@@ -385,3 +385,11 @@ DOCK-CENTER remove entrada vertical e aplica expansão 18%→100% com fade, anco
 24 testes locais release e ASan/UBSan passaram antes do refinamento final de clip; repetição relevante e pacote registrados na conclusão. Teste novo verifica centro fixo, escala final, inversa e halo zero/positivo. Prévia do estado final inspecionada. Sem benchmark ou teste físico de GPU/VT. Shell ativo preservado; ativação no próximo login.
 
 **DOCK-CENTER · instalado:** pacote `0.5.0.r85.g024bcbb-1`, fonte 024bcbb, compilado do GitHub com 24 testes aprovados no makepkg e instalado pelo pacman. Release final: 24 aprovados; ASan/UBSan: bateria de 24 antes do refinamento final de clip e três testes relevantes (dock-visual/futurista-headless/dock-reduced-motion) repetidos depois, aprovados. Prévia estática inspecionada; sem benchmark ou avaliação visual da animação no hardware. Shell supervisionado atual preservado, nova animação/halo entram no próximo login. Sem logout/reinício/VT. PR #68, base feature/angular-dock-selection, sem merge; CI pendente no registro.
+
+
+## WhatsApp no lugar do Steam — feature/whatsapp-dock
+
+Décimo item do dock circular troca nome/ícone/ação de Steam para WhatsApp. Ícone vetorial nativo verde com balão e telefone; inicia jlinux-whatsapp já instalado. Layout, animações, seleção angular e demais aplicativos preservados. Teste headless clica no setor com comando WhatsApp simulado, sem iniciar sessão/mensagens reais. Base feature/dock-center-reveal; validação/instalação registradas após conclusão.
+
+
+**WhatsApp no dock · instalado:** pacote `0.5.0.r87.g15b821a-1`, fonte 15b821a, instalado após 24 testes do makepkg aprovados. Dois testes locais de interação (normal/movimento reduzido) também passaram; clique no antigo setor Steam confirmou execução do comando WhatsApp simulado. Prévia nativa inspecionada. Sessão aberta preservada: novo ícone/nome/ação entram no próximo login. Cliente jlinux-whatsapp existente mantido como dependência opcional, sem novo motor/processo de áudio ou alteração de contas. PR #70, base feature/dock-center-reveal (#68), sem merge. Sem nova rodada de sanitizers, benchmark ou teste físico da nova sessão.
