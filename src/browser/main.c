@@ -428,6 +428,25 @@ static void close_tab(struct app *app, guint index) {
     }
     g_object_unref(web);
 }
+static WebKitNetworkSession *network_session(gboolean probe) {
+    if (probe) { return webkit_network_session_new_ephemeral(); }
+    char *data = g_build_filename(g_get_user_data_dir(), "jlinux", "browser", NULL);
+    char *cache = g_build_filename(g_get_user_cache_dir(), "jlinux", "browser", "webkit", NULL);
+    const char *directories[] = {data, cache};
+    for (guint i = 0; i < G_N_ELEMENTS(directories); i++) {
+        struct stat st;
+        if (g_mkdir_with_parents(directories[i], 0700) || lstat(directories[i], &st)
+            || !S_ISDIR(st.st_mode) || st.st_uid != getuid() || chmod(directories[i], 0700)) {
+            g_printerr("Não foi possível preparar o perfil privado do navegador.\n");
+            g_free(data); g_free(cache); return NULL;
+        }
+    }
+    WebKitNetworkSession *session = webkit_network_session_new(data, cache);
+    char *cookies = g_build_filename(data, "cookies.sqlite", NULL);
+    webkit_cookie_manager_set_persistent_storage(webkit_network_session_get_cookie_manager(session),
+        cookies, WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
+    g_free(cookies); g_free(data); g_free(cache); return session;
+}
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
     if (argc == 2 && !strcmp(argv[1], "--help")) {
@@ -471,7 +490,8 @@ int main(int argc, char **argv) {
     }
     app.loop = g_main_loop_new(NULL, FALSE);
     app.display = display;
-    WebKitNetworkSession *session = webkit_network_session_new_ephemeral();
+    WebKitNetworkSession *session = network_session(app.probe);
+    if (!session) { g_main_loop_unref(app.loop); g_object_unref(display); g_free(uri); return 1; }
     app.session = session;
     webkit_network_session_set_tls_errors_policy(session, WEBKIT_TLS_ERRORS_POLICY_FAIL);
     app.chrome.tabs = g_ptr_array_new_with_free_func(g_object_unref);

@@ -2,7 +2,7 @@
 
 Primeira entrega na branch `feature/web-browser`, dependente da branch `fix/terminal-locale`/PR #28. Aplicativo em C; WPE WebKit 2.54/WPEPlatform processa sites em processos separados. Não altera compositor, shell, login ou navegador padrão. O motor ainda é candidato: nenhuma comparação comprovou que seja o mais rápido ou leve no hardware do usuário.
 
-A branch `feature/browser-tabs` acrescenta somente abas e depende de `feature/web-browser`/PR #32. Cada aba mantém uma WebView e seu histórico/DOM; todas compartilham o display, o toplevel Wayland e a sessão de rede efêmera. Somente a aba ativa é marcada como visível no WPE. Ocultar não é suspender: páginas em segundo plano continuam sujeitas ao comportamento do motor, inclusive áudio e trabalho de fundo.
+A branch `feature/browser-tabs` acrescenta somente abas e depende de `feature/web-browser`/PR #32. Cada aba mantém uma WebView e seu histórico/DOM; todas compartilham o display, o toplevel Wayland e a sessão de rede persistente (ver [perfil](browser-profile.md)). Somente a aba ativa é marcada como visível no WPE. Ocultar não é suspender: páginas em segundo plano continuam sujeitas ao comportamento do motor, inclusive áudio e trabalho de fundo.
 
 ## Compilar e executar
 
@@ -37,7 +37,7 @@ Ativo por padrão antes da primeira navegação em cada aba. Usa o filtro de con
 
 Os domínios da lista são bloqueados em carregamentos de terceiros. O caminho `/pagead/` também bloqueia scripts, imagens e requisições de dados, inclusive no próprio domínio. A ação cosmética nativa oculta `ins.adsbygoogle`, `[data-ad-client]` e iframes com ID começando em `google_ads_iframe`. Não oculta genericamente elementos chamados `ads` e não muda o tema dos sites. É cobertura parcial: anúncios servidos junto ao conteúdo, YouTube/streaming, novos domínios e técnicas antibloqueio podem continuar aparecendo. Não é equivalente ao conjunto de regras e scripts do uBlock Origin.
 
-Ctrl+Shift+B alterna o bloqueio na aba ativa e recarrega a página; formulários em memória dessa página podem perder texto ao recarregar. A escolha dura enquanto essa aba existir, inclusive ao navegar para outro site. Outras abas mantêm seu estado e novas abas começam protegidas. Não há whitelist persistida por site nesta versão efêmera. A faixa de ajuda e estado abaixo do endereço foi removida.
+Ctrl+Shift+B alterna o bloqueio na aba ativa e recarrega a página; formulários em memória dessa página podem perder texto ao recarregar. A escolha dura enquanto essa aba existir, inclusive ao navegar para outro site. Outras abas mantêm seu estado e novas abas começam protegidas. Não há whitelist persistida por site nesta versão. A faixa de ajuda e estado abaixo do endereço foi removida.
 
 A primeira abertura compila a lista em `$XDG_CACHE_HOME/jlinux/browser/filters` (ou o cache padrão do GLib). As seguintes carregam o filtro existente identificado pelo SHA-256 das regras. Formato inválido/incompatível recompila pelo WPE. Se a compilação/cache falhar, há diagnóstico no registro mantendo a navegação. `JLINUX_BROWSER_ADBLOCK=0 jlinux-browser` inicia uma execução inteira sem carregar filtros; para reativar nesse caso, reabrir sem a variável. Não altera DNS, hosts, proxy ou outro navegador; não consulta serviço remoto para atualizar listas. Novos snapshots são revisados e distribuídos com o pacote.
 
@@ -53,7 +53,7 @@ Instalado em 06/11/2026: `jlinux-browser-git 0.1.0.r50.gada56a9-1`, código `ada
 
 O cabeçalho ocupa a largura da janela em uma subsuperfície em `(0, -148)`, acima da origem da página. A geometria automática xdg inclui as duas superfícies; o motor recebe somente a altura útil abaixo do cabeçalho. O tamanho da view é ajustado nas notificações de largura/altura, antes de WPE emitir `resized` para WebKit, evitando enviar temporariamente o tamanho da janela inteira durante troca de abas ou foco. Não há cópia dos quadros web, mudança de motor ou alteração de CSS dos sites.
 
-O cabeçalho trata seus próprios eventos de ponteiro Wayland e cursor; coordenadas de cliques no site continuam locais à página. A implementação usa `wayland-cursor`, já usado pelo shell e fornecido pelo pacote Wayland existente. O perfil efêmero, pesquisa Google, sandbox e políticas de navegação permanecem os mesmos.
+O cabeçalho trata seus próprios eventos de ponteiro Wayland e cursor; coordenadas de cliques no site continuam locais à página. A implementação usa `wayland-cursor`, já usado pelo shell e fornecido pelo pacote Wayland existente. Pesquisa Google, sandbox e políticas de navegação permanecem; o [perfil agora é persistente](browser-profile.md).
 
 O teste headless verifica `innerHeight = altura da janela - 148`, ausência de viewport intermediário com altura inteira ao alternar abas, cliques reais em botões fixos no topo e rodapé do site, nova aba pelo cabeçalho maximizado, maximizar/restaurar e redimensionar pela borda. Não equivale a uma captura visual nem a teste físico com GPU/HiDPI. Nenhum compositor paralelo foi iniciado no TTY ativo. Passaram os 16 testes locais release e os quatro testes do navegador com ASan/UBSan (`detect_leaks=0`); LeakSanitizer permanece pendente.
 
@@ -95,7 +95,7 @@ Validação desta entrega: 16 testes locais release e os quatro testes do navega
 
 ## Políticas e limites de navegação
 
-Esta versão tem múltiplas abas por janela e perfil efêmero: cookies e armazenamento são compartilhados entre as abas da mesma execução e não persistem entre execuções. Voltar/avançar é histórico em memória de cada aba. Ainda não há favoritos, histórico em disco, downloads, extensão, restauração de sessão ou suspensão de abas. Links que pedem novas janelas continuam bloqueados; esta entrega abre abas pelo usuário, sem alterar a política de popups.
+Esta versão tem múltiplas abas por janela e [perfil persistente](browser-profile.md): cookies persistentes e armazenamento de sites podem sobreviver entre execuções, respeitando a validade definida pelos sites. Voltar/avançar é histórico em memória de cada aba. Ainda não há favoritos, histórico em disco, extensão, restauração de abas ou suspensão de abas; [downloads estão disponíveis](browser-downloads.md). Links que pedem novas janelas continuam bloqueados; esta entrega abre abas pelo usuário, sem alterar a política de popups.
 
 Endereços e navegações aceitam HTTP/HTTPS e `about:blank`. Esquemas locais/ativos/externos e URLs com credenciais são recusados. Não há interpolação de comandos, ponte JavaScript para funções nativas ou bypass de TLS. A sandbox padrão do WPE permanece ativa; o programa recusa `WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS`. Isso não substitui uma auditoria de segurança ou comprova proteção contra todas as classes de ataque.
 

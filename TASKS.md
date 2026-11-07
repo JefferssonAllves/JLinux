@@ -276,3 +276,8 @@ Downloads nativos WPE em Downloads, sem sobrescrita, progresso e acesso à pasta
 ### BROWSER-IMAGE-DOWNLOADS
 
 Correção da política de navegação para imagens geradas pela página via Blob HTTP/HTTPS. Entrada manual continua restrita. Regressão reproduzida na versão anterior 5a9a774; download Blob passou com a correção. Teste PNG confere bytes, sem validar a conta real do ChatGPT.
+
+
+### BROWSER-PERSISTENT-LOGIN
+
+Perfil normal persistente com cookies SQLite, localStorage e IndexedDB; cache separado e pastas 0700. Probe segue efêmero. Teste de reinício/remoção de cache, perfil isolado, cookie HttpOnly e diretório privado passou em release e ASan/UBSan. Cinco checks existentes de navegação/downloads, mídia, bloqueio, motor/TLS e endereços passaram. Login uma vez na nova versão; sessões expiradas/revogadas continuam sob controle dos sites. Sem conta real ou benchmark novo; ver docs/browser-profile.md.

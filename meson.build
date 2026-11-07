@@ -96,6 +96,7 @@ if foot.found() and wtype.found()
     dependencies: client_dep)
   if get_option('browser')
     test('web-browser-wayland', find_program('scripts/smoke-web-browser.py'), args: [compositor, browser, wtype, pointer_test], timeout: 60)
+    test('web-browser-profile', find_program('scripts/smoke-web-profile.py'), args: [compositor, browser], timeout: 60)
     test('web-browser-media', find_program('scripts/smoke-web-media.py'), args: [compositor, browser, wtype], timeout: 90)
   endif
   if get_option('shell')
