@@ -57,3 +57,7 @@ Pedido atual: barra de 36 px, sem margem lateral, retangular e com cantos retos,
 A bateria mostra um raio azul-claro à esquerda quando o status da mesma fonte de capacity é exatamente Charging. Full, Discharging, Not charging, Unknown e ausência de status não acendem o raio; capacidade ausente/inválida mostra traço. src/shell/battery.c consulta somente sysfs e usa a primeira capacidade válida, mantendo a política de uma bateria da interface anterior. Não agrega múltiplas baterias. Atualização usa o relógio de status existente do shell, sem timer novo.
 
 A prévia futurista-dock-only.png usa 75% e estado Charging ilustrativos, não representa a carga real do computador. Testes de leitura usam diretório temporário e cobrem carga, descarga, cheia, estado ausente e capacidades inválidas. Testes headless de maximização/encaixe foram atualizados para a reserva de 36 px. Alterações compiladas entram no próximo login: o shell ativo não recarrega seu código.
+
+## Bloco Glass de data e hora
+
+Data/hora permanecem centralizadas pela largura medida em Pango, agora com fonte de 14 px (antes 16). O bloco tem 28 px de altura dentro da barra de 36, margem de 4 px acima/abaixo e cantos discretos de 5 px. Reutiliza tonalização escura/translúcida, sombra interna e contorno contínuo azul/rosado das janelas; TINT, SHADOW e REFLECTION permanecem independentes. Não há blur de janelas no relógio nem atualização contínua nova. O bloco continua informativo, sem calendário/menu novo. A prévia mostra o desenho nativo; avaliação na sessão física fica pendente até novo login.
