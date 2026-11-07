@@ -211,7 +211,8 @@ static bool draw(struct surface *surface) {
     wl_buffer_add_listener(buffer->wl, &buffer_listener, buffer);
     cairo_surface_t *image = cairo_image_surface_create_for_data(mapping, CAIRO_FORMAT_ARGB32,
         surface->width, surface->height, stride);
-    bool animate = surface == &surface->app->launcher && dock_animating(surface->app, animation_now());
+    /* Closing needs a final callback even if rasterization outlasted the transition. */
+    bool animate = surface == &surface->app->launcher && (surface->app->dock_closing || dock_animating(surface->app, animation_now()));
     cairo_t *cr = cairo_create(image); paint(surface, cr);
     bool valid = cairo_status(cr) == CAIRO_STATUS_SUCCESS && cairo_surface_status(image) == CAIRO_STATUS_SUCCESS;
     cairo_destroy(cr); cairo_surface_destroy(image);

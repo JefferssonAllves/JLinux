@@ -395,3 +395,5 @@ PANEL-COMPACT implementado: barra 36 px de largura total e cantos retos; logo/te
 ## WhatsApp no lugar do Steam — feature/whatsapp-dock
 
 Décimo item do dock circular troca nome/ícone/ação de Steam para WhatsApp. Ícone vetorial nativo verde com balão e telefone; inicia jlinux-whatsapp já instalado. Layout, animações, seleção angular e demais aplicativos preservados. Teste headless clica no setor com comando WhatsApp simulado, sem iniciar sessão/mensagens reais. Base feature/dock-center-reveal; validação/instalação registradas após conclusão.
+
+Integração preserva o dock WhatsApp já instalado (15b821a). A repetição identificou uma condição anterior de fechamento da animação: se o desenho começasse após o término da transição, podia não haver callback final para destruir a superfície. O desenho de fechamento agora solicita esse callback mesmo com transição vencida. Após o ajuste, 25 testes release e quatro relevantes ASan/UBSan passaram; bateria completa ASan/UBSan também havia passado na base integrada antes desse ajuste. Sem timer adicional. O primeiro pacote gerado desta entrega não foi instalado, para não remover a atualização concorrente do dock.
