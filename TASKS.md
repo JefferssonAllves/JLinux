@@ -288,3 +288,10 @@ Perfil normal persistente com cookies SQLite, localStorage e IndexedDB; cache se
 Cliente C/WPE sobre o motor já instalado: executável/atalho próprios, janela sem abas/barra, perfil privado e persistente separado, lock de instância única, cache DOCUMENT_VIEWER, links externos no navegador padrão e navegação principal restrita à origem oficial. Sem Electron/outro motor empacotado. Tela de vinculação real verificada; conta não vinculada.
 
 Consumo baixíssimo não atingido: ensaio headless GLES2 com conta não vinculada ficou em 620–632 MiB PSS mediano (pico 705 MiB). Piloto de pressão agressiva rejeitado por redução não reprodutível e CPU maior. Métodos/dados em docs/whatsapp.md. Não prometer limite de RAM, chamadas, notificações, anexos ou uso pós-login sem validação. Testes/instalação registrados após conclusão. Base feature/browser-persistent-login; trabalho paralelo de memória do navegador preservado em outra árvore.
+
+
+## BROWSER-MODERN-TABS — feature/browser-modern-tabs
+
+Implementadas abas proporcionais com reticências e “+” após a última, hit testing compartilhado, cabeçalho escuro com reflexo de foco e controles vetoriais, I-beam na URL e caret piscante limitado à edição com foco. DNS do Google antecipado uma vez por execução ao focar endereço; nenhum texto de busca é enviado antecipadamente. Cache existente não ampliado; dados de login preservados. Base ed57981/r63 instalada, mantendo WhatsApp.
+
+Evidência local: 13 testes release passaram; 2 direcionados com ASan/UBSan passaram. Layout cobre 1–256 abas e 240–1920 px; Wayland clica na última aba comprimida e preserva conteúdo/histórico. Prévias nativas inspecionadas em docs/design/browser-modern-{header,tabs}.png. Sem medição de ganho de rede ou GPU física. Instalação/commit serão registrados após pacote; PR dependente de feature/whatsapp-app (#69), sem integração autorizada.

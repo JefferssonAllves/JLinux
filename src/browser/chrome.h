@@ -27,7 +27,9 @@ struct browser_chrome {
     gpointer clicked_data;
     struct wl_list buffers;
     struct jlinux_glass glass;
-    guint idle;
+    guint idle, caret_timer;
+    gboolean caret_visible, cursor_text;
+    uint32_t pointer_serial;
     int in_flight;
     gboolean editing, dirty, selected;
     gboolean adblock_available, adblock_enabled;
@@ -39,6 +41,8 @@ gboolean browser_chrome_init(struct browser_chrome *chrome, WPEView *view);
 void browser_chrome_update(struct browser_chrome *chrome);
 void browser_chrome_finish(struct browser_chrome *chrome);
 void browser_chrome_paint(struct browser_chrome *chrome, cairo_t *cr, int width);
-guint browser_chrome_tab_slots(int width);
+double browser_chrome_tab_width(int width, guint count);
+guint browser_chrome_tab_at(struct browser_chrome *chrome, int width, double x, gboolean *close);
+gboolean browser_chrome_url_at(int width, double x, double y);
 int browser_chrome_new_tab_x(struct browser_chrome *chrome, int width);
 #endif

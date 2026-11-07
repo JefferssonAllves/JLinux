@@ -36,6 +36,10 @@ if get_option('browser')
   address_test = executable('jlinux-test-web-address', 'tests/web-address.c',
     'src/browser/address.c', dependencies: dependency('glib-2.0'))
   test('web-address', address_test)
+  chrome_test = executable('jlinux-test-web-chrome', 'tests/web-chrome.c', 'src/browser/chrome.c',
+    'src/toolkit/painter.c', 'src/effects/glass.c',
+    dependencies: [wpe, wpe_wayland, dependency('wayland-client'), dependency('wayland-cursor'), cairo, pango, fontconfig, math])
+  test('web-chrome-layout', chrome_test)
   test('web-blocklist-data', find_program('tests/browser-blocklist.py'))
   test('web-browser-blocker', find_program('scripts/smoke-web-blocker.py'), args: [browser], timeout: 60)
   test('web-engine-headless', find_program('scripts/smoke-web-engine.py'), args: [browser], timeout: 60)

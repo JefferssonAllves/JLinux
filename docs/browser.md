@@ -132,3 +132,16 @@ Hardware: Ryzen 7 5700U, RAM utilizável 7,1 GiB, alimentação AC (`ADP0/online
 PSS consultado em `/proc` da árvore acessível a cada 25 ms: processos que encerram entre amostras, páginas sem permissão e picos curtos podem ficar de fora. Isso não é memória estável em repouso nem pico exato. O ponto inicial já envolve aproximadamente 229–233 MiB em uma página mínima, portanto ainda não há fundamento para anunciar um navegador “superleve”. O motor representa parte relevante do custo; C não elimina esse consumo.
 
 Próximo comparativo: workloads e perfis equivalentes em WPE, Firefox e Chromium; inicialização com caches quentes/frios separados, 1/5/10 abas quando suportadas, PSS em repouso, CPU/despertares, rolagem, vídeo, compatibilidade e energia. A etapa acelerada será aninhada antes de qualquer ensaio DRM. Não houve medição GPU, bateria, latência ponta a ponta ou equivalência visual com as referências.
+
+
+## Cabeçalho e abas proporcionais
+
+A faixa mantém todas as abas no mesmo espaço: largura máxima de 180 px, reduzida proporcionalmente quando necessário, com “+” junto à última. Desenho e clique usam o mesmo cálculo, inclusive após redimensionar. Títulos recebem reticências; em abas estreitas, o fechar aparece somente na ativa, e em larguras muito pequenas vira indicador. Ctrl+Tab/Ctrl+Shift+Tab e Ctrl+W continuam disponíveis. Não há limite artificial de abas; muitas abas reduzem a legibilidade e continuam consumindo os recursos dos sites.
+
+Cabeçalho nativo C/Cairo/Pango sobre fundo escuro, aba ativa com reflexo azul-violeta, controles vetoriais e campo arredondado com indicação de foco. A altura permanece 100 px, sem sobrepor o site. Prévias de componente: [uma aba](design/browser-modern-header.png) e [12 abas](design/browser-modern-tabs.png). São geradas pelas mesmas rotinas nativas; não são capturas de páginas nem prova de desempenho em GPU.
+
+A URL mostra ponteiro de texto ao passar o mouse e caret piscante ao digitar. O fim de um endereço longo permanece visível durante edição. O timer de 530 ms existe somente enquanto o campo está em edição e a janela tem foco; sai ao navegar, trocar foco ou encerrar. A edição existente continua acrescentando/apagando no fim do campo.
+
+Ao focar a barra pela primeira vez nesta execução, `webkit_network_session_prefetch_dns` antecipa somente a resolução de `www.google.com`, sem enviar o texto digitado, sem carregar resultados e sem abrir uma página oculta. A API está disponível na biblioteca instalada. Pode reduzir o passo inicial quando o DNS não está em cache; não foi medido um ganho percentual de pesquisa na rede do usuário. O cache normal do WebKit já estava ativado e não foi ampliado. Perfis persistentes, bloqueador, downloads, vídeos e o app WhatsApp são preservados.
+
+Validação: 13 testes locais release passaram com navegador habilitado/shell desabilitado. Incluem perfil/login, downloads, bloqueio, vídeo e WhatsApp. Dois testes direcionados passaram também com ASan/UBSan (`detect_leaks=0`): layout/caret e navegação Wayland, incluindo clique na última de sete abas comprimidas. O teste de layout percorre 1–256 abas em larguras de 240–1920 px, verifica limites, hit testing e diferença de pixels com/sem caret. Inspeção das duas prévias nativas concluída; teste visual físico/HiDPI e benchmark da busca continuam pendentes.

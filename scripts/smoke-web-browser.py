@@ -188,6 +188,7 @@ def main():
                 typed("x", "twomorexx")
                 for _ in range(6):
                     keys("-M", "ctrl", "-k", "t", "-m", "ctrl")
+                click(40 + 12 + 6 * ((window_width - 56) / 7) + 12, 110)  # Last compressed tab remains visible/clickable.
                 keys("-M", "ctrl", "-k", "Tab", "-m", "ctrl")
                 typed("z", "twomorexxz")
                 keys("-M", "ctrl", "-M", "shift", "-k", "Tab", "-m", "shift", "-m", "ctrl")

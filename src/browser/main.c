@@ -25,7 +25,7 @@ struct app {
     WebKitNetworkSession *session;
     GPtrArray *downloads;
     struct browser_chrome chrome;
-    gboolean probe, whatsapp;
+    gboolean probe, whatsapp, search_prepared;
     gboolean media_available;
     WebKitUserContentFilter *filter;
     gboolean consumed[768];
@@ -48,9 +48,12 @@ static void web_notice(struct app *app, WebKitWebView *web, const char *message)
     if (web == app->web) { notice(app, message); }
 }
 static void show_address(struct app *app) {
+    if(!app->search_prepared && !app->probe && !app->whatsapp){
+        webkit_network_session_prefetch_dns(app->session,"www.google.com");app->search_prepared=TRUE;
+    }
     const char *uri = webkit_web_view_get_uri(app->web);
     g_strlcpy(app->chrome.address, uri && strcmp(uri, "about:blank") ? uri : "", sizeof(app->chrome.address));
-    app->chrome.selected = TRUE; app->chrome.editing = TRUE;
+    app->chrome.selected = app->chrome.address[0] != 0; app->chrome.editing = TRUE; app->chrome.caret_visible = TRUE;
     g_strlcpy(app->chrome.message, app->media_available ? "" : "Vídeo indisponível: instale os plugins GStreamer base/good/libav.", sizeof(app->chrome.message));
     browser_chrome_update(&app->chrome);
 }
@@ -84,7 +87,7 @@ static void append_text(struct app *app, const char *text) {
     size_t offset = app->chrome.selected ? 0 : strlen(app->chrome.address);
     if (strlen(text) > BROWSER_ADDRESS_LIMIT - offset) { notice(app, "Endereço longo demais."); return; }
     g_strlcpy(app->chrome.address + offset, text, sizeof(app->chrome.address) - offset);
-    app->chrome.selected = FALSE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
+    app->chrome.selected = FALSE; app->chrome.caret_visible = TRUE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
 }
 static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
     struct app *app = data; struct browser_chrome *chrome = &app->chrome;
@@ -130,7 +133,7 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         }
         else if (key == XKB_KEY_BackSpace || key == XKB_KEY_Delete) {
             char *end = chrome->selected ? chrome->address : g_utf8_find_prev_char(chrome->address, chrome->address + strlen(chrome->address));
-            if (end) { *end = 0; } chrome->selected = FALSE; browser_chrome_update(chrome);
+            if (end) { *end = 0; } chrome->selected = FALSE; chrome->caret_visible = TRUE; browser_chrome_update(chrome);
         } else if (!ctrl && !alt) {
             gunichar character = xkb_keysym_to_utf32(key);
             if (character && g_unichar_isprint(character)) {
@@ -150,16 +153,9 @@ static void chrome_clicked(struct browser_chrome *chrome, double x, double y, gp
         guint count = chrome->tabs->len;
         int add_x = browser_chrome_new_tab_x(chrome, width);
         if (x >= add_x && x < add_x + 32) { new_tab(app, "about:blank"); }
-        else if (x >= width - 72) { select_tab(app, (chrome->active_tab + 1) % count); }
-        else if (x >= width - 100) { select_tab(app, (chrome->active_tab + count - 1) % count); }
-        else if (x >= 12) {
-            guint slots = browser_chrome_tab_slots(width);
-            guint slot = (guint)(x - 12) / BROWSER_TAB_WIDTH;
-            guint index = chrome->active_tab / slots * slots + slot;
-            if (slot < slots && index < count) {
-                if (x - 12 - slot * BROWSER_TAB_WIDTH >= BROWSER_TAB_WIDTH - 32) { close_tab(app, index); }
-                else { select_tab(app, index); }
-            }
+        else {
+            gboolean close=FALSE;guint index=browser_chrome_tab_at(chrome,width,x,&close);
+            if(index<count){if(close){close_tab(app,index);}else{select_tab(app,index);}}
         }
     } else if (y < BROWSER_CHROME_HEIGHT) {
         if (x < 45) { webkit_web_view_go_back(app->web); }
@@ -370,6 +366,10 @@ static void disconnected(WPEDisplay *display, GError *error, gpointer data) {
     (void)display; struct app *app = data; app->status = 1;
     g_printerr("Conexão gráfica encerrada: %s\n", error ? error->message : "sem detalhes"); quit(app);
 }
+static void view_focus_changed(WPEView *view, GParamSpec *spec, gpointer data) {
+    (void)spec;struct app *app=data;
+    if(view==app->chrome.view){browser_chrome_update(&app->chrome);}
+}
 static void view_size_changed(WPEView *view, GParamSpec *spec, gpointer data) {
     (void)spec; struct app *app = data;
     WPEToplevel *toplevel = wpe_view_get_toplevel(view);
@@ -440,6 +440,7 @@ static void new_tab(struct app *app, const char *uri) {
         wpe_view_set_toplevel(view, app->toplevel);
         view_size_changed(view, NULL, app);
         g_signal_connect(view, "event", G_CALLBACK(view_event), app);
+        g_signal_connect(view, "notify::has-focus", G_CALLBACK(view_focus_changed), app);
         select_tab(app, app->chrome.tabs->len - 1);
     } else { app->web = web; }
     webkit_web_view_load_uri(web, uri);

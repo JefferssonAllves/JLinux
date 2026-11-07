@@ -59,3 +59,8 @@ Gerada por `jlinux-test-window-frame --preview`: usa os quatro buffers reais de 
 ![Prévia nativa do login JLinux](native-login-preview.png)
 
 Imagem gerada por `jlinux-greeter --preview`, usando o toolkit C do projeto. Material Glass escuro, bordas finas e brilhos localizados. A imagem é do modo de prévia e não demonstra autenticação PAM real.
+
+
+### Cabeçalho do navegador com abas proporcionais
+
+[Uma aba](browser-modern-header.png) · [12 abas e caret](browser-modern-tabs.png). Prévias dos componentes C/Cairo/Pango, mantendo fundo escuro e reflexos azul-violeta do sistema. Não são capturas da sessão nem substituem as referências do usuário. Comportamento e limites em [browser.md](../browser.md#cabeçalho-e-abas-proporcionais).
