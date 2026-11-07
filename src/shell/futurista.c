@@ -466,12 +466,16 @@ void futurista_panel(struct futurista *s, cairo_t *cr, int width) {
     snprintf(clock, sizeof(clock), "%s, %02d de %s  %02d:%02d", days[t.tm_wday], t.tm_mday, months[t.tm_mon],
              t.tm_hour, t.tm_min);
     PangoLayout *label = pango_cairo_create_layout(cr);
-    PangoFontDescription *font = pango_font_description_from_string("Adwaita Sans 16px");
+    PangoFontDescription *font = pango_font_description_from_string("Adwaita Sans 14px");
     pango_layout_set_font_description(label, font);
     pango_layout_set_text(label, clock, -1);
     int clock_width;
     pango_layout_get_pixel_size(label, &clock_width, NULL);
-    text(cr, clock, (width - clock_width) / 2., 15, 16, false, 0xf1f2ff);
+    struct ui_rect clock_box = {(width - clock_width) / 2. - 14, 12, clock_width + 28, 28};
+    if (s->glass.tint) { jlinux_glass_window_tint(cr, clock_box, 5); }
+    if (s->glass.shadow) { jlinux_glass_window_shading(cr, clock_box, 5); }
+    if (s->glass.reflection) { jlinux_glass_window_reflections(cr, clock_box, 5, clock_box.height); }
+    text(cr, clock, (width - clock_width) / 2., 17, 14, false, 0xf1f2ff);
     pango_font_description_free(font);
     g_object_unref(label);
     material(cr, width - 57, 11, 39, 30, 4, false, s->glass);

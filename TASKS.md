@@ -423,3 +423,9 @@ WM-SMOOTH implementado: cópia dos buffers da janela interpola posição e taman
 Implementados recorte da superfície principal/subsurfaces à geometria da janela, handoff do encaixe após commit do configure, espera sem polling, troca entre metades iguais sem aguardar novo tamanho, preservação vertical ao puxar e uso do tamanho solicitado no próximo gesto. Clique em outra janela não cancela todas as animações. Base instalada e43e58f/r94 preservada.
 
 Evidência: escape de conteúdo reproduzido na versão instalada; teste com buffer maior e cliente atrasado 650 ms passou após correção. 30 testes release e cinco direcionados ASan/UBSan passaram. Navegador WPE instalado foi verificado em runtime headless com nova composição, incluindo encaixe/viewport. Sem benchmark físico/DRM/VT; limites e plano em docs/validation.md. Instalação/PR serão registrados após pacote, sem merge.
+
+## Data e hora com material de janela — feature/glass-clock-panel
+
+CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao texto, cantos de 5 px e helpers existentes de tonalização, sombreado e reflexão das molduras. Fonte reduzida de 16 para 14 px e posição vertical ajustada à barra de 36 px. Cada efeito respeita o controle global correspondente. Nenhum timer, dependência ou lógica de animação novo.
+
+29 testes locais release passaram; prévia nativa inspecionada. Sem repetição de sanitizadores para esta alteração de layout que reutiliza helpers existentes; sem benchmark ou validação física visual. Pacote/ativação registrados na conclusão; shell ativo preservado, ativação no próximo login.

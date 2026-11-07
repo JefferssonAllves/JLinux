@@ -252,3 +252,9 @@ WM-SMOOTH implementado: cópia dos buffers da janela interpola posição e taman
 Base instalada e43e58f/r94; branch fix/window-motion-sync sobre feature/smooth-side-snap. GCC/wlroots 0.20.2, backend headless/Pixman. Regressão reproduzida no compositor instalado: fixture com buffer 1280×720 e geometria 1000×600 recebia clique fora da moldura. Versão corrigida recorta a superfície e passou no teste. Cenário de commit deliberadamente atrasado 650 ms verifica que o conteúdo vivo não reaparece aos 220 ms antes do novo buffer.
 
 30 testes release passaram; cinco direcionados com ASan/UBSan (`detect_leaks=0`) passaram: motion-sync, side-snap, transitions, reduced-motion e effects-lifecycle. Cenário de navegação do navegador instalado passou com o novo compositor em runtime isolado, além de uma execução que encaixou WPE e verificou viewport/handoff final. Sem benchmark de GPU/energia ou ensaio DRM/VT; plano de validação física: repetir arraste livre e encaixe alternado com Foot e navegador, medir p95/p99 de apresentação e latência de entrada em builds release equivalentes, respeitando efeitos escolhidos.
+
+## Data e hora com material de janela — feature/glass-clock-panel
+
+CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao texto, cantos de 5 px e helpers existentes de tonalização, sombreado e reflexão das molduras. Fonte reduzida de 16 para 14 px e posição vertical ajustada à barra de 36 px. Cada efeito respeita o controle global correspondente. Nenhum timer, dependência ou lógica de animação novo.
+
+29 testes locais release passaram; prévia nativa inspecionada. Sem repetição de sanitizadores para esta alteração de layout que reutiliza helpers existentes; sem benchmark ou validação física visual. Pacote/ativação registrados na conclusão; shell ativo preservado, ativação no próximo login.
