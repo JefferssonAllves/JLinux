@@ -144,7 +144,12 @@ static void apply_visual(struct view *view, double now) {
     for (unsigned i = 0; i < 4; i++) {
         wlr_scene_buffer_set_opacity(view->frame.parts[i], visible * (view->owner->focused == view ? 1 : .72));
     }
-    wlr_scene_node_set_position(&view->visual->node, 0, view->owner->reduced_motion ? 0 : (int)((1-visible)*12-lift*3));
+    int offset_y = view->owner->reduced_motion ? 0 : (int)((1-visible)*12-lift*3);
+    if (!view->is_fullscreen && view->owner->has_workarea) {
+        int minimum = view->owner->workarea.y + JLINUX_FRAME_HEADER - view->tree->node.y;
+        if (offset_y < minimum) { offset_y = minimum; }
+    }
+    wlr_scene_node_set_position(&view->visual->node, 0, offset_y);
     window_aura_opacity(&view->aura, view->owner->focused == view, lift, visible);
     for (unsigned i = 0; i < 4; i++) {
         wlr_scene_node_set_enabled(&view->aura.shadow[i]->node, !view->is_fullscreen);
@@ -388,7 +393,7 @@ static void arrange(struct interaction *state) {
         wlr_scene_node_set_enabled(&view->tree->node, view->mapped && view->workspace == state->workspace);
     }
 }
-static bool snap_target(struct interaction *state, struct wlr_box *target) {
+static bool snap_target(struct interaction *state, struct wlr_box *target, bool *top) {
     struct view *view = state->grabbed;
     if (!view || state->resizing || view->maximized || view->is_fullscreen) { return false; }
     struct wlr_output *output = wlr_output_layout_get_center_output(state->layout);
@@ -396,6 +401,9 @@ static bool snap_target(struct interaction *state, struct wlr_box *target) {
     struct wlr_box bounds, area;
     wlr_output_layout_get_box(state->layout, output, &bounds);
     if (state->cursor->y < bounds.y || state->cursor->y >= bounds.y + bounds.height || !maximize_area(view, &area)) { return false; }
+    *top = state->cursor->x >= bounds.x && state->cursor->x < bounds.x + bounds.width &&
+        (state->cursor->y <= bounds.y + 12 || (state->has_workarea && state->cursor->y < state->workarea.y));
+    if (*top) { *target = area; return true; }
     bool left = state->cursor->x <= bounds.x + 12;
     bool right = state->cursor->x >= bounds.x + bounds.width - 12;
     if (!left && !right) { return false; }
@@ -411,7 +419,8 @@ static bool snap_target(struct interaction *state, struct wlr_box *target) {
 }
 static void preview_snap(struct interaction *state) {
     struct wlr_box area;
-    bool visible = snap_target(state, &area);
+    bool top;
+    bool visible = snap_target(state, &area, &top);
     if (visible) {
         state->hint_box = (struct wlr_box){area.x-JLINUX_FRAME_BORDER, area.y-JLINUX_FRAME_HEADER,
             area.width+2*JLINUX_FRAME_BORDER, area.height+JLINUX_FRAME_HEADER+JLINUX_FRAME_BORDER};
@@ -423,11 +432,17 @@ static void preview_snap(struct interaction *state) {
         if (visible) { wlr_log(WLR_INFO, "Prévia de encaixe: %dx%d em %d,%d", state->hint_box.width, state->hint_box.height, state->hint_box.x, state->hint_box.y); }
     }
 }
-static void snap_side(struct interaction *state) {
+static void apply_snap(struct interaction *state) {
     struct view *view = state->grabbed;
     struct wlr_box area;
-    if (!snap_target(state, &area)) {
+    bool top;
+    if (!snap_target(state, &area, &top)) {
         if (view && !state->resizing) { view->snap_restore = (struct wlr_box){0}; }
+        return;
+    }
+    if (top) {
+        set_maximized(view, true);
+        view->restore.width = state->width; view->restore.height = state->height;
         return;
     }
     if (!view->snapped && !view->snap_restore.width) { view->snap_restore = (struct wlr_box){0, 0, state->width, state->height}; }
@@ -983,7 +998,11 @@ static void pointer_moved(struct interaction *state, uint32_t time) {
             }
             wlr_xdg_toplevel_set_size(state->grabbed->xdg, width, height);
         } else {
-            wlr_scene_node_set_position(&state->grabbed->tree->node, state->window_x + dx, state->window_y + dy);
+            int y = state->window_y + dy;
+            if (state->has_workarea && y < state->workarea.y + JLINUX_FRAME_HEADER) {
+                y = state->workarea.y + JLINUX_FRAME_HEADER;
+            }
+            wlr_scene_node_set_position(&state->grabbed->tree->node, state->window_x + dx, y);
         }
         preview_snap(state);
         return;
@@ -1029,7 +1048,7 @@ static void button_event(struct wl_listener *listener, void *data) {
     }
     if (state->grab_button) {
         if (event->state == WL_POINTER_BUTTON_STATE_RELEASED && event->button == state->grab_button) {
-            snap_side(state);
+            apply_snap(state);
             end_grab(state);
             pointer_moved(state, event->time_msec);
         }

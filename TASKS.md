@@ -445,3 +445,10 @@ WM-OVERVIEW implementado: grade Glass do espaço atual, miniaturas clicáveis, f
 Blur real usa uma composição da saída central, redução GPU para 1/4 por eixo, leitura e box blur CPU em cache. Miniaturas reutilizam buffers; nenhuma recaptura ao paginar e nenhum timer de overview. BLUR=0 evita captura; falha de captura usa fundo escuro com aviso. Mantém efeitos independentes e recursos pertencentes ao compositor. Base atual instalada de volume/movimento preservada por integração local, sem merge de PR.
 
 Validação e limites em docs/window-overview.md: testes locais release/ASan e GPU headless Radeon, prévia de componentes com dados fictícios e custo descritivo de preparação (sem afirmar latência de apresentação ou desempenho físico). Resultados finais e pacote registrados na conclusão. Sem VT, reinício de sessão ou captura persistida do desktop do usuário.
+CONTROL-VOLUME — instalado `0.5.0.r102.gf84be4a-1` via pacman, 23 arquivos sem ausências. 30/30 testes locais release e 30/30 no pacote; CI do código f84be4a aprovado. PR #78 enviado, sem merge. Backup/versão em docs/arch-installation.md. Sessão preservada; ativação no próximo login. Prévia conferida; fluidez física não medida.
+
+## TOP-BAR-SNAP — feature/top-bar-window-snap
+
+Implementados limite superior do arraste e da elevação visual, prévia de área inteira ao levar o ponteiro à barra e maximização ao soltar, com restauração de tamanho. Reutiliza maximização/área útil existentes; preserva encaixe lateral e fullscreen solicitado pelo aplicativo. Base dependente de feature/control-volume-slider (#78).
+
+30 testes locais release passaram, incluindo encaixe normal, movimento reduzido e fechamento na posição limitada. Pacote/instalação serão registrados na conclusão. Sem substituir sessão, testes de VT ou benchmark físico.
