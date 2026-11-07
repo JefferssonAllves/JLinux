@@ -67,6 +67,11 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             processes.remove(drag)
             h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x645 em 3,72)' in log(), processes, 'left half respecting panel without lateral reserve')
 
+            if env.get('JLINUX_REDUCED_MOTION') == '1':
+                assert 'Transição de encaixe iniciada' not in log()
+            else:
+                h.wait_for(lambda: 'Transição de encaixe concluída' in log(), processes, 'animated glide completed')
+                assert 'Transição de encaixe iniciada' in log()
             half = size()
             assert half[1] < original[1]
             mouse(220, 54, 1279, 240)
@@ -79,6 +84,13 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             mouse(700, 240, 700, 0)
             assert size() == original
             assert log().count('Janela encaixada:') == before, 'top edge snapped a window'
+            # Disconnect a client immediately after snapping, while the snapshot may still be alive.
+            three, (_, _, x3, y3) = open_window(3)
+            mouse(x3 + 160, y3 - 18, 0, 240)
+            h.wait_for(lambda: 'Janela encaixada: Snap-3' in log(), processes, 'snap before disconnect')
+            h.stop(three)
+            processes.remove(three)
+            assert server.poll() is None, 'disconnect during snap killed compositor'
             h.stop(one)
             processes.remove(one)
             if env.get('JLINUX_REDUCED_MOTION') != '1':

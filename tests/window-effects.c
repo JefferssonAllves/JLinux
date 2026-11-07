@@ -51,6 +51,13 @@ int main(int argc,char **argv) {
     int x,y; CHECK(wlr_scene_node_coords(node,&x,&y));
     check_buffer(fill,x,y,&check); CHECK(check.valid && check.count==1);
     double sx,sy; CHECK(!wlr_scene_node_at(&scene->tree.node,170,200,&sx,&sy));
+    struct wlr_box from={50,120,640,600},to={250,200,320,300};
+    window_snapshot_geometry(snapshot,from,to,0);
+    CHECK(ghost->node.x==50 && ghost->node.y==120 && fill->dst_width==640);
+    window_snapshot_geometry(snapshot,from,to,.5);
+    CHECK(ghost->node.x==150 && ghost->node.y==160 && fill->dst_width==480 && fill->dst_height==450);
+    window_snapshot_geometry(snapshot,from,to,1);
+    CHECK(ghost->node.x==250 && ghost->node.y==200 && fill->dst_width==320 && fill->dst_height==300);
     window_snapshot_destroy(snapshot); CHECK(destroyed);
     struct window_aura aura={0}; CHECK(window_aura_create(&aura,parent));
     struct jlinux_glass effects={.shadow=true,.reflection=true,.tint=true};

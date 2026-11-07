@@ -115,6 +115,7 @@ if foot.found() and wtype.found()
     test('window-layout-constraints', find_program('scripts/smoke-layout-constraints.py'), args: [compositor, layout_client, wtype, pointer_test], timeout: 25)
   endif
   test('window-side-snap', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], timeout: 40)
+  test('snap-reduced-motion', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 40)
   test('window-frame-input', find_program('scripts/smoke-window-frame.py'), args: [compositor, pointer_test, foot, wtype], timeout: 35)
   terminal_test = find_program('scripts/smoke-terminal.py')
   test('terminal-input-headless', terminal_test, args: [compositor, pointer_test, foot, wtype], timeout: 40)
