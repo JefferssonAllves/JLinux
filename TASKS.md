@@ -437,3 +437,5 @@ Implementado volume absoluto por clique/arraste com resposta visual imediata, li
 Testes direcionados de backend e entrada headless com áudio simulado passaram; prévia nativa inspecionada. Suite completa/pacote/instalação registrados na conclusão. Sem reiniciar a sessão ativa, testes de VT, benchmark ou confirmação física da fluidez.
 
 WINDOW-MOTION-SYNC — instalado `0.5.0.r99.g161ba52-1`, preservando a instalação concorrente do relógio Glass 9613200. Pacote 30/30 e integridade confirmados; regressão passou também com `/usr/bin/jlinux-compositor`. PR #76 agora depende de feature/glass-clock-panel (#75). Sessão preservada, ativação no próximo login. Backup/source/limites em docs/arch-installation.md.
+
+CONTROL-VOLUME — instalado `0.5.0.r102.gf84be4a-1` via pacman, 23 arquivos sem ausências. 30/30 testes locais release e 30/30 no pacote; CI do código f84be4a aprovado. PR #78 enviado, sem merge. Backup/versão em docs/arch-installation.md. Sessão preservada; ativação no próximo login. Prévia conferida; fluidez física não medida.
