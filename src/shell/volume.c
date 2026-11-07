@@ -12,13 +12,15 @@
 #include <unistd.h>
 /* shortcut: wpctl per request; use native subscriptions when adding live device selection. */
 bool volume_start(struct volume *volume, int action) {
-    if (volume->pid || action < 0 || action > 3) { return false; }
+    if (volume->pid || action < 0 || action > 4) { return false; }
     int pipefd[2];
     if (pipe2(pipefd, O_CLOEXEC | O_NONBLOCK)) { volume->available = false; return false; }
     char *query[] = {"wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@", NULL};
     char *step[] = {"wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_AUDIO_SINK@", action == 1 ? "5%-" : "5%+", NULL};
     char *mute[] = {"wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle", NULL};
-    char **args = action == 0 ? query : action == 3 ? mute : step;
+    char value[32]; snprintf(value, sizeof(value), "%.4f", volume->target);
+    char *absolute[] = {"wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_AUDIO_SINK@", value, NULL};
+    char **args = action == 4 ? absolute : action == 0 ? query : action == 3 ? mute : step;
     char **env = g_get_environ();
     env = g_environ_setenv(env, "LC_ALL", "C", true);
     if (!getenv("PIPEWIRE_RUNTIME_DIR")) {
@@ -49,11 +51,21 @@ bool volume_start(struct volume *volume, int action) {
     clock_gettime(CLOCK_MONOTONIC, &volume->started);
     return true;
 }
+bool volume_set(struct volume *volume, double level) {
+    if (!isfinite(level)) { return false; }
+    volume->target = fmin(1, fmax(0, level));
+    volume->level = volume->target;
+    volume->pending = true;
+    if (volume->pid) { return true; }
+    volume->pending = false;
+    return volume_start(volume, 4);
+}
 void volume_complete(struct volume *volume, int status) {
     char output[128] = {0}, tail[32] = {0};
     ssize_t count = read(volume->fd, output, sizeof(output) - 1);
     close(volume->fd); volume->fd = -1; volume->pid = 0;
-    if (!WIFEXITED(status) || WEXITSTATUS(status)) { volume->available = false; return; }
+    if (!WIFEXITED(status) || WEXITSTATUS(status)) { volume->available = false; volume->pending = false; return; }
+    if (volume->pending) { volume->pending = false; volume_start(volume, 4); return; }
     if (!volume->query) { volume_start(volume, 0); return; }
     double level;
     int fields = sscanf(output, "Volume: %lf %31[^\n]", &level, tail);

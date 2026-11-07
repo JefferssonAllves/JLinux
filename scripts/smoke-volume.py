@@ -24,7 +24,9 @@ with (root / 'calls').open('a') as out:
     out.write(json.dumps(sys.argv[1:]) + '\\n')
 if (root / 'hang').exists(): time.sleep(20)
 if (root / 'fail').exists(): sys.exit(1)
-if sys.argv[1] == 'get-volume': print('Volume: 0.40 [MUTED]')
+if sys.argv[1] == 'get-volume':
+    time.sleep(.15)
+    print('Volume: 0.40 [MUTED]')
 ''')
     mock.chmod(0o755)
     env = dict(os.environ, PATH=directory, VOLUME_TEST=directory, XDG_RUNTIME_DIR=directory,
@@ -51,6 +53,24 @@ if sys.argv[1] == 'get-volume': print('Volume: 0.40 [MUTED]')
                 if not live:
                     click(1074, 18)
                     assert 'Interface mapeada: jlinux-volume\n' not in log(), 'Área do volume removida ainda abre o popup'
+                    click(1240, 24)
+                    wait_for(lambda: 'Painel de controle aberto.' in shell_log.read_text(), [server, client], 'controls')
+                    # Nominal slider coordinates scaled to the headless 1280x720 output.
+                    scale = min(1280 / 1672, (720 - 52) / 889)
+                    offset = (1280 - 1672 * scale) / 2
+                    y = round(52 + (720 - 52 - 889 * scale) / 2 - 52 * scale + 376 * scale)
+                    for start, end in ((1300, 1550), (1550, 1290)):
+                        before = len(recorded())
+                        subprocess.run([pointer, str(round(offset + start * scale)), str(y),
+                                        str(round(offset + end * scale)), str(y)], env=env, check=True, timeout=3)
+                        expected = ((round(offset + end * scale) - offset) / scale - 1287) / 339
+                        wait_for(lambda: any(c[0] == 'set-volume' and abs(float(c[-1]) - expected) < .003
+                                             for c in recorded()[before:]), [server, client], 'final drag value')
+                        time.sleep(.4)
+                    # Outside the track, the release still clamps to its end.
+                    subprocess.run([pointer, '1100', str(y), '1270', str(y)], env=env, check=True, timeout=3)
+                    wait_for(lambda: any(c[0] == 'set-volume' and c[-1] == '1.0000' for c in recorded()),
+                             [server, client], 'clamped drag')
                     stop(client)
                     assert client.returncode == 0
                     continue

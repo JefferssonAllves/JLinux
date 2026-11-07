@@ -533,7 +533,7 @@ static void sector(cairo_t *cr, int index, double focus, struct jlinux_glass eff
     }
 }
 static void controls(struct futurista *s, cairo_t *cr, int width, int height) {
-    material(cr, 1194, 66, 462, 760, 38, false, s->glass);
+    material(cr, 1194, 66, 462, 632, 38, false, s->glass);
     cairo_set_source_rgba(cr, .85, .85, 1, .8);
     roundrect(cr, 1407, 83, 47, 6, 3);
     cairo_fill(cr);
@@ -549,17 +549,8 @@ static void controls(struct futurista *s, cairo_t *cr, int width, int height) {
         text(cr, labels[i], x + (i == 2 ? 16 : 34), 194, 17, true, 0xffffff);
         text(cr, states[i], x + 12, 218, 14, false, 0xd8daee);
     }
-    const char *small[] = {"Não Perturbe", "Economia", "Tela Noturna", "Captura"};
-    const char *second[] = {"", "de Energia", "", "de Tela"};
-    for (int i = 0; i < 4; i++) {
-        double x = 1220 + i * 106;
-        material(cr, x, 272, 92, 106, 24, false, s->glass);
-        line_icon(cr, i + 3, x + 31, 289, 30, 0xf7f7ff);
-        text(cr, small[i], x + 4, 340, 13, true, 0xffffff);
-        text(cr, second[i], x + 11, 357, 12, true, 0xffffff);
-    }
     for (int i = 0; i < 2; i++) {
-        double y = 400 + i * 72;
+        double y = 272 + i * 72;
         material(cr, 1220, y, 417, 65, 24, false, s->glass);
         line_icon(cr, i == 0 ? 5 : 11, 1236, y + 15, 32, 0xffffff);
         double value = i == 0 ? s->brightness : s->volume;
@@ -578,35 +569,35 @@ static void controls(struct futurista *s, cairo_t *cr, int width, int height) {
     }
     cairo_set_source_rgba(cr, .7, .67, .9, .27);
     cairo_set_line_width(cr, 1);
-    cairo_move_to(cr, 1224, 557);
-    cairo_line_to(cr, 1635, 557);
+    cairo_move_to(cr, 1224, 429);
+    cairo_line_to(cr, 1635, 429);
     cairo_stroke(cr);
-    text(cr, "Dispositivos", 1223, 573, 19, true, 0xffffff);
-    material(cr, 1221, 602, 416, 76, 24, false, s->glass);
-    line_icon(cr, 7, 1245, 624, 32, 0xffffff);
-    text(cr, "Exibição", 1302, 621, 17, false, 0xffffff);
+    text(cr, "Dispositivos", 1223, 445, 19, true, 0xffffff);
+    material(cr, 1221, 474, 416, 76, 24, false, s->glass);
+    line_icon(cr, 7, 1245, 496, 32, 0xffffff);
+    text(cr, "Exibição", 1302, 493, 17, false, 0xffffff);
     char display[64];
     snprintf(display, sizeof(display), "%d × %d", width, height);
-    text(cr, display, 1302, 646, 14, false, 0xd2d8ee);
-    text(cr, "›", 1603, 621, 30, false, 0xffffff);
+    text(cr, display, 1302, 518, 14, false, 0xd2d8ee);
+    text(cr, "›", 1603, 493, 30, false, 0xffffff);
     const char *power[] = {"Encerrar", "Reiniciar", "Desligar"};
     for (int i = 0; i < 3; i++) {
         double x = 1222 + i * 145;
-        material(cr, x, 702, 124, 101, 27, false, s->glass);
-        line_icon(cr, 8 + i, x + 46, 720, 32, i == 2 ? 0xff779d : 0xffffff);
-        text(cr, power[i], x + 25, 758, 14, true, 0xffffff);
+        material(cr, x, 574, 124, 101, 27, false, s->glass);
+        line_icon(cr, 8 + i, x + 46, 592, 32, i == 2 ? 0xff779d : 0xffffff);
+        text(cr, power[i], x + 25, 630, 14, true, 0xffffff);
         if (i == 0) {
-            text(cr, "Sessão", x + 32, 777, 14, true, 0xffffff);
+            text(cr, "Sessão", x + 32, 649, 14, true, 0xffffff);
         }
     }
     if (s->message[0]) {
         cairo_save(cr);
-        roundrect(cr, 1210, 832, 444, 74, 15);
+        roundrect(cr, 1210, 704, 444, 74, 15);
         cairo_set_source_rgba(cr, .06, .04, .16, .97);
         cairo_fill(cr);
-        cairo_rectangle(cr, 1220, 840, 425, 56);
+        cairo_rectangle(cr, 1220, 712, 425, 56);
         cairo_clip(cr);
-        text(cr, s->message, 1224, 846, 13, false, 0xf8dfff);
+        text(cr, s->message, 1224, 718, 13, false, 0xf8dfff);
         cairo_restore(cr);
     }
 }
@@ -628,7 +619,7 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     cairo_translate(cr, l.x, l.y);
     cairo_scale(cr, l.scale, l.scale);
     if (control_panel) {
-        roundrect(cr, 1194, 66, 462, 760, 38);
+        roundrect(cr, 1194, 66, 462, 632, 38);
         blurred_backdrop(s, cr, 1672, 941);
         controls(s, cr, width, height);
         cairo_restore(cr);
@@ -681,6 +672,10 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     text(cr, s->selected == 0 ? "Navegador Web" : "Abrir aplicativo", 774, 525, 17, false, 0xb6b5d1);
     cairo_restore(cr);
 }
+double futurista_volume_at(double x, int width, int height) {
+    struct layout l = layout(width, height);
+    return l.scale > 0 ? fmin(1, fmax(0, ((x - l.x) / l.scale - 1287) / 339)) : 0;
+}
 int futurista_hit(double x, double y, int width, int height, bool control_panel) {
     struct layout l = layout(width, height);
     if (l.scale <= 0) {
@@ -705,22 +700,19 @@ int futurista_hit(double x, double y, int width, int height, bool control_panel)
     if (x >= 1223 && x < 1637 && y >= 125 && y < 245) {
         return 20 + (int)((x - 1223) / 145);
     }
-    if (x >= 1220 && x < 1637 && y >= 272 && y < 378) {
-        return 23 + (int)((x - 1220) / 106);
-    }
-    if (x >= 1220 && x < 1280 && y >= 472 && y <= 537) {
+    if (x >= 1220 && x < 1280 && y >= 344 && y <= 409) {
         return 29;
     }
-    if (x >= 1287 && x <= 1626 && y >= 472 && y <= 537) {
-        return x < 1456 ? 30 : 31;
+    if (x >= 1287 && x <= 1626 && y >= 344 && y <= 409) {
+        return 30;
     }
-    if (x >= 1221 && x < 1637 && y >= 602 && y < 678) {
+    if (x >= 1221 && x < 1637 && y >= 474 && y < 550) {
         return 32;
     }
-    if (x >= 1222 && x < 1637 && y >= 702 && y < 803) {
+    if (x >= 1222 && x < 1637 && y >= 574 && y < 675) {
         return 33 + (int)((x - 1222) / 145);
     }
-    if (x >= 1194 && x <= 1656 && y >= 66 && y <= 826) {
+    if (x >= 1194 && x <= 1656 && y >= 66 && y <= 698) {
         return 40;
     }
     return -1;
