@@ -127,3 +127,10 @@ Pacote `jlinux-desktop-git 0.5.0.r92.g5abb0af-1`, source commit **5abb0af**, bra
 Backup dos arquivos instalados anteriores e banco local do pacote em `/var/backups/jlinux-before-window-transitions-5abb0af/` (`installed-files.tar.gz` e `pacman-db/`). Novo pacote preservado em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r92.g5abb0af-1-x86_64.pkg.tar.zst`. Prévia estática dos componentes em `~/Imagens/JLinux-janelas-5abb0af.png`; conteúdo do cliente ilustrativo.
 
 Teste headless de remap/fullscreen/desconexão/shutdown passou também com `/usr/bin/jlinux-compositor` instalado. Na atualização, os processos 47277 (compositor) e 47300 (shell), iniciados neste boot às 22:52, mantiveram seus executáveis/inodes anteriores, agora marcados `(deleted)` por `/proc`. São evidência desta atualização, não PIDs a reutilizar após boot. A nova versão ativa **ao sair e entrar novamente**, sem reiniciar o computador. A sessão atual e os aplicativos não foram encerrados; nenhum serviço/PAM/VT/DRM alterado. Avaliação de fluidez/efeitos na sessão física e benchmark de GPU continuam pendentes.
+
+
+### Correção de movimentação e encaixe — 07/11/2026
+
+Instalado `jlinux-desktop-git 0.5.0.r99.g161ba52-1`, source commit **161ba52**, branch `fix/window-motion-sync`, PR #76. Incorpora a versão anterior efetiva `0.5.0.r96.g9613200-1` com relógio Glass, além do encaixe suave e43e58f. Receita Arch executou 30 testes; todos passaram. Conferidos donos/permissões e `pacman -Qkk`: 23 arquivos, zero alterações. Cenário de buffer maior/commit atrasado também passou com o novo binário instalado em runtime headless isolado.
+
+Backup dos arquivos anteriores e banco local em `/var/backups/jlinux-before-motion-sync-161ba52/`; pacote novo preservado em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r99.g161ba52-1-x86_64.pkg.tar.zst`. Inodes dos processos existentes 688/689/713 preservados; são evidência deste boot, não PIDs a reutilizar. Nenhuma sessão, serviço, VT ou parâmetro de kernel foi alterado. **Ativar saindo e entrando novamente**, sem reiniciar o computador. Teste físico de fluidez/DRM permanece pendente.

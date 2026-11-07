@@ -429,3 +429,6 @@ Evidência: escape de conteúdo reproduzido na versão instalada; teste com buff
 CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao texto, cantos de 5 px e helpers existentes de tonalização, sombreado e reflexão das molduras. Fonte reduzida de 16 para 14 px e posição vertical ajustada à barra de 36 px. Cada efeito respeita o controle global correspondente. Nenhum timer, dependência ou lógica de animação novo.
 
 29 testes locais release passaram; prévia nativa inspecionada. Sem repetição de sanitizadores para esta alteração de layout que reutiliza helpers existentes; sem benchmark ou validação física visual. Pacote/ativação registrados na conclusão; shell ativo preservado, ativação no próximo login.
+
+
+WINDOW-MOTION-SYNC — instalado `0.5.0.r99.g161ba52-1`, preservando a instalação concorrente do relógio Glass 9613200. Pacote 30/30 e integridade confirmados; regressão passou também com `/usr/bin/jlinux-compositor`. PR #76 agora depende de feature/glass-clock-panel (#75). Sessão preservada, ativação no próximo login. Backup/source/limites em docs/arch-installation.md.
