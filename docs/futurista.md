@@ -49,3 +49,6 @@ Seleção angular: removido o limite de distância externa no hit test, mantendo
 A entrada vertical anterior foi removida. A transformação fica em renderer/dock-transform.c e recebe somente o progresso calculado por animation/transition.c; effects/dock.c desenha o halo sem relógio próprio. O halo respeita REFLECTION e não exige quadros extras: acompanha a transição de hover existente. Movimento reduzido continua aplicando estados finais imediatamente; desativar o halo não desativa escala/fade/hover. A região de rasterização permanece restrita ao retângulo final do dock.
 
 Teste de componente confere pivô invariável no centro, expansão monotônica até escala 1, inversão das coordenadas em todos os estágios e halo nulo quando intensidade é zero. Testes headless exercitam Super, seleção angular e modo reduzido. A imagem de prévia mostra apenas o estado final, não comprova fluidez no hardware. Sem benchmark de CPU/GPU/energia. Instalar não substitui o shell ativo; a nova entrada vale no próximo login.
+
+
+O setor superior esquerdo antes associado ao Steam passa a exibir WhatsApp (balão/telefone verde) e executar `jlinux-whatsapp`. Requer o cliente instalado pelo pacote jlinux-browser-git; o shell continua exibindo erro de lançamento se não estiver disponível. Essa troca preserva posição e animações e entra no próximo login após atualizar o pacote.
