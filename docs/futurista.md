@@ -32,3 +32,12 @@ Gerar a prévia do dock: `jlinux-shell --preview-futurista arquivo.png`; do pain
 A separação de dock/painel e a barra revista passaram nos testes locais futurista-headless, power-menu-headless, volume-headless e glass-preview; futurista-headless também passou com ASan/UBSan (detect_leaks=0). Sem validação visual da sessão física.
 
 Dock por pressão: testes locais futurista-headless, shell-headless, terminal-input-headless e window-side-snap passaram; regressão do dock também verificada com ASan/UBSan. Exercita Super esquerda/direita, soltar, clique segurando, Super+Enter e remoção do teclado.
+
+
+## Animações iniciais do dock
+
+O dock circular entra com fade e deslocamento vertical de 24 px em 200 ms; ao soltar Super desaparece em 160 ms. Ao passar entre aplicativos, os setores mudam de destaque e os ícones crescem até 10% em 140 ms. As transições usam smoothstep, tempo monotônico e preservam o valor atual ao reverter. Reabrir durante a saída reutiliza a superfície, sem saltar para o começo. O centro mostra o aplicativo selecionado; o painel de controle separado mantém abertura/fechamento imediato.
+
+O shell pede frames pelo callback Wayland somente enquanto há transição, sem timer contínuo. O grupo temporário Cairo fica limitado ao retângulo do dock; o backend ainda rasteriza SHM em CPU e mantém o limite existente de dois buffers por superfície. Nenhuma alegação de FPS, aceleração da animação ou economia de GPU foi medida. Ao fechar, a região de entrada é esvaziada imediatamente; hit testing durante a entrada desconta o deslocamento visual.
+
+`JLINUX_REDUCED_MOTION=1` na inicialização do shell aplica os estados finais imediatamente; `0` ou ausência habilitam as transições. Outros valores são recusados. Essa opção de processo não é persistência de preferências nem recarga ao vivo. Blur/tint/reflection continuam independentes. Instalar o pacote não substitui o shell supervisionado da sessão aberta: animações entram no próximo login.

@@ -49,7 +49,7 @@ Um efeito que amostra o fundo pode exigir composição e impedir direct scanout 
 
 Nesta entrega, renderer.c passou a possuir a criação/limpeza do renderizador e alocador wlroots e a apresentação/frame-done, extraídas de compositor/main.c. O comportamento gráfico existente foi preservado.
 
-animation/ continua sendo um contrato sem motor. effects/glass.c agora compõe o primeiro material do painel/dock em Cairo: amostragem do wallpaper, tonalização e reflexos estáticos de borda. renderer/blur.c executa um box blur separável em imagem ARGB32 reduzida a 1/4 por dimensão. O shell mantém esse fundo em cache até a resolução mudar; hover e relógio não recalculam o blur.
+animation/ implementa a primeira transição escalar smoothstep, reversível, usada na abertura/fechamento e destaque do dock; o chamador fornece tempo monotônico e o shell agenda frames Wayland somente durante a transição. Isso não implementa animações de janelas ou adaptação de efeitos. effects/glass.c agora compõe o primeiro material do painel/dock em Cairo: amostragem do wallpaper, tonalização e reflexos estáticos de borda. renderer/blur.c executa um box blur separável em imagem ARGB32 reduzida a 1/4 por dimensão. O shell mantém esse fundo em cache até a resolução mudar; hover e relógio não recalculam o blur.
 
 Limite explícito: o fundo amostrado é apenas o wallpaper procedural do shell, não janelas de outros clientes. Não há refração, sombra difusa, shaders Glass ou adaptação automática. A rasterização permanece em CPU; este caminho inicial não substitui o futuro pipeline GPU do compositor. As referências do usuário continuam sendo a meta, sem fidelidade completa.
 

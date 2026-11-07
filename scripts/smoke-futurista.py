@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Real Super hold/release, native launcher hit testing and shell restart in private Wayland."""
+import socket
+import time
 import os
 from pathlib import Path
 import runpy
@@ -59,6 +61,20 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
                 control_closed=log().count('Painel de controle fechado.')
                 mouse(1240,24)
                 wait(lambda:log().count('Painel de controle fechado.')>control_closed,processes,'right button closes controls')
+                # Reverse an unfinished close, then move across sectors without clicks.
+                with socket.socket(socket.AF_UNIX,socket.SOCK_DGRAM) as ctl:
+                    opened=log().count('Dock circular aberto.')
+                    ctl.sendto(b'show',str(sock))
+                    wait(lambda:log().count('Dock circular aberto.')>opened,processes,'animation open')
+                    ctl.sendto(b'hide',str(sock));time.sleep(.04);ctl.sendto(b'show',str(sock))
+                    time.sleep(.25)
+                    for x,y in ((836,216),(994,270),(1077,407)):
+                        subprocess.run([pointer,str(round(x*1280/1672)),str(round(y*720/941)),'--motion'],
+                                       env=env,check=True,timeout=4)
+                    assert client.poll() is None,'hover/reversal killed shell'
+                    closed=log().count('Dock circular fechado.')
+                    ctl.sendto(b'hide',str(sock))
+                    wait(lambda:log().count('Dock circular fechado.')>closed,processes,'reversed animation closes')
                 opened=log().count('Dock circular aberto.')
                 closed=log().count('Dock circular fechado.')
                 held=subprocess.Popen([wtype,'-P',key,'-s','10000'],env=env)

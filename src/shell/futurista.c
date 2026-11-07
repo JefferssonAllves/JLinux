@@ -39,6 +39,7 @@ static cairo_surface_t *asset(const char *name) {
 }
 bool futurista_init(struct futurista *s, struct jlinux_glass glass) {
     *s = (struct futurista){.glass = glass, .wifi = -1, .battery = -1, .volume = -1, .brightness = -1};
+    s->hover[s->selected] = 1;
     s->wallpaper = asset("/org/jlinux/futurista/wallpaper.png");
     s->firefox = asset("/org/jlinux/futurista/firefox.png");
     s->code = asset("/org/jlinux/futurista/code.png");
@@ -501,9 +502,9 @@ static void tint_stop(cairo_pattern_t *pattern, double position, double r, doubl
     }
     cairo_pattern_add_color_stop_rgba(pattern, position, r, g, b, alpha);
 }
-static void sector(cairo_t *cr, int index, int selected, struct jlinux_glass effects) {
+static void sector(cairo_t *cr, int index, double focus, struct jlinux_glass effects) {
     double a = (-108 + index * 36 + .6) * pi / 180, b = (-72 + index * 36 - .6) * pi / 180;
-    double outer = index == selected ? 330 : 326, inner = index == selected ? 165 : 176;
+    double outer = 326 + 4 * focus, inner = 176 - 11 * focus;
     const double corner = 5;
     cairo_new_path(cr);
     cairo_arc(cr, 836, 469, outer, a + corner / outer, b - corner / outer);
@@ -522,31 +523,23 @@ static void sector(cairo_t *cr, int index, int selected, struct jlinux_glass eff
     double mid = (a + b) / 2;
     cairo_pattern_t *p = cairo_pattern_create_linear(836 + outer * cos(mid), 469 + outer * sin(mid),
                                                      836 + inner * cos(mid), 469 + inner * sin(mid));
-    if (index == selected && effects.tint) {
-        tint_stop(p, 0, .46, .25, .96, .98, effects.tint);
-        tint_stop(p, .5, .36, .18, .75, .98, effects.tint);
-        tint_stop(p, 1, .55, .34, .96, .98, effects.tint);
-    } else {
-        tint_stop(p, 0, .42, .40, .66, .98, effects.tint);
-        tint_stop(p, .15, .31, .30, .53, .98, effects.tint);
-        tint_stop(p, .7, .21, .21, .43, .98, effects.tint);
-        tint_stop(p, 1, .18, .18, .36, .98, effects.tint);
-    }
+    tint_stop(p, 0, .42 + .04 * focus, .40 - .15 * focus, .66 + .30 * focus, .98, effects.tint);
+    tint_stop(p, .5, .26 + .10 * focus, .25 - .07 * focus, .48 + .27 * focus, .98, effects.tint);
+    tint_stop(p, 1, .18 + .37 * focus, .18 + .16 * focus, .36 + .60 * focus, .98, effects.tint);
     cairo_set_source(cr, p);
     cairo_fill_preserve(cr);
     cairo_pattern_destroy(p);
     if (effects.reflection) {
-        if (index == selected) {
-            cairo_set_source_rgba(cr, .70, .32, 1, .16);
+        if (focus > 0) {
+            cairo_set_source_rgba(cr, .70, .32, 1, .16 * focus);
             cairo_set_line_width(cr, 13);
             cairo_stroke_preserve(cr);
-            cairo_set_source_rgba(cr, .82, .48, 1, .30);
+            cairo_set_source_rgba(cr, .82, .48, 1, .30 * focus);
             cairo_set_line_width(cr, 5);
             cairo_stroke_preserve(cr);
         }
-        cairo_set_source_rgba(cr, index == selected ? .89 : .58, index == selected ? .65 : .61, 1,
-                              index == selected ? 1 : .75);
-        cairo_set_line_width(cr, index == selected ? 2 : 1.3);
+        cairo_set_source_rgba(cr, .58 + .31 * focus, .61 + .04 * focus, 1, .75 + .25 * focus);
+        cairo_set_line_width(cr, 1.3 + .7 * focus);
         cairo_stroke(cr);
     } else {
         cairo_new_path(cr);
@@ -665,8 +658,8 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     static const double positions[10][2] = {{836, 216}, {994, 270}, {1077, 407}, {1076, 552}, {983, 674},
                                             {837, 714}, {690, 674}, {597, 552},  {593, 405},  {674, 277}};
     for (int i = 0; i < 10; i++) {
-        sector(cr, i, s->selected, s->glass);
-        double size = i == 0 ? 86 : i == 6 ? 68 : 74;
+        sector(cr, i, s->hover[i], s->glass);
+        double size = (i == 0 ? 86 : i == 6 ? 68 : 74) * (1 + .10 * s->hover[i]);
         app_icon(s, cr, i, positions[i][0] - size / 2, positions[i][1] - size / 2, size);
     }
     cairo_pattern_t *p = cairo_pattern_create_radial(820, 420, 20, 836, 469, 133);

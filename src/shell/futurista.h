@@ -5,7 +5,7 @@ struct futurista {
     cairo_surface_t *wallpaper, *blurred, *firefox, *code;
     struct jlinux_glass glass;
     int selected, wifi, battery;
-    double volume, brightness;
+    double volume, brightness, hover[10];
     bool muted;
     char message[180];
 };

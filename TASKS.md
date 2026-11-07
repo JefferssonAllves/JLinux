@@ -365,3 +365,14 @@ Painel de controle separado do dock: Super alterna somente dock; botão de ajust
 ### FUTURISTA-SUPER-HOLD
 
 Dock visível enquanto Super fica pressionada; keyup ou remoção do teclado oculta. Combinações existentes cancelam o dock; mouse seleciona aplicativos enquanto Super permanece pressionada. Input limitado à área do dock deixa janelas externas acessíveis, com encaixe/atalhos preservados. IPC passa a show/hide idempotentes; painel por botão permanece separado. Quatro testes locais relevantes passaram; cenário de dock com ASan/UBSan. Não testado em teclado físico/DRM nesta entrega.
+
+
+## Animações do dock — feature/dock-animations
+
+- **ANIM-DOCK · implementado:** fade/slide de 24px na entrada (200ms)/saída (160ms); destaque dos setores e escala de ícones até +10% ao mover entre apps (140ms). Transição escalar em animation/, sem loop em effects/. Tempo monotônico, interrupção/reversão sem salto, callbacks Wayland somente durante transições; movimento reduzido por JLINUX_REDUCED_MOTION=1. Painel de controle separado preservado.
+- Fechar remove entrada de mouse imediatamente; hit testing desconta deslocamento. Dois buffers por superfície preservados; grupo Cairo limitado ao dock. SHM/CPU continua sendo o backend; sem benchmark ou alegação de fluidez física.
+- Testes unitários: início/meio/fim, reversão contínua, faixa dos valores e duração zero. Headless: Super esquerda/direita, clique segurando, desconexão de teclado, reabertura rápida, movimento sem clique e modo reduzido. Três testes direcionados passaram em release e ASan/UBSan (detect_leaks=0). Prévia estática do estado final inspecionada; animação física pendente.
+- Uma execução paralela da suíte falhou em window-side-snap; repetição isolada passou. Validação final da suíte/pacote registrada após conclusão. Base fix/hold-super-dock (#64), mantendo o pacote instalado mais recente. Sem reinício/VT na sessão de trabalho.
+
+
+**ANIM-DOCK · instalado:** pacote `0.5.0.r82.g66b04f1-1`, fonte 66b04f1, instalado pelo pacman após 23 testes do pacote aprovados (MESON_TESTTHREADS=1). Suíte local completa também passou com 23 testes em série; os três testes direcionados passaram com ASan/UBSan (detect_leaks=0). Checks de código do GitHub verdes no PR #65. Shell instalado root:root 0755 com suporte a JLINUX_REDUCED_MOTION conferido. Sessão/shell/compositor ativos preservados: animações entram no próximo login. Sem benchmark, teste físico de fluidez ou troca de VT. Base temporária fix/hold-super-dock (#64), sem merge.
