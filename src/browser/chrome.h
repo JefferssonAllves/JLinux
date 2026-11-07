@@ -31,7 +31,7 @@ struct browser_chrome {
     gboolean caret_visible, cursor_text;
     uint32_t pointer_serial;
     int in_flight;
-    gboolean editing, dirty, selected;
+    gboolean editing, dirty, selected, error;
     gboolean adblock_available, adblock_enabled;
     char address[BROWSER_ADDRESS_LIMIT + 1];
     char message[256];

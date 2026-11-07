@@ -298,3 +298,8 @@ Evidência local: 13 testes release passaram; 2 direcionados com ASan/UBSan pass
 
 
 BROWSER-MODERN-TABS — pacote `0.1.0.r64.gec7ef34-1` instalado; check() 13/13 e integridade pacman confirmados. Fluxo Wayland completo passou com binários instalados em runtime headless. LeakSanitizer do teste de layout passou. Backup/ativação em docs/browser.md; navegador atual preservado, reabrir para ativar. Código e documentação enviados no PR #73, sem merge.
+
+
+## BROWSER-DIRECT-URL — fix/browser-direct-url
+
+Corrigida saída de tamanho obrigatória da API de leitura do clipboard, antes nula e causadora de erro GLib/colagem sem texto. Negociação de formatos e limpeza somente de whitespace externo; erro de navegação visível no campo. Perfil/login, política de URL/TLS e sandbox preservados. Regressão Wayland cobre copiar URL com newline de uma página, colar e navegar. Suíte release 13/13 após corrigir espera da fixture; três direcionados ASan/UBSan passaram. URL específica do usuário ainda não recebida; probe HTTPS público passou. Instalação/commit após pacote.

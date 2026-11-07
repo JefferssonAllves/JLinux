@@ -40,6 +40,7 @@ static void close_tab(struct app *app, guint index);
 static gboolean quit(gpointer data) { g_main_loop_quit(((struct app *)data)->loop); return G_SOURCE_CONTINUE; }
 static void notice(struct app *app, const char *message) {
     g_strlcpy(app->chrome.message, message, sizeof(app->chrome.message));
+    app->chrome.error = TRUE;
     if (app->whatsapp) { g_printerr("WhatsApp: %s\n", message); if (app->web) { changed_title(app->web,NULL,app); } }
     if (!app->probe) { browser_chrome_update(&app->chrome); }
 }
@@ -48,6 +49,7 @@ static void web_notice(struct app *app, WebKitWebView *web, const char *message)
     if (web == app->web) { notice(app, message); }
 }
 static void show_address(struct app *app) {
+    app->chrome.error = FALSE;
     if(!app->search_prepared && !app->probe && !app->whatsapp){
         webkit_network_session_prefetch_dns(app->session,"www.google.com");app->search_prepared=TRUE;
     }
@@ -66,7 +68,7 @@ static void focus_page(struct app *app) {
 static void navigate(struct app *app) {
     char *uri = browser_address_uri(app->chrome.address);
     if (!uri) { notice(app, "Digite uma busca ou um endereço HTTP/HTTPS válido, sem credenciais e até 4096 bytes."); return; }
-    app->chrome.editing = FALSE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
+    app->chrome.editing = FALSE; app->chrome.error = FALSE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
     webkit_web_view_load_uri(app->web, uri); g_free(uri);
 }
 static void toggle_blocker(struct app *app) {
@@ -87,7 +89,7 @@ static void append_text(struct app *app, const char *text) {
     size_t offset = app->chrome.selected ? 0 : strlen(app->chrome.address);
     if (strlen(text) > BROWSER_ADDRESS_LIMIT - offset) { notice(app, "Endereço longo demais."); return; }
     g_strlcpy(app->chrome.address + offset, text, sizeof(app->chrome.address) - offset);
-    app->chrome.selected = FALSE; app->chrome.caret_visible = TRUE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
+    app->chrome.selected = FALSE; app->chrome.caret_visible = TRUE; app->chrome.error = FALSE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
 }
 static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
     struct app *app = data; struct browser_chrome *chrome = &app->chrome;
@@ -128,8 +130,15 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         else if (key == XKB_KEY_Return || key == XKB_KEY_KP_Enter) { navigate(app); }
         else if (ctrl && (key == XKB_KEY_a || key == XKB_KEY_A)) { chrome->selected = TRUE; browser_chrome_update(chrome); }
         else if (ctrl && (key == XKB_KEY_v || key == XKB_KEY_V)) {
-            char *text = wpe_clipboard_read_text(wpe_display_get_clipboard(wpe_view_get_display(view)), "text/plain;charset=utf-8", NULL);
-            append_text(app, text); g_free(text);
+            WPEClipboard *clipboard = wpe_display_get_clipboard(wpe_view_get_display(view));
+            const char * const *formats = wpe_clipboard_get_formats(clipboard);
+            const char *supported[] = {"text/plain;charset=utf-8", "text/plain", "UTF8_STRING"};
+            char *text = NULL; gsize size = 0;
+            for (guint i=0; formats && !text && i<G_N_ELEMENTS(supported); i++) {
+                if (g_strv_contains(formats, supported[i])) { text = wpe_clipboard_read_text(clipboard, supported[i], &size); }
+            }
+            if (text) { g_strstrip(text); append_text(app, text); g_free(text); }
+            else { notice(app, "Não foi possível colar texto. Tente copiar o endereço novamente."); }
         }
         else if (key == XKB_KEY_BackSpace || key == XKB_KEY_Delete) {
             char *end = chrome->selected ? chrome->address : g_utf8_find_prev_char(chrome->address, chrome->address + strlen(chrome->address));
@@ -197,6 +206,7 @@ static void js_finished(GObject *object, GAsyncResult *result, gpointer data) {
 static void load_changed(WebKitWebView *web, WebKitLoadEvent event, gpointer data) {
     struct app *app = data;
     if (event == WEBKIT_LOAD_STARTED) {
+        if (web == app->web) { app->chrome.error = FALSE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome); }
         if (app->whatsapp) { app->chrome.message[0]=0; changed_title(web,NULL,app); }
         if (app->probe) { app->load_started = g_get_monotonic_time(); }
         g_object_set_data(G_OBJECT(web), "jlinux-notice", NULL);

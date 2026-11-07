@@ -29,5 +29,9 @@ int main(int argc,char **argv){
     unsigned char *with_caret=g_memdup2(pixels,bytes);chrome.caret_visible=false;browser_chrome_paint(&chrome,cr,1000);cairo_surface_flush(image);
     CHECK(memcmp(with_caret,pixels,bytes));g_free(with_caret);
     if(argc==3 && !strcmp(argv[1],"--preview")){chrome.caret_visible=true;browser_chrome_paint(&chrome,cr,1000);CHECK(cairo_surface_write_to_png(image,argv[2])==CAIRO_STATUS_SUCCESS);}
+    chrome.error=true;g_strlcpy(chrome.message,"Não foi possível abrir a página.",sizeof(chrome.message));
+    browser_chrome_paint(&chrome,cr,1000);cairo_surface_flush(image);
+    uint32_t edge=*(uint32_t *)(pixels+70*cairo_image_surface_get_stride(image)+133*4);
+    CHECK(((edge>>16)&255)>(edge&255));
     cairo_destroy(cr);cairo_surface_destroy(image);g_ptr_array_unref(chrome.tabs);ui_finish();return 0;
 }

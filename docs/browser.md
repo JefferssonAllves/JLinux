@@ -154,3 +154,12 @@ Pacote efetivamente instalado: `jlinux-browser-git 0.1.0.r64.gec7ef34-1`, commit
 Backup dos arquivos anteriores r63/ed57981 e banco do pacote em `/var/backups/jlinux-browser-before-modern-ec7ef34/`; novo pacote em `/var/cache/pacman/pkg/jlinux-browser-git-0.1.0.r64.gec7ef34-1-x86_64.pkg.tar.zst`. Dados do perfil, cookies e armazenamento dos sites não foram modificados por scripts de instalação. O navegador ativo PID 732 manteve o inode/executável anterior, agora `(deleted)` em `/proc`; este PID é evidência deste boot, não instrução para sessões futuras. Ativação ao fechar e reabrir o navegador. Nenhum app ou sessão gráfica foi encerrado.
 
 Prévias copiadas para `~/Imagens/JLinux-browser-header-ec7ef34.png` e `~/Imagens/JLinux-browser-tabs-ec7ef34.png`. Teste unitário de layout também passou com `ASAN_OPTIONS=detect_leaks=1`; teste físico/HiDPI e medição comparativa da busca continuam pendentes.
+
+
+### Correção da colagem de URLs
+
+A barra passava `NULL` como saída de tamanho para `wpe_clipboard_read_text`. Na biblioteca instalada, copiar o endereço de uma página e colar na barra produzia `g_bytes_unref_to_data: assertion 'size != NULL' failed`, retornando sem o texto. Agora fornece `gsize` válido, negocia formatos UTF-8/text/plain/UTF8_STRING e remove espaços/quebras de linha somente das extremidades do texto colado. Controles internos e esquemas proibidos continuam recusados; não há relaxamento de TLS ou sandbox.
+
+Falhas de abertura/entrada agora aparecem dentro do próprio campo, com contorno de erro, sem reintroduzir ajuda abaixo da barra. Clicar no endereço ou voltar a digitar recupera a edição. O texto digitado e o perfil persistente não são descartados para atualizar a interface.
+
+Regressão Wayland copia uma URL real de textarea da página, com newline final, e cola por Ctrl+L/Ctrl+V/Enter; verifica que a página correta abre e não ocorre o aviso GLib. A fixture aguarda foco/cópia para evitar corrida durante testes paralelos. Houve uma falha de sincronização da fixture na primeira execução paralela; corrigida a espera, a suíte release passou 13/13. Três testes direcionados passaram com ASan/UBSan. Uma URL HTTPS pública também abriu em probe, confirmando que o defeito identificado estava na colagem, não numa falha geral do motor. Não foi fornecida a URL específica do relato para comparar eventual incompatibilidade de site.

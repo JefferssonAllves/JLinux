@@ -31,6 +31,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
         function viewport(){fetch('/viewport?w='+innerWidth+'&h='+innerHeight);}
         addEventListener('resize',viewport); viewport();</script></body>"""
         mime = "text/html; charset=utf-8"
+        if self.path == "/copy-link":
+            target = f"http://{self.headers['Host']}/direct-pasted\n"
+            body = ("<!doctype html><title>Copy link</title><textarea autofocus onfocus=\"fetch('/copy-ready')\" oncopy=\"event.clipboardData.setData('text/plain',this.value);event.preventDefault();fetch('/copied')\">"+target+"</textarea><script>fetch('/shown?path=/copy-link')</script>").encode()
         if self.path == "/pagead/banner.js":
             body, mime = b"window.adLoaded = true;", "application/javascript"
         if self.path in ("/download", "/download-broken"):
@@ -108,6 +111,15 @@ def main():
                 wait_for(lambda: f"/viewport?w={window_width}&h={window_height - 100}" in Handler.events,
                          processes, "viewport desconta a altura do cabeçalho")
                 assert "/pagead/banner.js" not in Handler.events, "Default blocking did not prevent download"
+                navigate("/copy-link")
+                wait_for(lambda: "/copy-ready" in Handler.events, processes, "foco do texto a copiar")
+                keys("-M", "ctrl", "-k", "a", "-k", "c", "-m", "ctrl")
+                wait_for(lambda: "/copied" in Handler.events, processes, "evento de cópia")
+                keys("-M", "ctrl", "-k", "l", "-k", "v", "-m", "ctrl", "-k", "Return")
+                wait_for(lambda: "/shown?path=/direct-pasted" in Handler.events, processes, "URL colada com newline final")
+                assert "g_bytes_unref_to_data" not in log(), "Clipboard read called without required size output"
+                navigate("/first")
+
                 for number in (1, 2):
                     keys("-M", "ctrl", "-k", "l", "-m", "ctrl", base + "/download", "-k", "Return")
                     destination = downloads / f"{number}-fixture.bin"
