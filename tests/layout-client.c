@@ -23,7 +23,17 @@ static struct wl_shm *shm;
 static struct xdg_wm_base *shell;
 static struct wl_buffer *buffer;
 static unsigned delay_ms;
-static struct window windows[8];
+static struct window windows[12];
+static struct wl_seat *seat;
+static struct wl_keyboard *keyboard;
+static void input_map(void *data,struct wl_keyboard *keys,uint32_t format,int fd,uint32_t size){(void)data;(void)keys;(void)format;(void)size;close(fd);}
+static void input_enter(void *data,struct wl_keyboard *keys,uint32_t serial,struct wl_surface *surface,struct wl_array *held){(void)data;(void)keys;(void)serial;(void)surface;(void)held;}
+static void input_leave(void *data,struct wl_keyboard *keys,uint32_t serial,struct wl_surface *surface){(void)data;(void)keys;(void)serial;(void)surface;}
+static void input_key(void *data,struct wl_keyboard *keys,uint32_t serial,uint32_t time,uint32_t key,uint32_t state){(void)data;(void)keys;(void)serial;(void)time;printf("key %u %u\n",key,state);fflush(stdout);}
+static void input_mods(void *data,struct wl_keyboard *keys,uint32_t serial,uint32_t depressed,uint32_t latched,uint32_t locked,uint32_t group){(void)data;(void)keys;(void)serial;(void)depressed;(void)latched;(void)locked;(void)group;}
+static const struct wl_keyboard_listener input_listener={.keymap=input_map,.enter=input_enter,.leave=input_leave,.key=input_key,.modifiers=input_mods};
+static void seat_caps(void *data,struct wl_seat *value,uint32_t caps){(void)data;if((caps&WL_SEAT_CAPABILITY_KEYBOARD)&&!keyboard){keyboard=wl_seat_get_keyboard(value);wl_keyboard_add_listener(keyboard,&input_listener,NULL);}}
+static const struct wl_seat_listener seat_listener={.capabilities=seat_caps};
 static void ping(void *data, struct xdg_wm_base *base, uint32_t serial) {
     (void)data; xdg_wm_base_pong(base, serial);
 }
@@ -31,6 +41,7 @@ static const struct xdg_wm_base_listener shell_listener = {.ping = ping};
 static void global(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
     (void)data; (void)version;
     if (!strcmp(interface, "wl_compositor")) { compositor = wl_registry_bind(registry, name, &wl_compositor_interface, 4); }
+    if (!strcmp(interface,"wl_seat")&&!seat){seat=wl_registry_bind(registry,name,&wl_seat_interface,1);wl_seat_add_listener(seat,&seat_listener,NULL);}
     if (!strcmp(interface, "wl_shm")) { shm = wl_registry_bind(registry, name, &wl_shm_interface, 1); }
     if (!strcmp(interface, "xdg_wm_base")) {
         shell = wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
@@ -88,7 +99,7 @@ int main(void) {
             char line[128], command[16]; int id, parent, minw, minh, maxw, maxh;
             if (!fgets(line, sizeof(line), stdin)) { break; }
             assert(sscanf(line, "%15s %d %d %d %d %d %d", command, &id, &parent, &minw, &minh, &maxw, &maxh) == 7);
-            assert(id >= 0 && id < 8);
+            assert(id >= 0 && id < 12);
             struct window *window = &windows[id];
             if (!strcmp(command, "create")) {
                 window->id = id;
@@ -99,7 +110,7 @@ int main(void) {
                 xdg_toplevel_add_listener(window->top, &top_listener, window);
                 char title[32]; snprintf(title, sizeof(title), "Layout-%d", id);
                 xdg_toplevel_set_title(window->top, title);
-                if (parent >= 0) { assert(parent < 8 && windows[parent].top); xdg_toplevel_set_parent(window->top, windows[parent].top); }
+                if (parent >= 0) { assert(parent < 12 && windows[parent].top); xdg_toplevel_set_parent(window->top, windows[parent].top); }
             }
             assert(window->top);
             if (!strcmp(command,"delay")) { assert(minw>=0 && minw<=2000); delay_ms=(unsigned)minw; continue; }
@@ -118,13 +129,14 @@ int main(void) {
             wl_surface_commit(window->surface);
         }
     }
-    for (int i = 7; i >= 0; i--) {
+    for (int i = 11; i >= 0; i--) {
         if (windows[i].top) {
             xdg_toplevel_destroy(windows[i].top);
             xdg_surface_destroy(windows[i].xdg);
             wl_surface_destroy(windows[i].surface);
         }
     }
+    if(keyboard){wl_keyboard_destroy(keyboard);}if(seat){wl_seat_destroy(seat);}
     wl_buffer_destroy(buffer); xdg_wm_base_destroy(shell);
     wl_shm_destroy(shm); wl_compositor_destroy(compositor); wl_registry_destroy(registry);
     wl_display_flush(display);

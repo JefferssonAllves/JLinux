@@ -15,13 +15,17 @@ xdg_header = custom_target('xdg-shell-header',
 math = meson.get_compiler('c').find_library('m')
 cairo = dependency('cairo')
 pango = dependency('pangocairo')
+pixman = dependency('pixman-1')
 fontconfig = dependency('fontconfig')
-compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/window-effects.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
-  dependencies: [wlroots, wayland, xkb, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
+compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/window-effects.c', 'src/renderer/overview.c', 'src/renderer/blur.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
+  dependencies: [wlroots, wayland, xkb, cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
 frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
   'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
   dependencies: [wlroots, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
 test('window-frame-lifecycle', frame_test)
+overview_test = executable('jlinux-test-overview', 'tests/overview.c', 'src/renderer/overview.c', 'src/renderer/window-effects.c', 'src/renderer/blur.c', 'src/effects/window.c', 'src/effects/glass.c', 'src/toolkit/painter.c', dependencies: [wlroots, wayland, cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'])
+test('overview-lifecycle', overview_test)
+
 window_effects_test = executable('jlinux-test-window-effects', 'tests/window-effects.c',
   'src/renderer/window-effects.c', 'src/effects/window.c', 'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
   dependencies: [wlroots, wayland, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
@@ -113,6 +117,8 @@ if foot.found() and wtype.found()
     test('window-motion-sync', find_program('scripts/smoke-motion-sync.py'), args: [compositor, layout_client, pointer_test], timeout: 20)
     test('window-transitions', find_program('scripts/smoke-window-transitions.py'), args: [compositor, layout_client], timeout: 20)
     test('window-reduced-motion', find_program('scripts/smoke-window-transitions.py'), args: [compositor, layout_client], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 20)
+    test('window-overview', find_program('scripts/smoke-overview.py'), args: [compositor, layout_client, wtype, pointer_test, shell], timeout: 40)
+    test('overview-no-blur', find_program('scripts/smoke-overview.py'), args: [compositor, layout_client, wtype, pointer_test, shell], env: ['JLINUX_GLASS_BLUR=0'], timeout: 40)
     test('window-layout-constraints', find_program('scripts/smoke-layout-constraints.py'), args: [compositor, layout_client, wtype, pointer_test], timeout: 25)
   endif
   test('window-side-snap', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], timeout: 40)
