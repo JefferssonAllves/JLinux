@@ -1,5 +1,6 @@
 #include "futurista.h"
 #include "../renderer/blur.h"
+#include "../effects/dock.h"
 #include <gio/gio.h>
 #include <glob.h>
 #include <math.h>
@@ -660,7 +661,9 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     for (int i = 0; i < 10; i++) {
         sector(cr, i, s->hover[i], s->glass);
         double size = (i == 0 ? 86 : i == 6 ? 68 : 74) * (1 + .10 * s->hover[i]);
-        app_icon(s, cr, i, positions[i][0] - size / 2, positions[i][1] - size / 2, size);
+        double y = positions[i][1] - 4 * s->hover[i];
+        if (s->glass.reflection) { jlinux_dock_halo(cr, positions[i][0], y, size * .9, s->hover[i]); }
+        app_icon(s, cr, i, positions[i][0] - size / 2, y - size / 2, size);
     }
     cairo_pattern_t *p = cairo_pattern_create_radial(820, 420, 20, 836, 469, 133);
     cairo_pattern_add_color_stop_rgba(p, 0, .32, .27, .62, .97);

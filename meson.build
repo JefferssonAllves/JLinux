@@ -27,6 +27,8 @@ panel_test = executable('jlinux-test-glass-panel', 'tests/glass-panel.c', 'src/e
 test('glass-panel-fade', panel_test)
 transition_test = executable('jlinux-test-transition', 'tests/transition.c', 'src/animation/transition.c', dependencies: math)
 test('animation-transition', transition_test)
+dock_visual_test = executable('jlinux-test-dock-visual', 'tests/dock-visual.c', 'src/renderer/dock-transform.c', 'src/effects/dock.c', dependencies: [cairo, math])
+test('dock-visual', dock_visual_test)
 if get_option('shell')
   client = dependency('wayland-client')
   cursor = dependency('wayland-cursor')
@@ -62,7 +64,7 @@ if get_option('shell')
   install_data('data/wayland-sessions/jlinux.desktop', install_dir: get_option('datadir') / 'wayland-sessions')
   install_data('data/futurista/README.md', install_dir: get_option('datadir') / 'licenses/jlinux-desktop-git', rename: 'futurista-assets.md')
   futurista_resources = import('gnome').compile_resources('futurista-resources', 'data/futurista/assets.xml', source_dir: 'data/futurista')
-  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/volume.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
+  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/volume.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/effects/dock.c', 'src/renderer/dock-transform.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
     c_args: ['-Wno-overlength-strings'], dependencies: [client, cursor, cairo, pango, fontconfig, math, dependency('gio-2.0')], install: true)
   volume_test = executable('jlinux-test-volume', 'tests/volume.c', 'src/shell/volume.c', dependencies: [glib, math])
   test('volume-response', volume_test)
