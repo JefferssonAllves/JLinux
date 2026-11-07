@@ -1,4 +1,5 @@
 #include "futurista.h"
+#include "battery.h"
 #include "../renderer/blur.h"
 #include "../effects/dock.h"
 #include <gio/gio.h>
@@ -417,9 +418,9 @@ static void blurred_backdrop(struct futurista *s, cairo_t *cr, int width, int he
 }
 void futurista_panel(struct futurista *s, cairo_t *cr, int width) {
     cairo_save(cr);
-    roundrect(cr, 12, -4, width - 24, 56, 28);
+    cairo_rectangle(cr, 0, 0, width, 36);
     blurred_backdrop(s, cr, width, 941);
-    roundrect(cr, 12, -4, width - 24, 56, 28);
+    cairo_rectangle(cr, 0, 0, width, 36);
     cairo_pattern_t *header = cairo_pattern_create_linear(0, 0, width, 52);
     cairo_pattern_add_color_stop_rgba(header, 0, s->glass.tint ? .045 : .07, s->glass.tint ? .055 : .07,
                                       s->glass.tint ? .13 : .07, .97);
@@ -437,30 +438,7 @@ void futurista_panel(struct futurista *s, cairo_t *cr, int width) {
     } else {
         cairo_new_path(cr);
     }
-    cairo_pattern_t *p = cairo_pattern_create_linear(42, 10, 72, 41);
-    cairo_pattern_add_color_stop_rgb(p, 0, .84, .46, 1);
-    cairo_pattern_add_color_stop_rgb(p, 1, .52, .28, .95);
-    circle(cr, 57, 25, 15);
-    cairo_set_source(cr, p);
-    cairo_fill(cr);
-    cairo_pattern_destroy(p);
-    cairo_set_source_rgb(cr, .10, .07, .24);
-    cairo_move_to(cr, 48, 13);
-    cairo_line_to(cr, 54, 14);
-    cairo_line_to(cr, 58, 19);
-    cairo_line_to(cr, 67, 18);
-    cairo_line_to(cr, 69, 24);
-    cairo_line_to(cr, 63, 26);
-    cairo_line_to(cr, 59, 23);
-    cairo_line_to(cr, 55, 28);
-    cairo_line_to(cr, 55, 36);
-    cairo_line_to(cr, 50, 31);
-    cairo_line_to(cr, 51, 24);
-    cairo_line_to(cr, 44, 21);
-    cairo_close_path(cr);
-    cairo_fill(cr);
-    text(cr, "JLinux", 84, 12, 23, true, 0xf8f8ff);
-    line_icon(cr, 11, width - 220, 13, 25, 0xf4f3ff);
+    cairo_translate(cr, 0, -8);
     cairo_set_source_rgb(cr, .94, .94, 1);
     roundrect(cr, width - 176, 17, 27, 14, 2);
     cairo_set_line_width(cr, 1.4);
@@ -471,9 +449,16 @@ void futurista_panel(struct futurista *s, cairo_t *cr, int width) {
         cairo_rectangle(cr, width - 173, 20, 21 * s->battery / 100., 8);
         cairo_fill(cr);
     }
+    if (s->charging) {
+        cairo_set_source_rgb(cr, .55, .91, .88);
+        cairo_move_to(cr, width - 191, 15); cairo_line_to(cr, width - 200, 25);
+        cairo_line_to(cr, width - 194, 25); cairo_line_to(cr, width - 198, 33);
+        cairo_line_to(cr, width - 186, 22); cairo_line_to(cr, width - 192, 22);
+        cairo_close_path(cr); cairo_fill(cr);
+    }
     char battery[20];
     snprintf(battery, sizeof(battery), s->battery >= 0 ? "%d%%" : "—", s->battery);
-    text(cr, battery, width - 137, 15, 18, false, 0xf1f2ff);
+    text(cr, battery, width - 137, 15, 16, false, 0xf1f2ff);
     time_t now = time(NULL);
     struct tm t;
     localtime_r(&now, &t);
@@ -484,16 +469,16 @@ void futurista_panel(struct futurista *s, cairo_t *cr, int width) {
     snprintf(clock, sizeof(clock), "%s, %02d de %s  %02d:%02d", days[t.tm_wday], t.tm_mday, months[t.tm_mon],
              t.tm_hour, t.tm_min);
     PangoLayout *label = pango_cairo_create_layout(cr);
-    PangoFontDescription *font = pango_font_description_from_string("Adwaita Sans 18px");
+    PangoFontDescription *font = pango_font_description_from_string("Adwaita Sans 16px");
     pango_layout_set_font_description(label, font);
     pango_layout_set_text(label, clock, -1);
     int clock_width;
     pango_layout_get_pixel_size(label, &clock_width, NULL);
-    text(cr, clock, (width - clock_width) / 2., 15, 18, false, 0xf1f2ff);
+    text(cr, clock, (width - clock_width) / 2., 15, 16, false, 0xf1f2ff);
     pango_font_description_free(font);
     g_object_unref(label);
-    material(cr, width - 57, 7, 39, 38, 12, false, s->glass);
-    line_icon(cr, 13, width - 50, 14, 24, 0xf1f2ff);
+    material(cr, width - 57, 11, 39, 30, 4, false, s->glass);
+    line_icon(cr, 13, width - 49, 16, 22, 0xf1f2ff);
     cairo_restore(cr);
 }
 static void tint_stop(cairo_pattern_t *pattern, double position, double r, double g, double b, double alpha,
@@ -767,14 +752,8 @@ void futurista_status(struct futurista *s) {
     }
     globfree(&paths);
     memset(&paths, 0, sizeof(paths));
-    if (!glob("/sys/class/power_supply/*/capacity", 0, NULL, &paths) && paths.gl_pathc) {
-        int n = read_number(paths.gl_pathv[0]);
-        if (n >= 0 && n <= 100) {
-            s->battery = n;
-        }
-    }
-    globfree(&paths);
-    memset(&paths, 0, sizeof(paths));
+    struct battery_status battery = battery_read("/sys/class/power_supply");
+    s->battery = battery.percent; s->charging = battery.charging;
     if (!glob("/sys/class/net/*/wireless", 0, NULL, &paths)) {
         s->wifi = 0;
         for (size_t i = 0; i < paths.gl_pathc; i++) {

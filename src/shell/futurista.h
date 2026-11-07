@@ -6,7 +6,7 @@ struct futurista {
     struct jlinux_glass glass;
     int selected, wifi, battery;
     double volume, brightness, hover[10];
-    bool muted;
+    bool muted, charging;
     char message[180];
 };
 bool futurista_init(struct futurista *scene, struct jlinux_glass glass);

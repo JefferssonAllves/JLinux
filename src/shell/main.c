@@ -30,7 +30,7 @@
 #include <wayland-cursor.h>
 #include "layer-shell-client.h"
 extern char **environ;
-enum { PANEL_BODY_HEIGHT = 52, PANEL_FADE_HEIGHT = 0,
+enum { PANEL_BODY_HEIGHT = 36, PANEL_FADE_HEIGHT = 0,
     PANEL_HEIGHT = PANEL_BODY_HEIGHT + PANEL_FADE_HEIGHT, PANEL_MARGIN = 6, PANEL_ZONE = PANEL_HEIGHT };
 struct app;
 struct surface {
@@ -543,7 +543,6 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
     } else if (app->pointer_surface == &app->panel) {
         if (!app->volume_panel && !app->power_panel) {
             if(app->pointer_x>=app->panel.width-60){toggle_launcher(app,true);}
-            else if(app->pointer_x>=app->panel.width-226 && app->pointer_x<app->panel.width-188){toggle_volume(app);}
 
         }
         else if (app->volume_panel || (app->pointer_x >= app->panel.width - 326 && app->pointer_x < app->panel.width - 272)) { toggle_volume(app); }
@@ -604,6 +603,7 @@ static int preview_futurista(const char *path, bool controls) {
     if (!futurista_init(&scene,effects)) { futurista_finish(&scene); return 1; }
     scene.wifi = 1;
     scene.battery = 75;
+    scene.charging = true; /* Illustrative status for the component preview. */
     scene.volume = .40;
     scene.brightness = .53;
     cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1672, 941);

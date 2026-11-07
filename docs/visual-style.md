@@ -105,3 +105,7 @@ A integração `feature/apply-pending-updates` reúne o cabeçalho preto transl�
 ## Referência Futurista mais recente
 
 Por pedido do usuário, a tela de Downloads “Central de Controle JLinux Futurista.png” orienta a nova composição: dock circular central acionado por Super, centro de controle à direita e barra arredondada azul-violeta. Substitui a orientação de ausência de dock para esta implementação; não restaura o dock lateral antigo. Código, prévia, comparação e limites em [futurista.md](futurista.md). O usuário autorizou instalar a prévia completa sem exigir agora reconstrução exata dos assets ausentes.
+
+## Barra superior compacta atual
+
+O pedido atual prevalece sobre o formato arredondado da referência Futurista: 36 px, largura total, cantos retos, sem marca JLinux e sem ícone de volume. Hora centralizada, bateria com porcentagem e raio de carregamento condicionado ao estado real; ajustes mantidos. Dock radial e animação de expansão central preservados.
