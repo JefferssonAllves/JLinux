@@ -303,3 +303,6 @@ BROWSER-MODERN-TABS — pacote `0.1.0.r64.gec7ef34-1` instalado; check() 13/13 e
 ## BROWSER-DIRECT-URL — fix/browser-direct-url
 
 Corrigida saída de tamanho obrigatória da API de leitura do clipboard, antes nula e causadora de erro GLib/colagem sem texto. Negociação de formatos e limpeza somente de whitespace externo; erro de navegação visível no campo. Perfil/login, política de URL/TLS e sandbox preservados. Regressão Wayland cobre copiar URL com newline de uma página, colar e navegar. Suíte release 13/13 após corrigir espera da fixture; três direcionados ASan/UBSan passaram. URL específica do usuário ainda não recebida; probe HTTPS público passou. Instalação/commit após pacote.
+
+
+BROWSER-DIRECT-URL — instalado `0.1.0.r66.g38b9ed1-1`; check() 13/13 e integridade pacman confirmados. Colagem/navegação passou com navegador e compositor corrigidos instalados em runtime isolado. Perfil e processo existente preservados; reabrir para ativar. Backup/source em docs/browser.md. PR #77 enviado, sem merge.
