@@ -430,5 +430,12 @@ CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao
 
 29 testes locais release passaram; prévia nativa inspecionada. Sem repetição de sanitizadores para esta alteração de layout que reutiliza helpers existentes; sem benchmark ou validação física visual. Pacote/ativação registrados na conclusão; shell ativo preservado, ativação no próximo login.
 
+## CONTROL-VOLUME — feature/control-volume-slider
+
+Implementado volume absoluto por clique/arraste com resposta visual imediata, limite 0–100% e coalescência do último valor pendente sem comandos paralelos. Removidos os quatro atalhos solicitados (Não perturbe, Economia de energia, Tela noturna e Captura de tela), com painel compactado. Dependência: fix/window-motion-sync, preservando relógio Glass e correções de janelas.
+
+Testes direcionados de backend e entrada headless com áudio simulado passaram; prévia nativa inspecionada. Suite completa/pacote/instalação registrados na conclusão. Sem reiniciar a sessão ativa, testes de VT, benchmark ou confirmação física da fluidez.
 
 WINDOW-MOTION-SYNC — instalado `0.5.0.r99.g161ba52-1`, preservando a instalação concorrente do relógio Glass 9613200. Pacote 30/30 e integridade confirmados; regressão passou também com `/usr/bin/jlinux-compositor`. PR #76 agora depende de feature/glass-clock-panel (#75). Sessão preservada, ativação no próximo login. Backup/source/limites em docs/arch-installation.md.
+
+CONTROL-VOLUME — instalado `0.5.0.r102.gf84be4a-1` via pacman, 23 arquivos sem ausências. 30/30 testes locais release e 30/30 no pacote; CI do código f84be4a aprovado. PR #78 enviado, sem merge. Backup/versão em docs/arch-installation.md. Sessão preservada; ativação no próximo login. Prévia conferida; fluidez física não medida.

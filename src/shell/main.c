@@ -60,7 +60,7 @@ struct app {
     struct wl_surface *cursor_surface;
     struct surface wallpaper, panel, power, audio, launcher;
     struct futurista futurista;
-    bool showing_controls, dock_closing, reduced_motion;
+    bool volume_dragging, showing_controls, dock_closing, reduced_motion;
     struct transition dock_open, dock_hover[10];
     struct wl_callback *dock_frame;
     int control;
@@ -360,6 +360,7 @@ static void destroy_launcher(struct app *app) {
     fprintf(stderr, "%s\n",app->showing_controls?"Painel de controle fechado.":"Dock circular fechado.");
 }
 static void close_launcher(struct app *app) {
+    app->volume_dragging = false;
     if (!app->launcher.wl || app->dock_closing) { return; }
     if (app->showing_controls || app->reduced_motion) { destroy_launcher(app); return; }
     app->dock_closing = true;
@@ -455,10 +456,7 @@ static void launcher_action(struct app *app, int hit) {
         volume_start(&app->volume, 3);
         return;
     }
-    if (hit == 30 || hit == 31) {
-        volume_start(&app->volume, hit == 30 ? 1 : 2);
-        return;
-    }
+
     if (hit >= 33 && hit <= 35) {
         close_launcher(app);
         toggle_power(app);
@@ -515,15 +513,30 @@ static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t seria
     struct app *app = data;
     app->pointer_surface = NULL;
 }
+static void drag_volume(struct app *app) {
+    volume_set(&app->volume, futurista_volume_at(app->pointer_x, app->launcher.width, app->launcher.height));
+    app->launcher.dirty = true;
+}
 static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y) {
     (void)pointer; (void)time;
     struct app *app = data; app->pointer_x = wl_fixed_to_double(x); app->pointer_y = wl_fixed_to_double(y);
+    if (app->volume_dragging) { drag_volume(app); }
     update_launcher_selection(app);
 }
 static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
     (void)pointer; (void)serial; (void)time;
     struct app *app = data;
-    if (button != BTN_LEFT || state != WL_POINTER_BUTTON_STATE_RELEASED) { return; }
+    if (button != BTN_LEFT) { return; }
+    if (app->volume_dragging) {
+        if (state == WL_POINTER_BUTTON_STATE_RELEASED) { drag_volume(app); app->volume_dragging = false; }
+        return;
+    }
+    if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+        if (app->pointer_surface == &app->launcher && app->showing_controls && launcher_hit(app) == 30) {
+            app->volume_dragging = true; drag_volume(app);
+        }
+        return;
+    }
     if (app->pointer_surface == &app->launcher) {
         if(!app->dock_closing){launcher_action(app,launcher_hit(app));}
     } else if (app->pointer_surface == &app->audio) {

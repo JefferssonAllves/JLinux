@@ -62,7 +62,7 @@ sys.exit(1 if pathlib.Path(os.environ['POWER_FAIL']).exists() else 0)
                     click(1240, 24)
                     if not panel_only:
                         wait_for(lambda: 'jlinux-control-center' in log(), [server, client], 'central de controle')
-                        click(round((1284+action*145)*1280/1672), round(751*720/941))
+                        click(round((1284+action*145)*1280/1672), round(623*720/941))
                     maps += 1
                     wait_for(lambda: log().count('Interface mapeada: jlinux-power-menu') >= maps,
                              [server, client], 'menu de energia')
@@ -73,7 +73,7 @@ sys.exit(1 if pathlib.Path(os.environ['POWER_FAIL']).exists() else 0)
                     click(1240, 24)
                     if not panel_only:
                         wait_for(lambda: 'jlinux-control-center' in log(), [server, client], 'central de controle')
-                        click(round((1284+action*145)*1280/1672), round(751*720/941))
+                        click(round((1284+action*145)*1280/1672), round(623*720/941))
                     maps += 1
                     wait_for(lambda: log().count('Interface mapeada: jlinux-power-menu') >= maps,
                              [server, client], 'reabertura')
