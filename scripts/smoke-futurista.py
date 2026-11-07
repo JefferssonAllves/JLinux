@@ -15,6 +15,11 @@ processes=[]
 with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
     root=Path(directory)
     env=dict(os.environ,XDG_RUNTIME_DIR=directory,WLR_BACKENDS='headless',WLR_RENDERER='pixman',WLR_HEADLESS_OUTPUTS='1',JLINUX_TEST_INPUT='1')
+    commands=root/'commands';commands.mkdir()
+    whatsapp=commands/'jlinux-whatsapp'
+    whatsapp.write_text(f"#!{sys.executable}\nfrom pathlib import Path\nimport os\nPath(os.environ['XDG_RUNTIME_DIR'],'whatsapp-opened').write_text('opened')\n")
+    whatsapp.chmod(0o755)
+    env['PATH']=str(commands)+os.pathsep+os.environ['PATH']
     logfile=root/'session.log'
     def log():return logfile.read_text(errors='replace')
     def keys(*args):subprocess.run([wtype,'-s','100',*args],env=env,check=True,timeout=5)
@@ -81,6 +86,17 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
                     closed=log().count('Dock circular fechado.')
                     ctl.sendto(b'hide',str(sock))
                     wait(lambda:log().count('Dock circular fechado.')>closed,processes,'reversed animation closes')
+                with socket.socket(socket.AF_UNIX,socket.SOCK_DGRAM) as ctl:
+                    opened=log().count('Dock circular aberto.')
+                    ctl.sendto(b'show',str(sock))
+                    wait(lambda:log().count('Dock circular aberto.')>opened,processes,'WhatsApp dock item')
+                    time.sleep(.25)
+                    marker=root/'whatsapp-opened';marker.unlink(missing_ok=True)
+                    mouse(round(674*1280/1672),round(277*720/941))
+                    wait(marker.exists,processes,'WhatsApp command launched from former Steam slot')
+                    closed=log().count('Dock circular fechado.')
+                    ctl.sendto(b'hide',str(sock))
+                    wait(lambda:log().count('Dock circular fechado.')>closed,processes,'WhatsApp dock closes')
                 opened=log().count('Dock circular aberto.')
                 closed=log().count('Dock circular fechado.')
                 held=subprocess.Popen([wtype,'-P',key,'-s','10000'],env=env)
