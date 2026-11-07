@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <time.h>
 #include <wayland-client.h>
 #include "xdg-shell-client.h"
 
@@ -21,6 +22,7 @@ static struct wl_compositor *compositor;
 static struct wl_shm *shm;
 static struct xdg_wm_base *shell;
 static struct wl_buffer *buffer;
+static unsigned delay_ms;
 static struct window windows[8];
 static void ping(void *data, struct xdg_wm_base *base, uint32_t serial) {
     (void)data; xdg_wm_base_pong(base, serial);
@@ -42,6 +44,7 @@ static const struct wl_registry_listener registry_listener = {.global = global, 
 static void configured(void *data, struct xdg_surface *surface, uint32_t serial) {
     struct window *window = data;
     xdg_surface_ack_configure(surface, serial);
+    if (delay_ms) { struct timespec delay={delay_ms/1000,(delay_ms%1000)*1000000L}; nanosleep(&delay,NULL); }
     int width = window->width > 0 ? window->width : 400;
     int height = window->height > 0 ? window->height : 300;
     assert(width <= 1280 && height <= 720);
@@ -99,6 +102,7 @@ int main(void) {
                 if (parent >= 0) { assert(parent < 8 && windows[parent].top); xdg_toplevel_set_parent(window->top, windows[parent].top); }
             }
             assert(window->top);
+            if (!strcmp(command,"delay")) { assert(minw>=0 && minw<=2000); delay_ms=(unsigned)minw; continue; }
             if (!strcmp(command, "unmap")) {
                 wl_surface_attach(window->surface, NULL, 0, 0);
                 wl_surface_commit(window->surface); continue;

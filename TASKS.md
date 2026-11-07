@@ -417,6 +417,13 @@ WM-SMOOTH implementado: cópia dos buffers da janela interpola posição e taman
 
 **WM-SMOOTH · instalado em 07/11/2026:** pacote `0.5.0.r94.ge43e58f-1`, fonte e43e58f, compilado do GitHub com 29 testes aprovados no makepkg e instalado via pacman. 29 testes locais release e ASan/UBSan passaram; casos de snap release repetidos após ampliar desconexão durante a animação. Compositor da sessão atual preservado: deslizamento/redimensionamento animados entram no próximo login. Sem logout/reinício/VT ou benchmark. PR #74, base feature/window-transitions, sem merge; CI e avaliação visual física pendentes no registro.
 
+
+## WINDOW-MOTION-SYNC — fix/window-motion-sync
+
+Implementados recorte da superfície principal/subsurfaces à geometria da janela, handoff do encaixe após commit do configure, espera sem polling, troca entre metades iguais sem aguardar novo tamanho, preservação vertical ao puxar e uso do tamanho solicitado no próximo gesto. Clique em outra janela não cancela todas as animações. Base instalada e43e58f/r94 preservada.
+
+Evidência: escape de conteúdo reproduzido na versão instalada; teste com buffer maior e cliente atrasado 650 ms passou após correção. 30 testes release e cinco direcionados ASan/UBSan passaram. Navegador WPE instalado foi verificado em runtime headless com nova composição, incluindo encaixe/viewport. Sem benchmark físico/DRM/VT; limites e plano em docs/validation.md. Instalação/PR serão registrados após pacote, sem merge.
+
 ## Data e hora com material de janela — feature/glass-clock-panel
 
 CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao texto, cantos de 5 px e helpers existentes de tonalização, sombreado e reflexão das molduras. Fonte reduzida de 16 para 14 px e posição vertical ajustada à barra de 36 px. Cada efeito respeita o controle global correspondente. Nenhum timer, dependência ou lógica de animação novo.

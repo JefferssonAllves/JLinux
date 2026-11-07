@@ -110,6 +110,7 @@ if foot.found() and wtype.found()
   if get_option('shell')
     layout_client = executable('jlinux-test-layout-client', 'tests/layout-client.c', client_xdg_header, client_xdg_code,
       dependencies: client_dep)
+    test('window-motion-sync', find_program('scripts/smoke-motion-sync.py'), args: [compositor, layout_client, pointer_test], timeout: 20)
     test('window-transitions', find_program('scripts/smoke-window-transitions.py'), args: [compositor, layout_client], timeout: 20)
     test('window-reduced-motion', find_program('scripts/smoke-window-transitions.py'), args: [compositor, layout_client], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 20)
     test('window-layout-constraints', find_program('scripts/smoke-layout-constraints.py'), args: [compositor, layout_client, wtype, pointer_test], timeout: 25)
