@@ -49,3 +49,11 @@ Seleção angular: removido o limite de distância externa no hit test, mantendo
 A entrada vertical anterior foi removida. A transformação fica em renderer/dock-transform.c e recebe somente o progresso calculado por animation/transition.c; effects/dock.c desenha o halo sem relógio próprio. O halo respeita REFLECTION e não exige quadros extras: acompanha a transição de hover existente. Movimento reduzido continua aplicando estados finais imediatamente; desativar o halo não desativa escala/fade/hover. A região de rasterização permanece restrita ao retângulo final do dock.
 
 Teste de componente confere pivô invariável no centro, expansão monotônica até escala 1, inversão das coordenadas em todos os estágios e halo nulo quando intensidade é zero. Testes headless exercitam Super, seleção angular e modo reduzido. A imagem de prévia mostra apenas o estado final, não comprova fluidez no hardware. Sem benchmark de CPU/GPU/energia. Instalar não substitui o shell ativo; a nova entrada vale no próximo login.
+
+## Barra fina e bateria carregando
+
+Pedido atual: barra de 36 px, sem margem lateral, retangular e com cantos retos, substituindo a barra arredondada de 52 px. Logo/símbolo/texto JLinux e ícone/área de clique de volume removidos da barra. Data/hora central, bateria/porcentagem e botão compacto de ajustes preservados. Controles de volume continuam no centro de controle e no utilitário auxiliar, sem atalho invisível no antigo local da barra.
+
+A bateria mostra um raio azul-claro à esquerda quando o status da mesma fonte de capacity é exatamente Charging. Full, Discharging, Not charging, Unknown e ausência de status não acendem o raio; capacidade ausente/inválida mostra traço. src/shell/battery.c consulta somente sysfs e usa a primeira capacidade válida, mantendo a política de uma bateria da interface anterior. Não agrega múltiplas baterias. Atualização usa o relógio de status existente do shell, sem timer novo.
+
+A prévia futurista-dock-only.png usa 75% e estado Charging ilustrativos, não representa a carga real do computador. Testes de leitura usam diretório temporário e cobrem carga, descarga, cheia, estado ausente e capacidades inválidas. Testes headless de maximização/encaixe foram atualizados para a reserva de 36 px. Alterações compiladas entram no próximo login: o shell ativo não recarrega seu código.

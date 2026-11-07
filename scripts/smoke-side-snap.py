@@ -54,13 +54,13 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             processes.remove(two)
             assert size() == original, 'closing another window resized the first'
             mouse(x + 160, y - 18, 0, 240)
-            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x629 em 3,88)' in log(), processes, 'left half respecting panel without lateral reserve')
+            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x645 em 3,72)' in log(), processes, 'left half respecting panel without lateral reserve')
             half = size()
             assert half[1] < original[1]
-            mouse(220, 68, 1279, 240)
-            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x629 em 643,88)' in log(), processes, 'right half')
+            mouse(220, 54, 1279, 240)
+            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x645 em 643,72)' in log(), processes, 'right half')
             assert size() == half
-            mouse(830, 68, 700, 240)
+            mouse(830, 54, 700, 240)
             assert size() == original, 'dragging away did not restore original dimensions'
             # At the top edge, with x away from the sides, no snap/maximize occurs.
             before = log().count('Janela encaixada:')
