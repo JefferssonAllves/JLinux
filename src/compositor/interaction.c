@@ -43,6 +43,7 @@ struct view {
     struct transition visibility, lift, snap_progress;
     struct window_snapshot *snap_visual;
     struct wlr_box snap_from, snap_to;
+    uint32_t snap_serial;
     bool mapped, maximized, is_fullscreen;
     unsigned workspace;
     bool snapped;
@@ -152,10 +153,13 @@ bool interaction_animate(struct interaction *state) {
     wl_list_for_each(view, &state->views, link) {
         if (!view->mapped || view->workspace != state->workspace) { continue; }
         if (view->snap_visual) {
-            if (!transition_active(&view->snap_progress, now)) {
+            bool moving = transition_active(&view->snap_progress, now);
+            bool ready = (int32_t)(view->xdg->base->current.configure_serial - view->snap_serial) >= 0;
+            if (!moving && ready) {
                 cancel_snap(view); wlr_log(WLR_INFO, "%s", "Transição de encaixe concluída");
             } else {
-                window_snapshot_geometry(view->snap_visual, view->snap_from, view->snap_to, transition_value(&view->snap_progress, now)); active = true;
+                window_snapshot_geometry(view->snap_visual, view->snap_from, view->snap_to, transition_value(&view->snap_progress, now));
+                active |= moving;
             }
         }
         apply_visual(view, now);
@@ -231,6 +235,14 @@ static void focus_available(struct interaction *state) {
     focus(state, NULL);
 }
 
+static void clip_content(struct wlr_scene_buffer *buffer, int x, int y, void *data) {
+    (void)x; (void)y;
+    struct view *view = data;
+    struct wlr_scene_surface *surface = wlr_scene_surface_try_from_buffer(buffer);
+    if (surface && surface->surface == view->xdg->base->surface) {
+        wlr_scene_subsurface_tree_set_clip(&buffer->node.parent->node, &view->xdg->base->geometry);
+    }
+}
 static void update_frame(struct view *view) {
     int width = view->xdg->base->geometry.width, height = view->xdg->base->geometry.height;
     if (width <= 0 || height <= 0) { return; }
@@ -355,6 +367,8 @@ static void snap_side(struct interaction *state) {
     place(view, area);
     if (snapshot) {
         view->snap_visual = snapshot; view->snap_from = from; view->snap_to = area;
+        view->snap_serial = from.width == area.width && from.height == area.height
+            ? view->xdg->base->current.configure_serial : view->xdg->base->scheduled_serial;
         view->snap_progress = (struct transition){0}; animate(state, &view->snap_progress, 1, .22);
         window_snapshot_geometry(snapshot, from, area, 0);
         wlr_scene_node_set_enabled(&view->visual->node, false);
@@ -372,7 +386,7 @@ static void detach_snap(struct view *view, bool resizing) {
         double ratio = (view->owner->cursor->x - view->tree->node.x) / (view->frame_width > 0 ? view->frame_width : 1);
         if (ratio < 0) { ratio = 0; } if (ratio > 1) { ratio = 1; }
         box.x = (int)(view->owner->cursor->x - box.width * ratio);
-        box.y = (int)view->owner->cursor->y + JLINUX_FRAME_HEADER / 2;
+        box.y = view->tree->node.y;
         place(view, box);
     }
 }
@@ -472,6 +486,8 @@ static void view_unmapped(struct wl_listener *listener, void *data) {
 static void view_committed(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, commit);
+    wlr_scene_node_for_each_buffer(&view->content->node, clip_content, view);
+    if (view->snap_visual) { schedule_animation(view->owner); }
     if (view->xdg->base->geometry.width != view->frame_width ||
         view->xdg->base->geometry.height != view->frame_height) { update_frame(view); }
     const struct wlr_xdg_toplevel_state *limits = &view->xdg->current;
@@ -912,11 +928,11 @@ static void button_event(struct wl_listener *listener, void *data) {
         return;
     }
     if (event->state == WL_POINTER_BUTTON_STATE_PRESSED) {
-        struct view *pending; wl_list_for_each(pending, &state->views, link) { cancel_snap(pending); }
         double x, y;
         struct wlr_surface *surface;
         struct view *view = surface_at(state, &surface, &x, &y);
         if (view) {
+            cancel_snap(view);
             cancel_super(state);
             focus(state, view);
             wlr_log(WLR_INFO, "Foco por clique: %s", view->xdg->title ? view->xdg->title : "sem título");
@@ -940,7 +956,8 @@ static void button_event(struct wl_listener *listener, void *data) {
             state->grabbed = view; state->resizing = state->resize_edges != 0;
             state->start_x = state->cursor->x; state->start_y = state->cursor->y;
             state->window_x = view->tree->node.x; state->window_y = view->tree->node.y;
-            state->width = view->frame_width; state->height = view->frame_height;
+            state->width = view->xdg->scheduled.width > 0 ? view->xdg->scheduled.width : view->frame_width;
+            state->height = view->xdg->scheduled.height > 0 ? view->xdg->scheduled.height : view->frame_height;
             begin_grab(view);
             return;
         }

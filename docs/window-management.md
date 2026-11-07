@@ -25,3 +25,12 @@ A janela percorre uma transição smoothstep de 220 ms da posição/tamanho de s
 Os snapshots pertencem a cada janela e não recebem entrada. Novo clique, posicionamento manual, maximização, fullscreen, mudança de parent/workspace, unmap/destruição e saída do compositor liberam o recurso temporário e restauram a janela real. Movimento reduzido e falha ao criar snapshot aplicam o encaixe imediato. Só há agendamento de frames enquanto uma transição estiver ativa.
 
 Testes de renderer verificam posição e dimensões no início, meio e fim, com retenção/liberação dos buffers. Headless cobre a conclusão dos dois lados, restauração, ausência de rearranjo automático, modo reduzido e desconexão logo após encaixar. A fluidez final em DRM/GPU ainda depende de avaliação no hardware; sem benchmark nesta entrega. Ativação da versão instalada no próximo login, preservando a sessão atual.
+
+
+### Sincronização e recorte do conteúdo
+
+A subárvore da superfície principal e seus subsurfaces agora é recortada à geometria xdg declarada, incluindo origens negativas como o cabeçalho do navegador. Popups xdg independentes não recebem esse recorte. Isso mantém buffers maiores que a janela dentro da moldura, tanto na cena viva quanto na cópia animada.
+
+O fim dos 220 ms não basta para revelar o conteúdo vivo: quando há mudança de tamanho, a transição aguarda o commit que confirma o configure solicitado. Até isso ocorrer, permanece a imagem no destino; a espera não mantém frames agendados em loop e o commit desperta a atualização. Trocar entre metades com dimensões iguais não espera um redimensionamento desnecessário. Clientes que não respondem mantêm a imagem anterior até responder ou encerrar; não há afirmação de fluidez para aplicativo travado.
+
+Clicar em outra janela não encerra todas as transições. Ao desencaixar, o ponto vertical de arraste é preservado e o estado de tamanho do próximo gesto usa o tamanho solicitado, evitando reaproveitar o tamanho antigo enquanto o cliente ainda atualiza. A posição continua acompanhando os eventos do cursor diretamente, sem acrescentar um filtro de atraso.

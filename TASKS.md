@@ -416,3 +416,10 @@ WM-SMOOTH implementado: cópia dos buffers da janela interpola posição e taman
 29 testes locais release e ASan/UBSan passaram; dois testes de encaixe repetidos em release após ampliar cobertura de desconexão durante a animação. Renderer verifica início/meio/fim e ownership dos buffers; headless verifica conclusão, geometria final, restauração, ausência de reorganização automática, modo reduzido e desconexão logo após drop. Sem benchmark ou teste físico de VT/GPU. Instalação/ativação registradas na conclusão abaixo; docs/window-management.md explicita imagem temporária e handoff ao conteúdo vivo.
 
 **WM-SMOOTH · instalado em 07/11/2026:** pacote `0.5.0.r94.ge43e58f-1`, fonte e43e58f, compilado do GitHub com 29 testes aprovados no makepkg e instalado via pacman. 29 testes locais release e ASan/UBSan passaram; casos de snap release repetidos após ampliar desconexão durante a animação. Compositor da sessão atual preservado: deslizamento/redimensionamento animados entram no próximo login. Sem logout/reinício/VT ou benchmark. PR #74, base feature/window-transitions, sem merge; CI e avaliação visual física pendentes no registro.
+
+
+## WINDOW-MOTION-SYNC — fix/window-motion-sync
+
+Implementados recorte da superfície principal/subsurfaces à geometria da janela, handoff do encaixe após commit do configure, espera sem polling, troca entre metades iguais sem aguardar novo tamanho, preservação vertical ao puxar e uso do tamanho solicitado no próximo gesto. Clique em outra janela não cancela todas as animações. Base instalada e43e58f/r94 preservada.
+
+Evidência: escape de conteúdo reproduzido na versão instalada; teste com buffer maior e cliente atrasado 650 ms passou após correção. 30 testes release e cinco direcionados ASan/UBSan passaram. Navegador WPE instalado foi verificado em runtime headless com nova composição, incluindo encaixe/viewport. Sem benchmark físico/DRM/VT; limites e plano em docs/validation.md. Instalação/PR serão registrados após pacote, sem merge.

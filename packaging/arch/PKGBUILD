@@ -10,7 +10,7 @@ makedepends=('git' 'meson' 'ninja' 'pkgconf' 'wayland-protocols' 'python')
 checkdepends=('wtype')
 optdepends=('greetd: login na inicialização' 'cage: compositor isolado da tela de login' 'jlinux-browser-git: app WhatsApp do dock')
 provides=('jlinux-desktop')
-source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/smooth-side-snap')
+source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=fix/window-motion-sync')
 sha256sums=('SKIP')
 
 pkgver() {
