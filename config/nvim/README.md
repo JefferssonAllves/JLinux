@@ -1,6 +1,6 @@
 # Neovim Code — Shades of Purple
 
-Perfil pessoal instalado em `~/.config/nvim`, Neovim 0.12.6. Abra pelo menu **Neovim Code** (Foot com FiraCode Nerd Font Mono, 11 pt) ou use `nvim` / `nvim pasta-do-projeto`. Não é uma interface gráfica idêntica ao VS Code: mantém os modos e comandos do Neovim.
+Perfil pessoal instalado em `~/.config/nvim`, Neovim 0.12.6. Abra pelo menu **Neovim Code** (Foot com FiraCode Nerd Font Mono Bold, 12 pt) ou use `nvim` / `nvim pasta-do-projeto`. Não é uma interface gráfica idêntica ao VS Code: mantém os modos e comandos do Neovim.
 
 A árvore abre à esquerda, o editor à direita, e o terminal abaixo do editor. Abas no topo, informações/diagnósticos embaixo e botão **▶ Executar** no canto superior direito do editor. Tema: port [Shades of Purple](https://github.com/necrogoru/shades-of-purple.nvim), referência confirmada pelo usuário.
 
@@ -52,3 +52,9 @@ O teste de UI requer `python-pynvim` e a configuração já instalada. Foram ver
 Pedido posterior: roxo mais escuro e bordas inspiradas no desktop. A base Shades of Purple mantém as cores de sintaxe, com fundo do código `#171126` (antes `#2D2B55`), painéis `#100C1D`, fundos profundos `#0C0917` e linhas discretas `#211832`. Divisórias violeta `#9874E8`, contornos de popups azul-claro `#6FD7FF`, sublinhado nos cabeçalhos e botão Executar. Menus do blink, documentação, assinaturas e Mason usam contorno arredondado; separadores nativos mostram linhas e junções.
 
 A implementação fica em lua/appearance.lua e reaplica os destaques ao recarregar o tema. São cores e contornos do terminal, sem blur/refração ou brilho gráfico do compositor. Teste de UI RPC passou com as novas cores, recarga do tema, layout e clique no botão. Configuração anterior preservada em `~/.config/nvim.before-dark-borders-20261112-201324`. Para carregar tudo, feche e abra o Neovim; não é necessário sair do desktop. Não foi feita comparação visual física lado a lado com o sistema.
+
+## Fonte maior e neon — 12/11/2026
+
+O atalho **Neovim Code** agora seleciona FiraCode Nerd Font Mono **Bold, 12 pt** (antes 11 pt). A cor de fundo continua #171126; bordas violeta #C77DFF e ciano #43F6FF, comentários roxo neon, constantes magenta e strings verde #8CFF9C. O texto base também recebe atributo bold no Neovim. São cores sólidas, sem efeito gráfico de glow.
+
+Feche e abra **Neovim Code pelo menu** para carregar a fonte e o tema. Quando iniciado com `nvim` em outro terminal, o tamanho da fonte continua sendo definido por esse terminal. Perfil anterior salvo em `~/.config/nvim.before-bold-neon-20261112-201642`. UI RPC validou fundo, bold, cores neon, recarga do tema, layout e execução pelo botão; Fontconfig confirmou a variante Bold, e Foot/desktop entry validaram a configuração. Sem avaliação visual física ou teste pixel a pixel.
