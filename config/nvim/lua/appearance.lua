@@ -5,17 +5,25 @@ function M.setup()
     colors.bg_dark = '#100C1D'
     colors.bg_darker = '#0C0917'
     colors.bg_lighter = '#211832'
-    colors.border = '#9874E8'
-    colors.border_highlight = '#6FD7FF'
+    colors.border = '#C77DFF'
+    colors.border_highlight = '#43F6FF'
+    colors.purple = '#DA7CFF'
+    colors.purple_bright = '#E49AFF'
+    colors.pink = '#FF66CE'
+    colors.cyan = '#43F6FF'
+    colors.green_light = '#8CFF9C'
+    colors.yellow = '#FFF066'
     vim.opt.winborder = 'rounded'
     vim.opt.fillchars:append({ vert = '│', horiz = '─', horizup = '┴', horizdown = '┬', vertleft = '┤', vertright = '├', verthoriz = '┼' })
     local function borders()
         local groups = {
-            WinSeparator = { fg = colors.border },
+            Normal = { fg = colors.fg, bg = colors.bg, bold = true },
+            NormalNC = { fg = colors.fg, bg = colors.bg, bold = true },
+            WinSeparator = { fg = colors.border, bold = true },
             FloatBorder = { fg = colors.border_highlight, bg = colors.bg_dark },
-            WinBar = { fg = '#E8DEFF', bg = colors.bg_dark, sp = colors.border, underline = true },
+            WinBar = { fg = '#F4E6FF', bg = colors.bg_dark, sp = colors.border, underline = true },
             WinBarNC = { fg = '#BAA8D8', bg = colors.bg_dark, sp = '#63468C', underline = true },
-            RunButton = { fg = '#A5FF90', bg = colors.bg_dark, sp = colors.border_highlight, bold = true, underline = true },
+            RunButton = { fg = colors.green_light, bg = colors.bg_dark, sp = colors.border_highlight, bold = true, underline = true },
             NvimTreeWinSeparator = { fg = colors.border, bg = colors.bg_dark },
             BlinkCmpMenuBorder = { fg = colors.border_highlight, bg = colors.bg_dark },
             BlinkCmpDocBorder = { fg = colors.border_highlight, bg = colors.bg_dark },

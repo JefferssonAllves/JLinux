@@ -11,8 +11,10 @@ try:
     assert any(w['kind']=='terminal' and w['pos'][0]>0 for w in windows), 'terminal ausente'
     assert n.eval('g:colors_name') == 'shades-of-purple'
     assert n.api.get_hl(0, {'name': 'Normal'})['bg'] == 0x171126
-    assert n.api.get_hl(0, {'name': 'WinSeparator'})['fg'] == 0x9874E8
-    assert n.api.get_hl(0, {'name': 'FloatBorder'})['fg'] == 0x6FD7FF
+    assert n.api.get_hl(0, {'name': 'WinSeparator'})['fg'] == 0xC77DFF
+    assert n.api.get_hl(0, {'name': 'FloatBorder'})['fg'] == 0x43F6FF
+    assert n.api.get_hl(0, {'name': 'Normal'})['bold']
+    assert n.api.get_hl(0, {'name': 'String'})['fg'] == 0x8CFF9C
     assert n.options['winborder'] == 'rounded'
     n.command('colorscheme shades-of-purple')
     assert n.api.get_hl(0, {'name': 'RunButton'})['underline'], 'borda nao sobreviveu a recarga'

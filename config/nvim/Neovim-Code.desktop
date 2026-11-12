@@ -2,7 +2,7 @@
 Type=Application
 Name=Neovim Code
 Comment=Editor roxo com arquivos, terminal e suporte a linguagens
-Exec=foot --app-id=org.jlinux.Neovim "--font=FiraCode Nerd Font Mono:size=11" -e nvim %F
+Exec=foot --app-id=org.jlinux.Neovim "--font=FiraCode Nerd Font Mono:style=Bold:size=12" -e nvim %F
 TryExec=foot
 Icon=nvim
 Terminal=false

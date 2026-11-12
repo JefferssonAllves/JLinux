@@ -9,3 +9,7 @@ Evidência: runner (cinco linguagens, C/C++ separados, HTML local e CSS), sete i
 ## NEOVIM-DARK-BORDERS — implementado e instalado
 
 Variação escura do perfil de #85, com painéis profundos, separadores violeta, contornos azul-claro e cabeçalhos sublinhados. Sem dependências novas. UI RPC verificou cores, contornos arredondados, persistência após recarga, layout e botão Executar. Backup da configuração anterior preservado; aplicação completa na próxima abertura do editor. Sem comparação visual física ou efeitos gráficos do compositor. Branch dependente de feature/neovim-workspace; sem merge autorizado.
+
+## NEOVIM-BOLD-NEON — implementado e instalado
+
+Atalho Neovim Code em FiraCode Nerd Font Mono Bold 12 pt, fundo escuro preservado, bordas e destaques neon reforçados. Base dependente de #86. UI RPC (cores, bold, recarga, layout e botão), Fontconfig, Foot e desktop entry validados. Backup anterior preservado; fonte nova na próxima abertura pelo menu. Sem mudança global na fonte dos outros terminais nem comparação visual física.
