@@ -89,3 +89,5 @@ O controlador fornece progresso smoothstep de 220 ms pelo motor existente. rende
 ### Visão de janelas
 
 renderer/overview.c realiza captura reduzida/desfoque em cache e cartões usando helpers existentes; interaction.c possui o modo modal, referências às views e seleção. Cada página possui no máximo nove snapshots e o fundo é capturado somente ao abrir. A composição para captura usa renderer/allocator da saída e sincronização implícita já adotada pelo compositor. Captura, texturas temporárias e estado de output são liberados antes de retornar; buffers dos cartões seguem referências wlroots. Não há caminho de pixels pelo shell ou serviço externo. Blur desativado não captura nem mantém cache exclusivo. A visão não adiciona relógio ou loop de animação.
+
+O contorno cromático dos setores do dock reutiliza `effects/glass.c:jlinux_glass_rim`, também chamado pelas reflexões das janelas. O helper desenha o path fornecido, sem relógio/loop próprio. O halo e as duas camadas de borda acompanham o progresso das transições já existentes; nenhuma animação contínua nova foi adicionada.

@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
 #include "../toolkit/painter.h"
 #include "volume.h"
+#include "apps.h"
+#include "preferences.h"
 #include <glib.h>
 #include "futurista.h"
 #include "control.h"
@@ -98,7 +100,7 @@ static const struct wl_callback_listener dock_frame_listener = {.done = dock_fra
 static void dock_select(struct app *app, int hit) {
     double now = animation_now();
     for (int i = 0; i < 10; i++) {
-        transition_target(&app->dock_hover[i], i == hit ? 1 : 0, now, app->reduced_motion ? 0 : .14);
+        transition_target(&app->dock_hover[i], i == hit ? 1 : 0, now, app->reduced_motion || (!app->futurista.prefs.zoom && !app->futurista.prefs.neon) ? 0 : .14);
     }
     app->launcher.dirty = true;
 }
@@ -378,6 +380,7 @@ static void toggle_launcher(struct app *app, bool controls) {
         if(same){return;}
     }
     app->showing_controls=controls;
+    app->futurista.settings_open=false;
     app->dock_open = (struct transition){0};
     transition_target(&app->dock_open, 1, animation_now(), app->reduced_motion ? 0 : .20);
     for(int i=0;i<10;i++){app->dock_hover[i]=(struct transition){0};}
@@ -394,54 +397,49 @@ static void toggle_launcher(struct app *app, bool controls) {
     app->futurista.message[0] = 0;
     fprintf(stderr,"%s\n",controls?"Painel de controle aberto.":"Dock circular aberto.");
 }
-static void reset_child_signals(gpointer data) {
-    (void)data;
-    sigset_t empty;
-    sigemptyset(&empty);
-    sigprocmask(SIG_SETMASK, &empty, NULL);
-}
 static void launch_item(struct app *app, int index) {
-    static const char *commands[] = {"firefox", "foot",         "code",         "spotify", "jlinux-files",
-                                     NULL,      "jlinux-files", "jlinux-files", "foot",    "jlinux-whatsapp"};
-    if (index < 0 || index >= 10) {
+    if(index<0 || index>=10){return;}
+    if(index==5){
+        if(app->launcher.wl){destroy_launcher(app);}
+        toggle_launcher(app,true);
+        app->futurista.settings_open=true;
+        app->futurista.settings_category=0;
+        app->launcher.dirty=true;
+        fprintf(stderr,"Configurações abertas.\n");
         return;
     }
-    if (index == 5) {
-        snprintf(app->futurista.message, sizeof(app->futurista.message),
-                 "Abra o painel pelo botão à direita da barra.");
-        app->launcher.dirty = true;
-        return;
-    }
-    const char *command = commands[index];
-    /* Keep the reference icon; use our browser when Firefox is absent. */
-    char *found = g_find_program_in_path(command);
-    if (!found && index == 0) {
-        command = "jlinux-browser";
-        found = g_find_program_in_path(command);
-    }
-    if (!found) {
-        snprintf(app->futurista.message, sizeof(app->futurista.message), "Aplicativo não instalado: %s",
-                 command);
-        app->launcher.dirty = true;
-        return;
-    }
-    char *folder = index == 6   ? g_strdup(g_get_user_special_dir(G_USER_DIRECTORY_PICTURES))
-                   : index == 7 ? g_strdup(g_get_user_special_dir(G_USER_DIRECTORY_VIDEOS))
-                                : NULL;
-    char *files_args[] = {(char *)command, folder, NULL};
-    char *terminal_args[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL};
-    char **args = !strcmp(command, "foot") ? terminal_args : files_args;
-    GError *error = NULL;
-    if (!g_spawn_async(NULL, args, NULL, G_SPAWN_SEARCH_PATH, reset_child_signals, NULL, NULL, &error)) {
-        snprintf(app->futurista.message, sizeof(app->futurista.message), "Falha ao abrir aplicativo: %s",
-                 error->message);
-        g_error_free(error);
-        app->launcher.dirty = true;
-    }
-    g_free(found);
-    g_free(folder);
+    GError *error=NULL;
+    if(!dock_app_launch(index,&error)){
+        snprintf(app->futurista.message,sizeof(app->futurista.message),"%s",error?error->message:"Falha ao abrir aplicativo");
+        g_clear_error(&error);app->launcher.dirty=true;
+    }else{fprintf(stderr,"Aplicativo iniciado: %s\n",dock_app_name(index));}
+}
+static void apply_preferences(struct app *app) {
+    struct shell_preferences p=app->futurista.prefs;
+    app->reduced_motion=!p.animations || (getenv("JLINUX_REDUCED_MOTION") && !strcmp(getenv("JLINUX_REDUCED_MOTION"),"1"));
+    app->futurista.glass.tint=p.tint;
+    app->futurista.glass.reflection=p.reflection;
+    app->futurista.glass.shadow=p.shadow;
+    app->panel.dirty=true;app->launcher.dirty=true;
 }
 static void launcher_action(struct app *app, int hit) {
+    if(app->futurista.settings_open && hit>=100 && hit<=102){app->futurista.settings_category=hit-100;app->launcher.dirty=true;return;}
+    if(app->futurista.settings_open && ((hit>=110 && hit<=112)||(hit>=120 && hit<=122))){
+        struct shell_preferences old=app->futurista.prefs;
+        struct shell_preferences *p=&app->futurista.prefs;
+        bool *values[]={&p->animations,&p->zoom,&p->neon,&p->tint,&p->reflection,&p->shadow};
+        int index=hit>=120?hit-120+3:hit-110;
+        *values[index]=!*values[index];
+        GError *error=NULL;
+        if(!shell_preferences_save(p,&error)){
+            *p=old;snprintf(app->futurista.message,sizeof(app->futurista.message),"Não foi possível salvar: %s",error->message);g_clear_error(&error);
+        }else{app->futurista.message[0]=0;apply_preferences(app);fprintf(stderr,"Preferências do shell salvas.\n");}
+        app->launcher.dirty=true;return;
+    }
+    if(app->futurista.settings_open && hit==130){app->futurista.settings_open=false;volume_start(&app->volume,0);app->launcher.dirty=true;return;}
+    if(app->futurista.settings_open && (hit==131 || hit==132)){launch_item(app,hit==131?4:8);return;}
+    if(hit==40){return;}
+
     if (hit >= 0 && hit < 10) {
         app->futurista.selected = hit;
         dock_select(app,hit);
@@ -481,6 +479,7 @@ static int launcher_hit(struct app *app) {
         if (cairo_matrix_invert(&matrix) != CAIRO_STATUS_SUCCESS) { return -1; }
         cairo_matrix_transform_point(&matrix, &x, &y);
     }
+    if(app->futurista.settings_open){return futurista_settings_hit(x,y,app->launcher.width,app->launcher.height,app->futurista.settings_category);}
     return futurista_hit(x,y,app->launcher.width,app->launcher.height,app->showing_controls);
 }
 static void update_launcher_selection(struct app *app) {
@@ -610,7 +609,7 @@ static int preview(const char *path) {
     ui_finish();
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
-static int preview_futurista(const char *path, bool controls) {
+static int preview_futurista(const char *path, bool controls, bool settings) {
     struct futurista scene;
     struct jlinux_glass effects;
     if (!jlinux_glass_settings(&effects)) { return 1; }
@@ -618,6 +617,7 @@ static int preview_futurista(const char *path, bool controls) {
     scene.wifi = 1;
     scene.battery = 75;
     scene.charging = true; /* Illustrative status for the component preview. */
+    scene.settings_open = settings;
     scene.volume = .40;
     scene.brightness = .53;
     cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1672, 941);
@@ -649,19 +649,25 @@ int main(int argc, char **argv) {
     bool power_panel = argc == 2 && !strcmp(argv[1], "--power-panel");
     if (argc == 3 && !strcmp(argv[1], "--preview-volume")) { return preview_power(argv[2], true); }
     if (argc == 3 && !strcmp(argv[1], "--preview-power")) { return preview_power(argv[2], false); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-control-center")) { return preview_futurista(argv[2],true); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-futurista")) { return preview_futurista(argv[2],false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-settings")) { return preview_futurista(argv[2],true,true); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-control-center")) { return preview_futurista(argv[2],true,false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-futurista")) { return preview_futurista(argv[2],false,false); }
     if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2]); }
     if (argc != 1 && !power_panel && !volume_panel) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-power arquivo.png | --power-panel | --volume-panel]\n"); return 1; }
     struct app app = {.running = true, .power_panel = power_panel, .volume_panel = volume_panel, .power_action = -1, .timer = -1, .signals = -1, .control = -1}; wl_list_init(&app.buffers);
+    /* GIO and SVG loaders can start threads; all must inherit the signal mask. */
+    sigset_t signals; sigemptyset(&signals); sigaddset(&signals, SIGINT); sigaddset(&signals, SIGTERM); sigaddset(&signals, SIGCHLD);
+    if (sigprocmask(SIG_BLOCK, &signals, NULL)) { return 1; }
     if (getenv("JLINUX_THEME")) { fprintf(stderr, "JLINUX_THEME/CSS não é suportado pelo shell nativo.\n"); return 1; }
     if (!jlinux_glass_settings(&app.glass)) { return 1; }
     if (!futurista_init(&app.futurista,app.glass)) { futurista_finish(&app.futurista); return 1; }
     const char *reduced = getenv("JLINUX_REDUCED_MOTION");
     if (reduced && strcmp(reduced,"0") && strcmp(reduced,"1")) { fprintf(stderr,"JLINUX_REDUCED_MOTION deve ser 0 ou 1.\n"); futurista_finish(&app.futurista); return 1; }
     app.reduced_motion = reduced && !strcmp(reduced,"1");
-    sigset_t signals; sigemptyset(&signals); sigaddset(&signals, SIGINT); sigaddset(&signals, SIGTERM); sigaddset(&signals, SIGCHLD);
-    if (sigprocmask(SIG_BLOCK, &signals, NULL)) { return 1; }
+    app.futurista.prefs.tint=app.glass.tint;app.futurista.prefs.reflection=app.glass.reflection;app.futurista.prefs.shadow=app.glass.shadow;
+    GError *preferences_error=NULL;
+    if(!shell_preferences_load(&app.futurista.prefs,&preferences_error)){fprintf(stderr,"Preferências ignoradas: %s\n",preferences_error->message);g_clear_error(&preferences_error);}
+    apply_preferences(&app);
     app.signals = signalfd(-1, &signals, SFD_CLOEXEC | SFD_NONBLOCK);
     app.timer = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
     app.display = wl_display_connect(NULL);

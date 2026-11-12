@@ -14,11 +14,13 @@ compositor,shell,wtype,pointer=map(lambda a:str(Path(a).resolve()),sys.argv[1:5]
 processes=[]
 with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
     root=Path(directory)
-    env=dict(os.environ,XDG_RUNTIME_DIR=directory,WLR_BACKENDS='headless',WLR_RENDERER='pixman',WLR_HEADLESS_OUTPUTS='1',JLINUX_TEST_INPUT='1')
+    env=dict(os.environ,XDG_RUNTIME_DIR=directory,XDG_CONFIG_HOME=directory+'/config',XDG_DATA_HOME=directory+'/data',WLR_BACKENDS='headless',WLR_RENDERER='pixman',WLR_HEADLESS_OUTPUTS='1',JLINUX_TEST_INPUT='1')
     commands=root/'commands';commands.mkdir()
     whatsapp=commands/'jlinux-whatsapp'
     whatsapp.write_text(f"#!{sys.executable}\nfrom pathlib import Path\nimport os\nPath(os.environ['XDG_RUNTIME_DIR'],'whatsapp-opened').write_text('opened')\n")
     whatsapp.chmod(0o755)
+    applications=root/'data'/'applications';applications.mkdir(parents=True)
+    (applications/'org.jlinux.WhatsApp.desktop').write_text('[Desktop Entry]\nType=Application\nName=WhatsApp\nExec=jlinux-whatsapp\nIcon=org.jlinux.WhatsApp\n')
     env['PATH']=str(commands)+os.pathsep+os.environ['PATH']
     logfile=root/'session.log'
     def log():return logfile.read_text(errors='replace')

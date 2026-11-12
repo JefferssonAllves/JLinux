@@ -78,3 +78,7 @@ As prévias de shell, moldura e Arquivos agora combinam barra reta com fade, cab
 ![Prévia nativa de componentes do overview](window-overview.png)
 
 Gerada pelo teste de renderer com conteúdo ilustrativo e blur desativado. Mostra grade, títulos e seleção Glass; não é captura de aplicativos reais ou do pipeline de captura/desfoque. Esse pipeline foi testado separadamente em headless/Pixman e GLES2.
+
+## Dock funcional e configurações nativas
+
+[Dock com ícones instalados e bordas neon](futurista-dock-only.png) · [Configurações por categoria](futurista-settings.png). Prévias Cairo de 12/11/2026; não são capturas da sessão física. Implementação, estados ilustrativos, catálogo e limites em docs/futurista.md.

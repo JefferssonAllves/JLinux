@@ -13,3 +13,5 @@ SHA-256:
 395e0e25367f7f8b277213ea18c16c89adb12321a402ca4ba503c41fe1e2fc6f  firefox.png
 e0a1a54f4b2b7bc296f1c7947b80cb50f80c5ea1e795e5c813c2033362cd7f41  code.png
 ```
+
+Os PNG Firefox/Code acima são históricos da primeira referência e deixaram de ser embutidos no shell. O dock atual lê os ícones dos aplicativos instalados (PNG/SVG) e não usa marcas de outros programas como substitutos.
