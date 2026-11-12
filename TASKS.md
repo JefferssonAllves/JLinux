@@ -2,9 +2,9 @@
 
 ## NEOVIM-WORKSPACE — implementado e instalado
 
-Perfil independente do desktop em config/nvim: árvore esquerda, terminal inferior, abas, botão clicável/F5, tema Shades of Purple e LSP/completar das linguagens principais. Instalado no usuário jlinux em 12/11/2026, Neovim 0.12.6, JDK 27, clang 23 e ferramentas Arch; Java LSP pelo Mason. Atalho Neovim Code no menu. Sem mudança nos binários/serviços do desktop.
+Perfil independente do desktop em config/nvim: árvore esquerda, terminal inferior, abas, execução por F5, tema Shades of Purple e LSP/completar das linguagens principais. Instalado no usuário jlinux em 12/11/2026, Neovim 0.12.6, JDK 27, clang 23 e ferramentas Arch; Java LSP pelo Mason. Atalho Neovim Code no menu. Sem mudança nos binários/serviços do desktop.
 
-Evidência: runner (cinco linguagens, C/C++ separados, HTML local e CSS), sete inicializações LSP e detecção automática, UI RPC com clique real no botão e layout, desktop entry validado. Documentação e comandos em config/nvim/README.md. Sem CI para estes testes pessoais dependentes das ferramentas instaladas; sem benchmark ou equivalência visual exata ao VS Code. Configuração enviada em branch para revisão; instalação pessoal ativa, sem merge autorizado.
+Evidência: runner (cinco linguagens, C/C++ separados, HTML local e CSS), sete inicializações LSP e detecção automática, UI RPC com execução por F5 e layout, desktop entry validado. Documentação e comandos em config/nvim/README.md. Sem CI para estes testes pessoais dependentes das ferramentas instaladas; sem benchmark ou equivalência visual exata ao VS Code. Configuração enviada em branch para revisão; instalação pessoal ativa, sem merge autorizado.
 
 ## NEOVIM-DARK-BORDERS — implementado e instalado
 
@@ -16,4 +16,4 @@ Atalho Neovim Code em FiraCode Nerd Font Mono Bold 12 pt, fundo escuro preservad
 
 ## NEOVIM-TREE-POLISH — implementado e instalado
 
-Marcadores de status Git ocultos; borda da árvore ciano e outras divisórias violeta; texto da árvore mais claro e em negrito; removido “Explorador” da barra. Atalho `a` cria arquivos e pastas pelo caminho digitado. Configuração ativa copiada para `~/.config/nvim`; backup em `~/.config/nvim.before-tree-polish-20261112-2034`. UI RPC passou verificando cores, ausência do título/marcadores `?` e criação de pasta/arquivo. A instância já aberta precisa ser reaberta para carregar todas as alterações.
+Mockup detalhado em `docs/design/neovim-workspace-preview.png`. Marcadores de status Git ocultos; bordas discretas azul-ardósia/violeta; texto mais claro e em negrito; árvore reduzida a 26 colunas; removidos “Explorador”, barras extras e botão visual, mantendo execução por F5. Atalho `a` cria arquivos e pastas pelo caminho digitado. Backup do perfil anterior em `~/.config/nvim.before-preview-20261112-2045`. UI RPC passou verificando cores, ausência do título/marcadores `?`, layout e execução por F5.

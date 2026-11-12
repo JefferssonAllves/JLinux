@@ -15,7 +15,6 @@ local function bottom(buffer)
     end
     vim.api.nvim_set_current_win(terminal_win)
     vim.api.nvim_win_set_buf(terminal_win, buffer)
-    vim.wo.winbar = ' TERMINAL'
     vim.wo.number = false
     vim.wo.signcolumn = 'no'
 end
@@ -91,18 +90,6 @@ function M.run()
     vim.cmd.startinsert()
 end
 function M.setup()
-    _G.JLinuxRun = function()
-        local win = vim.fn.getmousepos().winid
-        if vim.api.nvim_win_is_valid(win) then vim.api.nvim_set_current_win(win) end
-        M.run()
-    end
-    local toolbar = '%#WinBar# %f %m%=%#RunButton#%@v:lua.JLinuxRun@ ▶ Executar %X'
-    _G.JLinuxWinbar = function()
-        if vim.bo.filetype == 'NvimTree' then return '' end
-        if vim.bo.buftype == 'terminal' then return ' TERMINAL' end
-        return toolbar
-    end
-    vim.opt.winbar = '%{%v:lua.JLinuxWinbar()%}'
     vim.keymap.set({ 'n', 'i' }, '<C-s>', '<Cmd>write<CR>')
     vim.keymap.set({ 'n', 'i' }, '<F5>', M.run)
     vim.keymap.set('n', '<C-b>', '<Cmd>NvimTreeToggle<CR>')

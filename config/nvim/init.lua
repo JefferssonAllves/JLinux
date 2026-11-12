@@ -32,7 +32,7 @@ vim.opt.rtp:prepend(lazy)
 require('lazy').setup({
     { 'necrogoru/shades-of-purple.nvim', priority = 1000, config = function() require('appearance').setup() end },
     { 'nvim-tree/nvim-web-devicons' },
-    { 'nvim-tree/nvim-tree.lua', opts = { hijack_directories = { enable = false }, view = { width = 30 }, update_focused_file = { enable = true }, filters = { dotfiles = false }, git = { enable = false }, renderer = { icons = { show = { git = false } } } } },
+    { 'nvim-tree/nvim-tree.lua', opts = { hijack_directories = { enable = false }, view = { width = 26 }, update_focused_file = { enable = true }, filters = { dotfiles = false }, git = { enable = false }, renderer = { icons = { show = { git = false } } } } },
     { 'akinsho/bufferline.nvim', version = '*', opts = { options = { diagnostics = 'nvim_lsp' } } },
     { 'nvim-lualine/lualine.nvim', opts = { options = { theme = 'auto', globalstatus = true }, sections = { lualine_c = { { 'filename', path = 1 } }, lualine_x = { 'diagnostics', 'filetype' } } } },
     { 'saghen/blink.cmp', version = '1.*', opts = { keymap = { preset = 'super-tab' }, fuzzy = { implementation = 'lua' }, completion = { menu = { border = 'rounded' }, documentation = { auto_show = true, window = { border = 'rounded' } } }, signature = { enabled = true, window = { border = 'rounded' } } } },

@@ -2,12 +2,12 @@
 
 Perfil pessoal instalado em `~/.config/nvim`, Neovim 0.12.6. Abra pelo menu **Neovim Code** (Foot com FiraCode Nerd Font Mono Bold, 12 pt) ou use `nvim` / `nvim pasta-do-projeto`. Não é uma interface gráfica idêntica ao VS Code: mantém os modos e comandos do Neovim.
 
-A árvore abre à esquerda, o editor à direita, e o terminal abaixo do editor. Abas no topo, informações/diagnósticos embaixo e botão **▶ Executar** no canto superior direito do editor. Tema: port [Shades of Purple](https://github.com/necrogoru/shades-of-purple.nvim), referência confirmada pelo usuário.
+A árvore abre à esquerda, o editor à direita, e o terminal abaixo do editor. Abas no topo e informações/diagnósticos na linha de status inferior. O conceito visual está em `../../docs/design/neovim-workspace-preview.png`; é uma referência gerada, não uma captura do Neovim em execução. Tema: port [Shades of Purple](https://github.com/necrogoru/shades-of-purple.nvim), referência confirmada pelo usuário.
 
 ## Uso
 
 - `i`: editar; `Esc`: voltar ao modo normal. No terminal, `Esc` sai da digitação; `i` volta a digitar nele.
-- `Ctrl+S`: salvar. Clique **▶ Executar** ou use `F5`: salva e executa o arquivo atual.
+- `Ctrl+S`: salvar. `F5` salva e executa o arquivo atual.
 - `Ctrl+B` no modo normal: mostrar/ocultar a árvore. Na árvore, Enter abre; `a` cria arquivo ou pasta (termine o nome da pasta com `/`).
 - `Ctrl+crase`: mostrar/ocultar terminal. Alternativa no modo normal: Espaço, `t`, `t`.
 - `Ctrl+H/J/K/L`: trocar de painel no modo normal/terminal.
@@ -20,7 +20,7 @@ A árvore abre à esquerda, o editor à direita, e o terminal abaixo do editor. 
 
 Detecção por nome/extensão com sintaxe do Neovim, diagnósticos/LSP e autocompletar via blink.cmp. Servidores ativados conforme o arquivo: C/C++ (clangd), Java (jdtls), Python (pyright), JavaScript/TypeScript (ts_ls), HTML, CSS, JSON, YAML, Lua, Bash, Go e Rust. Java usa jdtls instalado pelo Mason; os demais usam pacotes Arch. Não são todas as linguagens existentes; `:Mason` permite ampliar a instalação/configuração.
 
-Execução simples do arquivo: C/C++ com gcc/g++, Java pelo modo de arquivo-fonte do JDK, Python, JavaScript/TypeScript pelo Node, Lua, Bash e Go. Binários temporários de C/C++ são apagados após a execução. Projetos com vários arquivos, dependências, Maven/Gradle/CMake/npm etc. podem exigir seus comandos próprios no terminal: o botão não substitui o sistema de build do projeto. Depurador com breakpoints não foi configurado.
+Execução simples do arquivo: C/C++ com gcc/g++, Java pelo modo de arquivo-fonte do JDK, Python, JavaScript/TypeScript pelo Node, Lua, Bash e Go. Binários temporários de C/C++ são apagados após a execução. Projetos com vários arquivos, dependências, Maven/Gradle/CMake/npm etc. podem exigir seus comandos próprios no terminal: F5 não substitui o sistema de build do projeto. Depurador com breakpoints não foi configurado.
 
 HTML inicia um servidor **somente em 127.0.0.1**, em porta livre, e abre o navegador; Ctrl+C encerra o servidor. CSS abre `index.html` da mesma pasta quando existe. Arquivos declarativos como JSON/YAML não são programas executáveis. Rust tem LSP; seu compilador não foi instalado por este perfil.
 
@@ -45,7 +45,7 @@ nvim --headless '+lua dofile("config/nvim/tests/languages.lua")' +qa
 python config/nvim/tests/ui.py .
 ```
 
-O teste de UI requer `python-pynvim` e a configuração já instalada. Foram verificados os compiladores/runners C/C++, Java, Python e JavaScript, caminhos com espaços, a prévia HTTP de HTML sem abrir o navegador pessoal, o caso CSS e tipos não executáveis. O teste de linguagens confirmou filetype e inicialização dos sete servidores principais (C, C++, Java, Python, JS, HTML, CSS). A UI via RPC confirmou árvore à esquerda, terminal abaixo do código, tema, um único botão e execução real por clique. O desktop entry passou na validação. Não foi feito benchmark, comparação visual pixel a pixel com VS Code ou teste de projetos externos complexos. A instalação não inicia nem encerra a sessão do desktop.
+O teste de UI requer `python-pynvim` e a configuração já instalada. Foram verificados os compiladores/runners C/C++, Java, Python e JavaScript, caminhos com espaços, a prévia HTTP de HTML sem abrir o navegador pessoal, o caso CSS e tipos não executáveis. O teste de linguagens confirmou filetype e inicialização dos sete servidores principais (C, C++, Java, Python, JS, HTML, CSS). A UI via RPC confirmou árvore à esquerda, terminal abaixo do código, tema, ausência de cabeçalhos extras e execução real por F5. O desktop entry passou na validação. Não foi feito benchmark, comparação visual pixel a pixel com VS Code ou teste de projetos externos complexos. A instalação não inicia nem encerra a sessão do desktop.
 
 ## Variação escura com contornos — 12/11/2026
 
@@ -57,8 +57,8 @@ A implementação fica em lua/appearance.lua e reaplica os destaques ao recarreg
 
 O atalho **Neovim Code** agora seleciona FiraCode Nerd Font Mono **Bold, 12 pt** (antes 11 pt). A cor de fundo continua #171126; bordas violeta #C77DFF e ciano #43F6FF, comentários roxo neon, constantes magenta e strings verde #8CFF9C. O texto base também recebe atributo bold no Neovim. São cores sólidas, sem efeito gráfico de glow.
 
-Feche e abra **Neovim Code pelo menu** para carregar a fonte e o tema. Quando iniciado com `nvim` em outro terminal, o tamanho da fonte continua sendo definido por esse terminal. Perfil anterior salvo em `~/.config/nvim.before-bold-neon-20261112-201642`. UI RPC validou fundo, bold, cores neon, recarga do tema, layout e execução pelo botão; Fontconfig confirmou a variante Bold, e Foot/desktop entry validaram a configuração. Sem avaliação visual física ou teste pixel a pixel.
+Feche e abra **Neovim Code pelo menu** para carregar a fonte e o tema. Quando iniciado com `nvim` em outro terminal, o tamanho da fonte continua sendo definido por esse terminal. Perfil anterior salvo em `~/.config/nvim.before-bold-neon-20261112-201642`. UI RPC validou fundo, bold, cores neon, recarga do tema, layout e execução por F5; Fontconfig confirmou a variante Bold, e Foot/desktop entry validaram a configuração. Sem avaliação visual física ou teste pixel a pixel.
 
-## Árvore sem status Git e bordas ciano/violeta
+## Árvore sem status Git e bordas discretas
 
-A árvore não exibe os marcadores de status Git que apareciam como `?`. A borda da árvore fica ciano e as demais divisórias violeta; nomes de arquivos e pastas aparecem em tons mais claros e negrito. O cabeçalho “Explorador” foi removido. Para criar, pressione `a` na árvore: digite um nome de arquivo, ou termine o caminho da pasta com `/` e confirme com Enter. Alterações entram em vigor ao reabrir o Neovim.
+A árvore não exibe os marcadores de status Git que apareciam como `?`. A borda da árvore usa azul-ardósia e as demais divisórias violeta escuro, ambas sem brilho/negrito. Nomes de arquivos e pastas aparecem em tons mais claros e negrito. O cabeçalho “Explorador” e as barras extras acima da árvore, editor e terminal foram removidos para corresponder ao mockup. Para criar, pressione `a` na árvore: digite um nome de arquivo, ou termine o caminho da pasta com `/` e confirme com Enter. Alterações entram em vigor ao reabrir o Neovim.
