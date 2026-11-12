@@ -10,6 +10,10 @@ import time
 helpers=runpy.run_path(str(Path(__file__).with_name('smoke-terminal.py')))
 stop,wait=helpers['stop'],helpers['wait_for']
 compositor,browser,wtype=map(lambda x:str(Path(x).resolve()),sys.argv[1:4])
+sandbox=subprocess.run(['bwrap','--unshare-user','--ro-bind','/','/','true'],capture_output=True)
+if sandbox.returncode:
+    print('SKIP: namespaces indisponíveis; sandbox preservada')
+    sys.exit(77)
 processes=[]
 with tempfile.TemporaryDirectory(prefix='jlinux-whatsapp-test-') as directory:
     root=Path(directory)
