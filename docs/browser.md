@@ -107,6 +107,8 @@ Um link `target="_blank"` aberto por ação do usuário cria uma aba e carrega d
 
 Validação local: 13 testes release passaram; `web-browser-wayland` passou também com ASan/UBSan (`detect_leaks=0`). A regressão usa clique Wayland real contra páginas locais e confirma que o destino abre em aba nova, a página de origem permanece carregada, o link comum navega na aba atual e a aba pode ser fechada. Testes headless/Pixman; não comprovam fluidez em saída física, HiDPI, benchmark de abertura ou ausência de vazamentos de bibliotecas externas.
 
+Instalado em 12/11/2026: `jlinux-browser-git 0.1.0.r68.g6e34f8f-1`, commit `6e34f8f`. O pacote executou 13/13 checks, `pacman -Qkk` confirmou 17 arquivos sem alterações e o teste Wayland passou com `/usr/bin/jlinux-browser` instalado. Versão anterior preservada em `/var/backups/jlinux-browser-before-links-6e34f8f/`. O navegador que já estava aberto não foi encerrado; fechar e abrir novamente para ativar. PR #82 aberto sobre a base temporária PR #77; nenhum merge.
+
 O teste revelou SIGSEGV ao destruir o display Wayland do WPE 2.54.2: o código dessa versão desconecta Wayland antes da limpeza EGL na classe base. O encerramento agora termina EGL após liberar a WebView e antes de liberar o display. É contorno localizado e testado, a remover quando a biblioteca corrigir a ordem. Fontes: [WPEDisplayWayland](https://github.com/WebKit/WebKit/blob/webkitgtk-2.54.2/Source/WebKit/WPEPlatform/wpe/wayland/WPEDisplayWayland.cpp), [WPEDisplay](https://github.com/WebKit/WebKit/blob/webkitgtk-2.54.2/Source/WebKit/WPEPlatform/wpe/WPEDisplay.cpp).
 
 ## Testes locais e CI
