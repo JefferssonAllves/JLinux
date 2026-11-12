@@ -170,6 +170,8 @@ Uma navegação GET iniciada pela barra ou por uma URL inicial explícita pode s
 
 O primeiro carregamento específico de `youtube.com` relatado não foi reproduzido nas execuções disponíveis: probe remoto e navegação visual aninhada carregaram, e o comportamento da recarga foi inconsistente. A regressão local Wayland interrompe de propósito a primeira resposta HTTP, confirma exatamente duas requisições GET e conclui a segunda. A suíte release completa passou 13/13. O teste ASan/UBSan não foi conclusivo: LeakSanitizer apontou alocações em Pango/fontconfig durante a inicialização do cabeçalho, e com LeakSanitizer desativado o smoke expirou em etapa posterior. Não foi feito benchmark nem teste de tela física/DRM.
 
+Instalado em 12/11/2026: `jlinux-browser-git 0.1.0.r72.g88fb7f0-1`, commit **88fb7f0**, PR #83 (sobre #82). O build Arch passou os 13 testes; `pacman -Qkk` confirmou 17 arquivos sem alterações. O smoke Wayland de navegação/abas passou com `/usr/bin/jlinux-browser` e `/usr/bin/jlinux-compositor` instalados, em runtime headless isolado. A versão anterior `0.1.0.r68.g6e34f8f-1` foi preservada em `/var/backups/jlinux-browser-before-youtube-88fb7f0/`. O processo aberto PID 35439 continuou executando o binário anterior após a atualização; feche e reabra o navegador para ativar a correção. Nenhum app ou sessão foi encerrado.
+
 
 ### Correção da colagem de URLs
 
