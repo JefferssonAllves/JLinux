@@ -6,7 +6,7 @@ jobs:
     container: archlinux:base
     steps:
       - name: Dependencies
-        run: pacman -Syu --noconfirm --needed git base-devel meson ninja pkgconf wlroots0.20 wayland wayland-protocols cairo pango fontconfig ttf-dejavu foot wtype json-c
+        run: pacman -Syu --noconfirm --needed git base-devel meson ninja pkgconf wlroots0.20 wayland wayland-protocols cairo pango fontconfig ttf-dejavu foot wtype json-c librsvg
       - uses: actions/checkout@v4
       - run: meson setup build --buildtype=release -Dshell=true
       - run: meson compile -C build

@@ -140,3 +140,11 @@ Backup dos arquivos anteriores e banco local em `/var/backups/jlinux-before-moti
 Instalado `jlinux-desktop-git 0.5.0.r102.gf84be4a-1`, fonte f84be4a, branch `feature/control-volume-slider`, PR #78 dependente de #76. Preserva a versão anterior 161ba52 e o relógio Glass. 30 testes release locais e 30 no check() do pacote passaram; CI do código f84be4a passou. Pacman confirmou 23 arquivos sem ausências e executáveis root:root 0755.
 
 Backup dos cinco executáveis anteriores e banco local do pacote em `/var/backups/jlinux-before-control-volume-f84be4a/`. Pacote construído em `/home/jlinux/.cache/jlinux-control-volume-package/`. Volume do centro de controle agora aceita clique/arraste contínuo; quatro atalhos removidos conforme docs/futurista.md. Sessão em execução preservada; **ativar saindo e entrando novamente**. Sem reinício de serviço, teste de VT, benchmark ou avaliação física da fluidez.
+
+## Dock funcional e configurações — 12/11/2026
+
+Instalado `jlinux-desktop-git 0.5.0.r111.g829b795-1`, commit 829b795, branch `feature/dock-apps-settings`, PR #90 dependente de #80. Base c4753d0 preservada. O pacote foi construído do GitHub e passou 36/36 testes; também passaram 36 testes release locais e quatro direcionados ASan/UBSan (detecção de leaks desativada para caches de terceiros). CI do código 829b795 aprovado. Pacman confirmou 23 arquivos sem ausências e shell/compositor root:root 0755.
+
+Brave, Neovim, qBittorrent e btop já estavam instalados. Foi instalado qt6-wayland para o qBittorrent. Catálogo, ícones, categorias e limites estão em docs/futurista.md; preferências novas são gravadas no usuário quando alteradas, sem editar regras do sistema ou contas de aplicativos.
+
+Backup dos cinco executáveis anteriores e banco local do pacote em `/var/backups/jlinux-before-dock-settings-829b795/`; pacote novo em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r111.g829b795-1-x86_64.pkg.tar.zst`. A sessão ativa foi preservada: **ativar saindo e entrando novamente**. Nenhum teste de VT, reinício de greetd, compositor DRM paralelo, alteração PAM/kernel ou benchmark foi feito. Prévias são renderizações nativas estáticas; os testes de lançamento usam executáveis/desktop entries simulados, sem abrir contas pessoais.

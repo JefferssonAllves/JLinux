@@ -1,5 +1,6 @@
 #include "futurista.h"
 #include "battery.h"
+#include "apps.h"
 #include "../renderer/blur.h"
 #include "../effects/dock.h"
 #include <gio/gio.h>
@@ -43,8 +44,8 @@ bool futurista_init(struct futurista *s, struct jlinux_glass glass) {
     *s = (struct futurista){.glass = glass, .wifi = -1, .battery = -1, .volume = -1, .brightness = -1};
     s->hover[s->selected] = 1;
     s->wallpaper = asset("/org/jlinux/futurista/wallpaper.png");
-    s->firefox = asset("/org/jlinux/futurista/firefox.png");
-    s->code = asset("/org/jlinux/futurista/code.png");
+    s->prefs = shell_preferences_default();
+    for (int i=0;i<10;i++) { s->icons[i] = dock_app_icon(i); }
     if (s->wallpaper && glass.blur) {
         s->blurred = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 418, 236);
         cairo_t *cr = cairo_create(s->blurred);
@@ -54,7 +55,7 @@ bool futurista_init(struct futurista *s, struct jlinux_glass glass) {
             return false;
         }
     }
-    return s->wallpaper && s->firefox && s->code;
+    return s->wallpaper != NULL;
 }
 void futurista_finish(struct futurista *s) {
     if (s->blurred) {
@@ -63,12 +64,8 @@ void futurista_finish(struct futurista *s) {
     if (s->wallpaper) {
         cairo_surface_destroy(s->wallpaper);
     }
-    if (s->firefox) {
-        cairo_surface_destroy(s->firefox);
-    }
-    if (s->code) {
-        cairo_surface_destroy(s->code);
-    }
+    for (int i=0;i<10;i++) { if (s->icons[i]) { cairo_surface_destroy(s->icons[i]); } }
+
 }
 static void roundrect(cairo_t *cr, double x, double y, double w, double h, double r) {
     cairo_new_sub_path(cr);
@@ -99,6 +96,16 @@ static void text(cairo_t *cr, const char *label, double x, double y, int size, b
     pango_cairo_show_layout(cr, layout);
     pango_font_description_free(font);
     g_object_unref(layout);
+}
+static void centered_text(cairo_t *cr,const char *label,double y,int size,bool bold,unsigned color) {
+    PangoLayout *layout=pango_cairo_create_layout(cr);
+    PangoFontDescription *font=pango_font_description_from_string("Adwaita Sans, Sans");
+    pango_font_description_set_absolute_size(font,size*PANGO_SCALE);
+    pango_font_description_set_weight(font,bold?PANGO_WEIGHT_SEMIBOLD:PANGO_WEIGHT_NORMAL);
+    pango_layout_set_font_description(layout,font);pango_layout_set_text(layout,label,-1);
+    int width;pango_layout_get_pixel_size(layout,&width,NULL);
+    text(cr,label,836-width/2.,y,size,bold,color);
+    pango_font_description_free(font);g_object_unref(layout);
 }
 static void material(cairo_t *cr, double x, double y, double w, double h, double r, bool active,
                      struct jlinux_glass effects) {
@@ -278,118 +285,12 @@ static void line_icon(cairo_t *cr, int kind, double x, double y, double size, un
     cairo_restore(cr);
 }
 static void app_icon(struct futurista *s, cairo_t *cr, int index, double x, double y, double size) {
-    if (index == 0) {
-        image(cr, s->firefox, x, y, size);
-        return;
-    }
-    if (index == 2) {
-        image(cr, s->code, x, y, size);
-        return;
-    }
-    cairo_save(cr);
-    cairo_translate(cr, x, y);
-    cairo_scale(cr, size / 80, size / 80);
-    if (index == 1) {
-        material(cr, 0, 0, 80, 76, 14, false, s->glass);
-        cairo_set_source_rgb(cr, .035, .04, .055);
-        roundrect(cr, 3, 3, 74, 70, 12);
-        cairo_fill(cr);
-        text(cr, "›_", 11, 4, 44, true, 0xffffff);
-    } else if (index == 3) {
-        cairo_set_source_rgb(cr, .02, .84, .26);
-        circle(cr, 40, 40, 38);
-        cairo_fill(cr);
-        cairo_set_source_rgb(cr, 0, .06, .03);
-        cairo_set_line_width(cr, 6);
-        cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
-        for (int i = 0; i < 3; i++) {
-            cairo_move_to(cr, 17 + i * 2, 29 + i * 12);
-            cairo_curve_to(cr, 32, 22 + i * 12, 51, 24 + i * 12, 64 - i * 2, 34 + i * 10);
-            cairo_stroke(cr);
-        }
-    } else if (index == 4) {
-        cairo_pattern_t *p = cairo_pattern_create_linear(0, 0, 0, 78);
-        cairo_pattern_add_color_stop_rgb(p, 0, .42, .84, 1);
-        cairo_pattern_add_color_stop_rgb(p, 1, .04, .41, .96);
-        roundrect(cr, 7, 12, 35, 20, 7);
-        cairo_set_source(cr, p);
-        cairo_fill(cr);
-        cairo_set_source_rgb(cr, .85, .95, 1);
-        roundrect(cr, 6, 23, 67, 43, 5);
-        cairo_fill(cr);
-        roundrect(cr, 4, 30, 72, 47, 8);
-        cairo_set_source(cr, p);
-        cairo_fill(cr);
-        cairo_pattern_destroy(p);
-    } else if (index == 5) {
-        cairo_set_source_rgb(cr, .66, .72, .88);
-        cairo_translate(cr, 40, 40);
-        for (int i = 0; i < 10; i++) {
-            cairo_save(cr);
-            cairo_rotate(cr, i * pi / 5);
-            cairo_rectangle(cr, -6, -39, 12, 18);
-            cairo_fill(cr);
-            cairo_restore(cr);
-        }
-        circle(cr, 0, 0, 31);
-        cairo_fill(cr);
-        cairo_set_source_rgb(cr, .25, .29, .47);
-        circle(cr, 0, 0, 21);
-        cairo_fill(cr);
-        cairo_set_source_rgb(cr, .7, .76, .9);
-        circle(cr, 0, 0, 11);
-        cairo_set_line_width(cr, 5);
-        cairo_stroke(cr);
-    } else if (index == 6) {
-        material(cr, 3, 5, 74, 68, 14, true, s->glass);
-        cairo_set_source_rgb(cr, .12, .62, 1);
-        roundrect(cr, 5, 5, 70, 64, 12);
-        cairo_fill(cr);
-        cairo_set_source_rgb(cr, 1, .72, .27);
-        circle(cr, 24, 22, 6);
-        cairo_fill(cr);
-        cairo_set_source_rgb(cr, .84, .87, 1);
-        cairo_move_to(cr, 8, 59);
-        cairo_line_to(cr, 31, 31);
-        cairo_line_to(cr, 56, 68);
-        cairo_line_to(cr, 8, 68);
-        cairo_fill(cr);
-        cairo_set_source_rgb(cr, 1, .63, .80);
-        cairo_move_to(cr, 35, 68);
-        cairo_line_to(cr, 54, 41);
-        cairo_line_to(cr, 72, 62);
-        cairo_line_to(cr, 72, 68);
-        cairo_fill(cr);
-    } else if (index == 7 || index == 8) {
-        material(cr, 4, 9, 72, 60, 12, index == 7, s->glass);
-        if (index == 7) {
-            cairo_set_source_rgb(cr, 1, 1, 1);
-            cairo_move_to(cr, 29, 24);
-            cairo_line_to(cr, 29, 57);
-            cairo_line_to(cr, 56, 41);
-            cairo_close_path(cr);
-            cairo_fill(cr);
-        } else {
-            text(cr, "‹/›", 12, 18, 34, true, 0xffffff);
-        }
-    } else if (index == 9) {
-        circle(cr,40,40,40);
-        cairo_set_source_rgb(cr,.07,.66,.34); cairo_fill(cr);
-        cairo_set_source_rgb(cr,1,1,1); cairo_set_line_width(cr,4.5);
-        cairo_set_line_join(cr,CAIRO_LINE_JOIN_ROUND);
-        cairo_move_to(cr,16,53); cairo_line_to(cr,12,71); cairo_line_to(cr,30,64);
-        cairo_arc_negative(cr,40,38,28,1.94,2.59-2*pi); cairo_close_path(cr); cairo_stroke(cr);
-        cairo_move_to(cr,29,24);
-        cairo_curve_to(cr,25,24,24,28,26,35);
-        cairo_curve_to(cr,29,47,39,56,50,58);
-        cairo_curve_to(cr,55,59,59,54,57,50);
-        cairo_line_to(cr,47,44); cairo_line_to(cr,43,49);
-        cairo_curve_to(cr,37,46,33,40,31,35);
-        cairo_line_to(cr,35,31); cairo_line_to(cr,31,24);
-        cairo_close_path(cr); cairo_fill(cr);
-    }
-    cairo_restore(cr);
+    if (s->icons[index]) { image(cr, s->icons[index], x, y, size); return; }
+    /* Missing system icons are explicit initials, never another application's logo. */
+    char initial[8] = {0}; g_unichar_to_utf8(g_utf8_get_char(dock_app_name(index)), initial);
+    text(cr, initial, x+size*.3, y+size*.2, size*.6, true, 0xddeaff);
 }
+
 void futurista_wallpaper(struct futurista *s, cairo_t *cr, int width, int height) {
     double iw = cairo_image_surface_get_width(s->wallpaper),
            ih = cairo_image_surface_get_height(s->wallpaper);
@@ -510,27 +411,68 @@ static void sector(cairo_t *cr, int index, double focus, struct jlinux_glass eff
     double mid = (a + b) / 2;
     cairo_pattern_t *p = cairo_pattern_create_linear(836 + outer * cos(mid), 469 + outer * sin(mid),
                                                      836 + inner * cos(mid), 469 + inner * sin(mid));
-    tint_stop(p, 0, .42 + .04 * focus, .40 - .15 * focus, .66 + .30 * focus, .98, effects.tint);
-    tint_stop(p, .5, .26 + .10 * focus, .25 - .07 * focus, .48 + .27 * focus, .98, effects.tint);
-    tint_stop(p, 1, .18 + .37 * focus, .18 + .16 * focus, .36 + .60 * focus, .98, effects.tint);
+    tint_stop(p, 0, .016 + .025 * focus, .021 + .012 * focus, .042 + .065 * focus, .98, effects.tint);
+    tint_stop(p, .5, .009 + .020 * focus, .012 + .009 * focus, .024 + .045 * focus, .98, effects.tint);
+    tint_stop(p, 1, .018 + .045 * focus, .012 + .012 * focus, .038 + .070 * focus, .98, effects.tint);
     cairo_set_source(cr, p);
     cairo_fill_preserve(cr);
     cairo_pattern_destroy(p);
     if (effects.reflection) {
         if (focus > 0) {
-            cairo_set_source_rgba(cr, .70, .32, 1, .16 * focus);
+            cairo_set_source_rgba(cr, .16, .72, 1, .28 * focus);
             cairo_set_line_width(cr, 13);
             cairo_stroke_preserve(cr);
-            cairo_set_source_rgba(cr, .82, .48, 1, .30 * focus);
+            cairo_set_source_rgba(cr, .88, .28, 1, .55 * focus);
             cairo_set_line_width(cr, 5);
             cairo_stroke_preserve(cr);
         }
-        cairo_set_source_rgba(cr, .58 + .31 * focus, .61 + .04 * focus, 1, .75 + .25 * focus);
-        cairo_set_line_width(cr, 1.3 + .7 * focus);
-        cairo_stroke(cr);
+        jlinux_glass_rim(cr, (struct ui_rect){506,139,660,660}, .75 + .25 * focus);
+        cairo_new_path(cr);
     } else {
         cairo_new_path(cr);
     }
+}
+static void settings(struct futurista *s, cairo_t *cr) {
+    struct ui_rect panel = {350,140,1020,650};
+    jlinux_glass_window_tint(cr,panel,24);
+    if(s->glass.shadow){jlinux_glass_window_shading(cr,panel,24);}
+    if(s->glass.reflection){jlinux_glass_window_reflections(cr,panel,24,70);}
+    text(cr,"Configurações",385,165,28,true,0xf2edff);
+    text(cr,"×",1315,160,32,false,0xbfdfff);
+    const char *categories[]={"Dock","Aparência","Sistema"};
+    for(int i=0;i<3;i++){
+        material(cr,380,270+i*92,215,66,14,i==s->settings_category,s->glass);
+        text(cr,categories[i],405,290+i*92,21,true,0xebeeff);
+    }
+    text(cr,categories[s->settings_category],640,235,26,true,0xebedff);
+    if(s->settings_category < 2){
+        const char *dock[]={"Animação de abrir e fechar","Ampliar ícone ao passar o mouse","Realce neon do item selecionado"};
+        const char *appearance[]={"Tonalização do dock e da barra","Reflexos e contornos do shell","Sombras do shell"};
+        bool states[] = {s->prefs.animations,s->prefs.zoom,s->prefs.neon};
+        if(s->settings_category==1){states[0]=s->prefs.tint;states[1]=s->prefs.reflection;states[2]=s->prefs.shadow;}
+        for(int i=0;i<3;i++){
+            double y=310+i*100;
+            material(cr,635,y,695,80,16,false,s->glass);
+            text(cr,s->settings_category ? appearance[i] : dock[i],655,y+15,18,true,0xf2eeff);
+            text(cr,states[i]?"Ativado":"Desativado",655,y+44,15,false,states[i]?0x7ee7ff:0xb5abc9);
+            material(cr,1245,y+26,58,27,13,states[i],s->glass);
+            cairo_set_source_rgb(cr,.9,.95,1);circle(cr,states[i]?1289:1259,y+39,10);cairo_fill(cr);
+        }
+        text(cr,"Preferências salvas para as próximas sessões.",640,650,16,false,0xb2c2e8);
+    }else{
+        const char *actions[]={"Som e volume","Pasta pessoal","Monitor do sistema"};
+        for(int i=0;i<3;i++){
+            material(cr,635,300+i*90,695,72,16,false,s->glass);
+            text(cr,actions[i],655,322+i*90,20,true,0xf1edff);
+            text(cr,"›",1285,313+i*90,30,false,0x9edaff);
+        }
+        const char *power[]={"Encerrar sessão","Reiniciar","Desligar"};
+        for(int i=0;i<3;i++){
+            material(cr,635+i*235,610,225,70,16,false,s->glass);
+            text(cr,power[i],650+i*235,635,17,true,i==2?0xff7fbb:0xf0efff);
+        }
+    }
+    if(s->message[0]){text(cr,s->message,640,730,14,false,0xffb6d7);}
 }
 static void controls(struct futurista *s, cairo_t *cr, int width, int height) {
     material(cr, 1194, 66, 462, 632, 38, false, s->glass);
@@ -618,6 +560,7 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     cairo_save(cr);
     cairo_translate(cr, l.x, l.y);
     cairo_scale(cr, l.scale, l.scale);
+    if (control_panel && s->settings_open) { settings(s,cr); cairo_restore(cr); return; }
     if (control_panel) {
         roundrect(cr, 1194, 66, 462, 632, 38);
         blurred_backdrop(s, cr, 1672, 941);
@@ -636,16 +579,16 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     static const double positions[10][2] = {{836, 216}, {994, 270}, {1077, 407}, {1076, 552}, {983, 674},
                                             {837, 714}, {690, 674}, {597, 552},  {593, 405},  {674, 277}};
     for (int i = 0; i < 10; i++) {
-        sector(cr, i, s->hover[i], s->glass);
-        double size = (i == 0 ? 86 : i == 6 ? 68 : 74) * (1 + .10 * s->hover[i]);
-        double y = positions[i][1] - 4 * s->hover[i];
-        if (s->glass.reflection) { jlinux_dock_halo(cr, positions[i][0], y, size * .9, s->hover[i]); }
+        sector(cr, i, s->prefs.neon ? s->hover[i] : 0, s->glass);
+        double size = (i == 0 ? 86 : i == 6 ? 68 : 74) * (1 + (s->prefs.zoom ? .12 : 0) * s->hover[i]);
+        double y = positions[i][1] - (s->prefs.zoom ? 5 : 0) * s->hover[i];
+        if (s->glass.reflection && s->prefs.neon) { jlinux_dock_halo(cr, positions[i][0], y, size * .9, s->hover[i]); }
         app_icon(s, cr, i, positions[i][0] - size / 2, y - size / 2, size);
     }
     cairo_pattern_t *p = cairo_pattern_create_radial(820, 420, 20, 836, 469, 133);
-    cairo_pattern_add_color_stop_rgba(p, 0, .32, .27, .62, .97);
-    cairo_pattern_add_color_stop_rgba(p, .6, .25, .20, .50, .98);
-    cairo_pattern_add_color_stop_rgba(p, 1, .08, .11, .26, .98);
+    cairo_pattern_add_color_stop_rgba(p, 0, .025, .028, .065, .97);
+    cairo_pattern_add_color_stop_rgba(p, .6, .012, .015, .035, .98);
+    cairo_pattern_add_color_stop_rgba(p, 1, .008, .012, .025, .98);
     circle(cr, 836, 469, 132);
     cairo_set_source(cr, p);
     cairo_fill_preserve(cr);
@@ -663,18 +606,28 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     } else {
         cairo_new_path(cr);
     }
-    static const char *names[] = {
-        "Firefox", "Terminal", "Visual Studio Code", "Spotify", "Arquivos", "Configurações",
-        "Imagens", "Vídeos",   "Desenvolvimento",    "WhatsApp"};
     app_icon(s, cr, s->selected, 788, 385, 96);
-    text(cr, names[s->selected], s->selected == 2 ? 747 : 796, 491, s->selected == 2 ? 18 : 25, true,
-         0xffffff);
-    text(cr, s->selected == 0 ? "Navegador Web" : "Abrir aplicativo", 774, 525, 17, false, 0xb6b5d1);
+    centered_text(cr,dock_app_name(s->selected),491,25,true,0xffffff);
+    centered_text(cr,s->selected==0?"Navegador Web":s->selected==2?"Editor de código":s->selected==5?"Abrir configurações":"Abrir aplicativo",525,17,false,0xb6b5d1);
     cairo_restore(cr);
 }
 double futurista_volume_at(double x, int width, int height) {
     struct layout l = layout(width, height);
     return l.scale > 0 ? fmin(1, fmax(0, ((x - l.x) / l.scale - 1287) / 339)) : 0;
+}
+int futurista_settings_hit(double x,double y,int width,int height,int category) {
+    struct layout l=layout(width,height);
+    if(l.scale<=0){return -1;}
+    x=(x-l.x)/l.scale;y=(y-l.y)/l.scale;
+    if(x>=1310 && y>=155 && y<210){return -1;}
+    for(int i=0;i<3;i++){
+        if(x>=380 && x<595 && y>=270+i*92 && y<336+i*92){return 100+i;}
+        if(category<2 && x>=635 && x<1330 && y>=310+i*100 && y<390+i*100){return 110+category*10+i;}
+        if(category==2 && x>=635 && x<1330 && y>=300+i*90 && y<372+i*90){return 130+i;}
+    }
+    if(category==2 && x>=635 && x<1330 && y>=610 && y<680){return 33+(int)((x-635)/235);}
+    if(x<350 || x>1370 || y<140 || y>790){return -1;}
+    return 40;
 }
 int futurista_hit(double x, double y, int width, int height, bool control_panel) {
     struct layout l = layout(width, height);

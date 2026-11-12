@@ -69,3 +69,27 @@ O trilho de volume aceita clique e arraste contínuo entre 0% e 100%, inclusive 
 Não perturbe, Economia de energia, Tela noturna e Captura de tela foram removidos do desenho e das ações do painel. Os demais itens subiram 128 unidades, com redução equivalente da altura do painel. Brilho e conectividade mantêm as capacidades anteriores; esta mudança não implementa seus comandos.
 
 Validação: teste unitário cobre rejeição de NaN, limites e substituição de valores pendentes; teste headless com wpctl simulado verifica arraste nos dois sentidos, valor final e limite ao soltar fora do trilho, preservando testes de mute, passos, falha e timeout. Prévia nativa inspecionada; sem avaliação de fluidez na sessão física ou benchmark.
+
+## Dock de aplicativos reais e configurações — 12/11/2026
+
+O catálogo fixo agora contém Brave, Terminal (Foot), Neovim Code, qBittorrent, Arquivos JLinux, Configurações, Imagens, Vídeos, Monitor (btop em Foot) e WhatsApp. Retirados os rótulos/logos Firefox, VS Code e Spotify, cujos executáveis não estavam instalados. Os atalhos de pasta abrem as pastas XDG correspondentes. A engrenagem abre as configurações nativas. Brave já estava instalado; qt6-wayland foi instalado para o qBittorrent.
+
+Os aplicativos gráficos usam seus desktop entries, incluindo o Neovim Code pessoal com a fonte configurada. O launcher respeita a expansão de argumentos do GDesktopAppInfo e não executa uma string via shell. Ícones PNG/SVG são lidos dos diretórios XDG/hicolor/Adwaita na inicialização, renderizados e mantidos em cache. Pastas usam seus ícones de Imagens/Vídeos; a engrenagem nativa mantém seu desenho próprio. Se faltar um aplicativo/ícone em outra instalação, a abertura informa o erro e o fallback visual é a inicial do nome, sem usar a marca de outro aplicativo. A instalação atual teve todos os dez ícones confirmados; programas não são instalados automaticamente pelo clique. O catálogo ainda não tem reordenação/adição livre de aplicativos.
+
+### Configurações na engrenagem
+
+- **Dock:** animação de abrir/fechar, ampliação dos ícones no hover e realce neon selecionado.
+- **Aparência:** tonalização, reflexos/contornos e sombras do shell (dock/barra). Não altera preferências gráficas dos aplicativos nem o compositor em execução.
+- **Sistema:** som/volume pelo centro de controle, pasta pessoal, monitor e encerrar/reiniciar/desligar com confirmação. Não há chaves falsas para rede, Bluetooth ou energia nessa tela.
+
+As seis preferências são salvas em `~/.config/jlinux/shell.ini`, modo 0600, com substituição consistente. Configuração inválida não aplica valores parcialmente; falha ao salvar mantém o estado anterior e mostra erro. A preferência de animação é respeitada nas aberturas seguintes; JLINUX_REDUCED_MOTION=1 continua impondo movimento reduzido sem sobrescrever a escolha salva. Sombras, tonalização e reflexão continuam independentes; blur mantém seu controle existente.
+
+### Material e seleção
+
+Setores e centro do dock ficaram próximos do preto azulado. O cabeçalho das janelas também foi escurecido pelo material compartilhado (RGB .004/.006/.012, alfa .94). Os setores reutilizam o gradiente de borda ciano/azul/magenta das janelas. O item selecionado ganha halo azul, duas camadas de realce ciano/magenta na borda e ampliação de 12% do ícone. Tudo usa as transições existentes; nenhuma animação permanente ou timer de brilho foi adicionado. Desligar reflexos ou o neon respeita a preferência e não desliga outros efeitos.
+
+Prévia nativa: [dock](design/futurista-dock-only.png), [configurações](design/futurista-settings.png). CLI: `jlinux-shell --preview-settings arquivo.png`. São composições renderizadas, com estado ilustrativo, não captura física nem correspondência exata à referência.
+
+### Validação
+
+Teste headless verifica os nove destinos de abertura com desktop entries/executáveis simulados, argumentos reais das pastas, categorias, preferências após reiniciar o shell e confirmação de energia sem executá-la. Testes unitários verificam decodificação/seleção de ícones e persistência/arquivo inválido/permissões. Probe local confirmou ícones da instalação e versões executáveis de Brave, Neovim, qBittorrent e btop; não abriu contas pessoais. A máscara de sinais do shell passou a ser configurada antes dos carregadores GIO/SVG criarem threads, preservando encerramento, limpeza do runtime e coleta dos comandos de áudio/energia. Checks completos e pacote são registrados na conclusão. Sem benchmark, login em serviços externos ou avaliação física de fluidez.

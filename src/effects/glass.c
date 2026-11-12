@@ -130,7 +130,7 @@ bool jlinux_glass_settings(struct jlinux_glass *effects) {
 
 void jlinux_glass_window_tint(cairo_t *cr, struct ui_rect rect, double radius) {
     cairo_save(cr); rounded(cr, rect, radius);
-    cairo_set_source_rgba(cr, .006, .009, .016, .88); cairo_fill(cr);
+    cairo_set_source_rgba(cr, .004, .006, .012, .94); cairo_fill(cr);
     cairo_restore(cr);
 }
 
@@ -144,19 +144,9 @@ void jlinux_glass_window_reflections(cairo_t *cr, struct ui_rect rect, double ra
     cairo_pattern_add_color_stop_rgba(sheen, 1, .58, .32, 1, .10);
     cairo_save(cr); cairo_rectangle(cr, rect.x, rect.y, rect.width, header); cairo_clip(cr);
     cairo_set_source(cr, sheen); cairo_paint(cr); cairo_restore(cr); cairo_pattern_destroy(sheen);
-    /* A continuous chromatic rim avoids isolated white light sources. */
-    for (int pass = 0; pass < 2; pass++) {
-        cairo_pattern_t *edge = cairo_pattern_create_linear(rect.x, rect.y,
-            rect.x + rect.width * .75, rect.y + rect.height);
-        double alpha = pass ? 1 : .18;
-        cairo_pattern_add_color_stop_rgba(edge, 0, .08, .82, 1, alpha);
-        cairo_pattern_add_color_stop_rgba(edge, .32, .08, .52, 1, alpha);
-        cairo_pattern_add_color_stop_rgba(edge, .66, .84, .24, .91, alpha);
-        cairo_pattern_add_color_stop_rgba(edge, 1, .24, .64, 1, alpha);
-        rounded(cr, rect, radius); cairo_set_source(cr, edge);
-        cairo_set_line_width(cr, pass ? 1.6 : 2.2); cairo_stroke(cr);
-        cairo_pattern_destroy(edge);
-    }
+    rounded(cr, rect, radius);
+    jlinux_glass_rim(cr, rect, 1);
+    cairo_new_path(cr);
     cairo_restore(cr);
 }
 
@@ -170,4 +160,19 @@ void jlinux_glass_window_shading(cairo_t *cr, struct ui_rect rect, double radius
     rounded(cr, inset, radius - 1.7); cairo_set_source(cr, shade);
     cairo_set_line_width(cr, 1.2); cairo_stroke(cr); cairo_pattern_destroy(shade);
     cairo_restore(cr);
+}
+
+void jlinux_glass_rim(cairo_t *cr, struct ui_rect rect, double strength) {
+    for (int pass = 0; pass < 2; pass++) {
+        cairo_pattern_t *edge = cairo_pattern_create_linear(rect.x, rect.y,
+            rect.x + rect.width * .75, rect.y + rect.height);
+        double alpha = (pass ? 1 : .18) * strength;
+        cairo_pattern_add_color_stop_rgba(edge, 0, .08, .82, 1, alpha);
+        cairo_pattern_add_color_stop_rgba(edge, .32, .08, .52, 1, alpha);
+        cairo_pattern_add_color_stop_rgba(edge, .66, .84, .24, .91, alpha);
+        cairo_pattern_add_color_stop_rgba(edge, 1, .24, .64, 1, alpha);
+        cairo_set_source(cr, edge);
+        cairo_set_line_width(cr, pass ? 1.6 : 2.2); cairo_stroke_preserve(cr);
+        cairo_pattern_destroy(edge);
+    }
 }

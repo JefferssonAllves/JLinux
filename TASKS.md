@@ -456,3 +456,11 @@ Implementados limite superior do arraste e da elevação visual, prévia de áre
 Integração final preserva a instalação 299b482 (restrição de arraste/topo), além de volume contínuo e relógio Glass. 33 testes release e 33 ASan/UBSan passaram nessa base. A roda em página única e hover no item já selecionado não reconstroem cartões. Teste de página única adicionado. Primeiro pacote a9226fb não instalado, para preservar a atualização concorrente do desktop.
 
 **WM-OVERVIEW · instalado em 07/11/2026:** pacote `0.5.0.r109.gc4753d0-1`, fonte c4753d0, compilado do GitHub com 33 testes aprovados no makepkg e instalado pelo pacman. 33 testes locais release e ASan/UBSan passaram na base integrada; teste adicional final em headless/GLES2 no Radeon real passou com blur e navegação. Preservados 299b482 e ajustes anteriores. Compositor da sessão atual preservado; Super+Tab entra no próximo login. Sem logout/reinício/VT; apresentação na saída física, energia e multimonitor permanecem não validados. PR #80, base feature/top-bar-window-snap, sem merge; CI pendente no registro.
+
+## DOCK-APPS-SETTINGS — feature/dock-apps-settings
+
+Implementados catálogo com programas instalados (Brave/Neovim incluídos), ícones reais PNG/SVG em cache, pastas XDG e engrenagem funcional. Configurações divididas em Dock, Aparência do shell e Sistema, com seis preferências persistentes e ações de áudio/monitor/sessão. Material escuro e contorno cromático compartilhado com janelas; seleção com halo/borda neon e ampliação. Cabeçalho das janelas mais escuro. Base depende de feature/window-overview (#80), preservando instalação c4753d0.
+
+36 testes locais release e quatro direcionados ASan/UBSan passaram, com detecção de leaks desativada para caches de terceiros; checks do pacote e instalação registrados na conclusão. Ícones reais e versões de executáveis conferidos; qt6-wayland instalado. Prévias nativas inspecionadas. Sem abrir contas, sessão/VT/DRM, benchmark ou teste físico de fluidez; ativação no próximo login.
+
+DOCK-APPS-SETTINGS — instalado `0.5.0.r111.g829b795-1`, 36/36 checks do pacote e 23 arquivos sem ausências. Código/CI 829b795 aprovado; PR #90 enviado, sem merge. Fonte, backup e pacote em docs/arch-installation.md. Sessão ativa preservada; novo dock e cabeçalhos no próximo login. Nenhum resultado de fluidez física ou conta externa é afirmado.
