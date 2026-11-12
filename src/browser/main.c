@@ -48,6 +48,11 @@ static void web_notice(struct app *app, WebKitWebView *web, const char *message)
     g_object_set_data_full(G_OBJECT(web), "jlinux-notice", g_strdup(message), g_free);
     if (web == app->web) { notice(app, message); }
 }
+static void enable_network_retry(WebKitWebView *web, const char *uri) {
+    g_object_set_data(G_OBJECT(web), "jlinux-network-retry", GINT_TO_POINTER(TRUE));
+    g_object_set_data(G_OBJECT(web), "jlinux-network-retry-used", NULL);
+    g_object_set_data_full(G_OBJECT(web), "jlinux-network-retry-uri", g_strdup(uri), g_free);
+}
 static void show_address(struct app *app) {
     app->chrome.error = FALSE;
     if(!app->search_prepared && !app->probe && !app->whatsapp){
@@ -69,6 +74,7 @@ static void navigate(struct app *app) {
     char *uri = browser_address_uri(app->chrome.address);
     if (!uri) { notice(app, "Digite uma busca ou um endereço HTTP/HTTPS válido, sem credenciais e até 4096 bytes."); return; }
     app->chrome.editing = FALSE; app->chrome.error = FALSE; app->chrome.message[0] = 0; browser_chrome_update(&app->chrome);
+    enable_network_retry(app->web, uri);
     webkit_web_view_load_uri(app->web, uri); g_free(uri);
 }
 static void toggle_blocker(struct app *app) {
@@ -211,17 +217,46 @@ static void load_changed(WebKitWebView *web, WebKitLoadEvent event, gpointer dat
         if (app->probe) { app->load_started = g_get_monotonic_time(); }
         g_object_set_data(G_OBJECT(web), "jlinux-notice", NULL);
     }
-    if (event != WEBKIT_LOAD_FINISHED || app->status) { return; }
+    if (event == WEBKIT_LOAD_REDIRECTED
+        && GPOINTER_TO_INT(g_object_get_data(G_OBJECT(web), "jlinux-network-retry"))) {
+        const char *uri = webkit_web_view_get_uri(web);
+        if (uri) { g_object_set_data_full(G_OBJECT(web), "jlinux-network-retry-uri", g_strdup(uri), g_free); }
+    }
+    if (event != WEBKIT_LOAD_FINISHED) { return; }
+    g_object_set_data(G_OBJECT(web), "jlinux-network-retry", NULL);
+    g_object_set_data(G_OBJECT(web), "jlinux-network-retry-used", NULL);
+    g_object_set_data(G_OBJECT(web), "jlinux-network-retry-uri", NULL);
+    if (app->status) { return; }
     if (app->probe) {
         webkit_web_view_evaluate_javascript(web,
             "document.readyState === 'complete' && !!document.body && (6 * 7 === 42)", -1, NULL, NULL, NULL, js_finished, app);
     } else { g_print("Página carregada\n"); }
 }
 static gboolean load_failed(WebKitWebView *web, WebKitLoadEvent event, const char *uri, GError *error, gpointer data) {
-    (void)web; (void)event; (void)uri; struct app *app = data;
+    (void)event; struct app *app = data;
     if (g_error_matches(error, WEBKIT_NETWORK_ERROR, WEBKIT_NETWORK_ERROR_CANCELLED)
         || g_error_matches(error, WEBKIT_POLICY_ERROR, WEBKIT_POLICY_ERROR_FRAME_LOAD_INTERRUPTED_BY_POLICY_CHANGE)) { return TRUE; }
     g_printerr("Falha de carregamento: %s\n", error->message);
+    gboolean transient = error->domain == G_RESOLVER_ERROR
+        || g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CONNECTION_CLOSED)
+        || g_error_matches(error, G_IO_ERROR, G_IO_ERROR_TIMED_OUT)
+        || g_error_matches(error, G_IO_ERROR, G_IO_ERROR_PARTIAL_INPUT)
+        || g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CONNECTION_REFUSED)
+        || g_error_matches(error, G_IO_ERROR, G_IO_ERROR_HOST_UNREACHABLE)
+        || g_error_matches(error, G_IO_ERROR, G_IO_ERROR_NETWORK_UNREACHABLE);
+    const char *retry_uri = g_object_get_data(G_OBJECT(web), "jlinux-network-retry-uri");
+    if (!app->probe && transient && uri && retry_uri && !strcmp(uri, retry_uri)
+        && browser_uri_allowed(retry_uri)
+        && GPOINTER_TO_INT(g_object_get_data(G_OBJECT(web), "jlinux-network-retry"))
+        && !GPOINTER_TO_INT(g_object_get_data(G_OBJECT(web), "jlinux-network-retry-used"))) {
+        g_object_set_data(G_OBJECT(web), "jlinux-network-retry-used", GINT_TO_POINTER(TRUE));
+        g_printerr("Falha de rede transitória; repetindo uma vez a navegação GET.\n");
+        webkit_web_view_load_uri(web, retry_uri);
+        return TRUE;
+    }
+    g_object_set_data(G_OBJECT(web), "jlinux-network-retry", NULL);
+    g_object_set_data(G_OBJECT(web), "jlinux-network-retry-used", NULL);
+    g_object_set_data(G_OBJECT(web), "jlinux-network-retry-uri", NULL);
     if (app->probe) { app->status = 1; quit(app); }
     else { web_notice(app, web, "Não foi possível abrir a página. Confira o endereço e a conexão."); }
     return TRUE;
@@ -447,6 +482,7 @@ static WebKitWebView *new_tab(struct app *app, const char *uri, WebKitWebView *r
         webkit_user_content_manager_add_filter(webkit_web_view_get_user_content_manager(web), app->filter);
         g_object_set_data(G_OBJECT(web), "jlinux-adblock", GINT_TO_POINTER(TRUE));
     }
+    if (uri && strcmp(uri, "about:blank") && !app->probe && !app->whatsapp) { enable_network_retry(web, uri); }
     WPEView *view = webkit_web_view_get_wpe_view(web);
     g_ptr_array_add(app->chrome.tabs, web);
     g_signal_connect(view, "closed", G_CALLBACK(closed), app);

@@ -315,3 +315,8 @@ Links acionados pelo usuário com `target="_blank"` abrem em uma nova aba relaci
 Validação local: 13 testes release passaram; `web-browser-wayland` passou com ASan/UBSan (`detect_leaks=0`). Clique Wayland local cobre nova aba, preservação da página de origem, navegação na mesma aba e fechamento. Teste headless/Pixman; sem benchmark de velocidade/energia, teste visual físico ou teste em DRM. A pré-verificação simulada de namespaces confirmou que os testes legados de perfil/WhatsApp retornam skip 77 quando sandbox não está disponível; sandbox não foi desativada.
 
 Instalado em 12/11/2026: `jlinux-browser-git 0.1.0.r68.g6e34f8f-1`; `pacman -Qkk` confirmou 17 arquivos sem alterações. O pacote compilou e passou os 13 checks antes da instalação; o teste Wayland completo também passou usando `/usr/bin/jlinux-browser` e `/usr/bin/jlinux-compositor` instalados. A versão anterior está preservada em `/var/backups/jlinux-browser-before-links-6e34f8f/`. Navegador já aberto foi mantido e só recebe a mudança ao reabrir. PR #82 sobre #77; não integrado.
+
+
+## BROWSER-YOUTUBE-FIRST-LOAD — fix/browser-youtube-first-load
+
+Mitigação para falhas transitórias de rede em navegação GET iniciada pela barra ou URL inicial: repetir uma única vez DNS/conexão/timeout, mantendo validação de URL, TLS e bloqueio de esquemas. Fixture Wayland interrompe a primeira resposta e confirma a segunda tentativa. Suíte release completa passou 13/13. O sintoma específico no YouTube não foi reproduzido; teste ASan/UBSan inconclusivo por vazamentos em Pango/fontconfig e timeout posterior do smoke. Sem benchmark ou teste físico. Mudança ainda não instalada; enviar PR dependente do #82 e registrar a instalação/ativação depois da validação do pacote.

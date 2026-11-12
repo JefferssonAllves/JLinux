@@ -164,6 +164,13 @@ Backup dos arquivos anteriores r63/ed57981 e banco do pacote em `/var/backups/jl
 Prévias copiadas para `~/Imagens/JLinux-browser-header-ec7ef34.png` e `~/Imagens/JLinux-browser-tabs-ec7ef34.png`. Teste unitário de layout também passou com `ASAN_OPTIONS=detect_leaks=1`; teste físico/HiDPI e medição comparativa da busca continuam pendentes.
 
 
+### Repetição de falha transitória ao abrir endereço
+
+Uma navegação GET iniciada pela barra ou por uma URL inicial explícita pode ser repetida uma vez quando o WebKit informa falha transitória de DNS/conexão/timeout. Isso cobre resolução DNS temporariamente indisponível e conexão interrompida durante a resposta. Redirecionamentos atualizam o endereço elegível para a repetição. Falhas TLS, política de URL e cancelamentos não são repetidos; POST/formulários, reloads manuais, WhatsApp e probe também não recebem retry automático. Se a repetição falhar, permanece o aviso de erro existente.
+
+O primeiro carregamento específico de `youtube.com` relatado não foi reproduzido nas execuções disponíveis: probe remoto e navegação visual aninhada carregaram, e o comportamento da recarga foi inconsistente. A regressão local Wayland interrompe de propósito a primeira resposta HTTP, confirma exatamente duas requisições GET e conclui a segunda. A suíte release completa passou 13/13. O teste ASan/UBSan não foi conclusivo: LeakSanitizer apontou alocações em Pango/fontconfig durante a inicialização do cabeçalho, e com LeakSanitizer desativado o smoke expirou em etapa posterior. Não foi feito benchmark nem teste de tela física/DRM.
+
+
 ### Correção da colagem de URLs
 
 A barra passava `NULL` como saída de tamanho para `wpe_clipboard_read_text`. Na biblioteca instalada, copiar o endereço de uma página e colar na barra produzia `g_bytes_unref_to_data: assertion 'size != NULL' failed`, retornando sem o texto. Agora fornece `gsize` válido, negocia formatos UTF-8/text/plain/UTF8_STRING e remove espaços/quebras de linha somente das extremidades do texto colado. Controles internos e esquemas proibidos continuam recusados; não há relaxamento de TLS ou sandbox.

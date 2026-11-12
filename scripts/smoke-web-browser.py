@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import runpy
 import re
+import socket
 import subprocess
 import sys
 import tempfile
@@ -19,12 +20,19 @@ PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAw
 
 class Handler(http.server.BaseHTTPRequestHandler):
     events = []
+    retry_requests = 0
 
     def log_message(self, *args):
         pass
 
     def do_GET(self):
         Handler.events.append(self.path)
+        if self.path == "/retry-once":
+            Handler.retry_requests += 1
+            if Handler.retry_requests == 1:
+                self.connection.shutdown(socket.SHUT_RDWR)
+                self.connection.close()
+                return
         body = b"""<!doctype html><meta charset='utf-8'><title>Browser fixture</title>
         <body><button style='position:fixed;left:8px;top:0' onclick="fetch('/page-click')">tap</button><button style='position:fixed;left:8px;bottom:0' onclick="fetch('/bottom-click')">bottom</button><input autofocus oninput="fetch('/typed?value='+encodeURIComponent(this.value))">
         <script src='/pagead/banner.js'></script><script>addEventListener('pageshow',()=>fetch('/shown?path='+location.pathname));
@@ -117,6 +125,9 @@ def main():
                 wait_for(lambda: f"/viewport?w={window_width}&h={window_height - 100}" in Handler.events,
                          processes, "viewport desconta a altura do cabeçalho")
                 assert "/pagead/banner.js" not in Handler.events, "Default blocking did not prevent download"
+                navigate("/retry-once")
+                assert Handler.retry_requests == 2, f"Navegação GET deve ser repetida exatamente uma vez: {Handler.retry_requests}"
+                navigate("/first")
                 navigate("/copy-link")
                 wait_for(lambda: "/copy-ready" in Handler.events, processes, "foco do texto a copiar")
                 keys("-M", "ctrl", "-k", "a", "-k", "c", "-m", "ctrl")
