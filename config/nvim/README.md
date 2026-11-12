@@ -46,3 +46,9 @@ python config/nvim/tests/ui.py .
 ```
 
 O teste de UI requer `python-pynvim` e a configuração já instalada. Foram verificados os compiladores/runners C/C++, Java, Python e JavaScript, caminhos com espaços, a prévia HTTP de HTML sem abrir o navegador pessoal, o caso CSS e tipos não executáveis. O teste de linguagens confirmou filetype e inicialização dos sete servidores principais (C, C++, Java, Python, JS, HTML, CSS). A UI via RPC confirmou árvore à esquerda, terminal abaixo do código, tema, um único botão e execução real por clique. O desktop entry passou na validação. Não foi feito benchmark, comparação visual pixel a pixel com VS Code ou teste de projetos externos complexos. A instalação não inicia nem encerra a sessão do desktop.
+
+## Variação escura com contornos — 12/11/2026
+
+Pedido posterior: roxo mais escuro e bordas inspiradas no desktop. A base Shades of Purple mantém as cores de sintaxe, com fundo do código `#171126` (antes `#2D2B55`), painéis `#100C1D`, fundos profundos `#0C0917` e linhas discretas `#211832`. Divisórias violeta `#9874E8`, contornos de popups azul-claro `#6FD7FF`, sublinhado nos cabeçalhos e botão Executar. Menus do blink, documentação, assinaturas e Mason usam contorno arredondado; separadores nativos mostram linhas e junções.
+
+A implementação fica em lua/appearance.lua e reaplica os destaques ao recarregar o tema. São cores e contornos do terminal, sem blur/refração ou brilho gráfico do compositor. Teste de UI RPC passou com as novas cores, recarga do tema, layout e clique no botão. Configuração anterior preservada em `~/.config/nvim.before-dark-borders-20261112-201324`. Para carregar tudo, feche e abra o Neovim; não é necessário sair do desktop. Não foi feita comparação visual física lado a lado com o sistema.

@@ -96,7 +96,6 @@ function M.setup()
         if vim.api.nvim_win_is_valid(win) then vim.api.nvim_set_current_win(win) end
         M.run()
     end
-    vim.api.nvim_set_hl(0, 'RunButton', { fg = '#A5FF90', bg = '#1E1E3F', bold = true })
     local toolbar = '%#WinBar# %f %m%=%#RunButton#%@v:lua.JLinuxRun@ ▶ Executar %X'
     _G.JLinuxWinbar = function()
         if vim.bo.filetype == 'NvimTree' then return ' EXPLORADOR' end

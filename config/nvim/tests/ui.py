@@ -10,6 +10,12 @@ try:
     assert any(w['ft']=='NvimTree' and w['pos'][1]==0 for w in windows), 'arvore ausente'
     assert any(w['kind']=='terminal' and w['pos'][0]>0 for w in windows), 'terminal ausente'
     assert n.eval('g:colors_name') == 'shades-of-purple'
+    assert n.api.get_hl(0, {'name': 'Normal'})['bg'] == 0x171126
+    assert n.api.get_hl(0, {'name': 'WinSeparator'})['fg'] == 0x9874E8
+    assert n.api.get_hl(0, {'name': 'FloatBorder'})['fg'] == 0x6FD7FF
+    assert n.options['winborder'] == 'rounded'
+    n.command('colorscheme shades-of-purple')
+    assert n.api.get_hl(0, {'name': 'RunButton'})['underline'], 'borda nao sobreviveu a recarga'
     text = n.exec_lua("local lines = {}; for r=1,45 do local line=''; for c=1,140 do line=line..vim.fn.screenstring(r,c) end; lines[#lines+1]=line end; return table.concat(lines,'\\n')")
     open('/tmp/jlinux-neovim-screen.txt','w').write(text)
     assert 'Executar' in text, 'botao ausente'
