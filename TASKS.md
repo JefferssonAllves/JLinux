@@ -170,6 +170,11 @@ Brilho do contorno externo na ponta esquerda da barra reduzido de 0,95 para 0,40
 
 **Feedback visual do usuário:** base inicial de vidro, cabeçalhos retangulares, bordas iluminadas e cantos discretos aprovada como versão inicial após o reinício anterior. Preservar essa direção; isso não conclui o Glass completo.
 
+## Tela cheia com F11 — feature/window-fullscreen
+
+- F11 alterna a janela focada entre tela cheia e tamanho/restauração anteriores. O compositor já oculta as quatro partes da moldura em tela cheia; essa capacidade agora também pode ser acionada pelo teclado.
+- O teste headless envia F11 e verifica os estados xdg-shell e a geometria da saída antes de restaurar a janela. Build Release e testes `window-transitions`/`window-reduced-motion` passaram localmente; isso não valida a aparência numa sessão DRM.
+
 **WM-MAX · ativação realizada:** usuário autorizou reinício e a versão nova foi iniciada na sessão DRM principal, com Codex, painel e dock mapeados. Pendente avaliação física pelo usuário; testes automatizados já registrados acima.
 
 ## Vidro mais evidente nas janelas — fix/window-glass-depth
