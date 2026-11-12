@@ -320,3 +320,12 @@ Instalado em 12/11/2026: `jlinux-browser-git 0.1.0.r68.g6e34f8f-1`; `pacman -Qkk
 ## BROWSER-YOUTUBE-FIRST-LOAD — fix/browser-youtube-first-load
 
 Mitigação para falhas transitórias de rede em navegação GET iniciada pela barra ou URL inicial: repetir uma única vez DNS/conexão/timeout, mantendo validação de URL, TLS e bloqueio de esquemas. Fixture Wayland interrompe a primeira resposta e confirma a segunda tentativa. Suíte release e pacote Arch passaram 13/13. O sintoma específico no YouTube não foi reproduzido; ASan/UBSan inconclusivo por vazamentos em Pango/fontconfig e timeout posterior do smoke. Sem benchmark ou teste físico. Instalado `0.1.0.r72.g88fb7f0-1`, integridade pacman confirmada; smoke passou com os binários instalados. Backup da versão anterior em `/var/backups/jlinux-browser-before-youtube-88fb7f0/`. O processo aberto foi preservado e precisa ser reaberto para ativar. PR #83 sobre #82; checks verdes, sem merge.
+
+
+## BROWSER-YOUTUBE-VIDEO — fix/browser-youtube-video-loading
+
+Recuperar uma vez uma navegação GET se o processo WPE cair antes do primeiro `LOAD_FINISHED`, sem recarregar páginas já em uso nem perder texto de formulários. Fixture local suspende a resposta, mata o processo web privado e valida nova requisição + JavaScript; manter a regressão de recarga manual para crash após página carregada. DOM remoto do YouTube carregou com bloqueador on/off e GLES2/Radeon, mas nenhum teste de pixels reproduziu a tela branca. Probe passou no modo headless. O perfil normal preserva cookies; login do usuário continua exigindo autenticação manual inicial.
+
+### Pendente: anúncios de vídeo do YouTube
+
+O filtro WebKit/AdAway atual não tem suporte confiável aos anúncios de vídeo do YouTube; isso não pode ser prometido como equivalente ao Brave. Avaliar um engine de filtros com regras de rede/cosméticas e compatibilidade de scriptlets, dependências/licenças e política de atualização. Provar bloqueio sem quebrar reprodução, login ou performance antes de alterar o padrão. Não bloquear `googlevideo.com` inteiro.

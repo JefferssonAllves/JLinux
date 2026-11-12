@@ -172,6 +172,14 @@ O primeiro carregamento específico de `youtube.com` relatado não foi reproduzi
 
 Instalado em 12/11/2026: `jlinux-browser-git 0.1.0.r72.g88fb7f0-1`, commit **88fb7f0**, PR #83 (sobre #82). O build Arch passou os 13 testes; `pacman -Qkk` confirmou 17 arquivos sem alterações. O smoke Wayland de navegação/abas passou com `/usr/bin/jlinux-browser` e `/usr/bin/jlinux-compositor` instalados, em runtime headless isolado. A versão anterior `0.1.0.r68.g6e34f8f-1` foi preservada em `/var/backups/jlinux-browser-before-youtube-88fb7f0/`. O processo aberto PID 35439 continuou executando o binário anterior após a atualização; feche e reabra o navegador para ativar a correção. Nenhum app ou sessão foi encerrado.
 
+### Recuperação do processo web antes de terminar a navegação
+
+Se o processo WPE da página morrer antes de concluir uma navegação GET iniciada pelo usuário, o navegador agora tenta abrir o mesmo endereço validado uma vez. Ao morrer depois de uma página carregada, mantém o aviso e o Ctrl+R manual para não descartar formulários ou texto não enviado. O teste Wayland mantém a primeira resposta HTTP suspensa, encerra somente o processo web isolado e confirma a segunda requisição/execução de JavaScript; a regressão existente continua cobrindo a recuperação manual após uma página de vídeo já carregada.
+
+Em 12/11/2026, probe do YouTube retornou título `YouTube`, `ytd-app` presente e 48 elementos de corpo com o bloqueador ligado e desligado. No compositor headless aninhado com GLES 3.2 na Radeon 5700U, a navegação registrou `Página carregada` nas duas condições. Isso não captura pixels e não reproduz o branco relatado; não confirma correção visual no runtime do usuário.
+
+O filtro atual segue baseado em regras declarativas limitadas do WebKit e na lista AdAway; não bloqueia de forma confiável anúncios de vídeo do YouTube. Não bloqueamos o `googlevideo.com` inteiro porque isso também interromperia os vídeos. Reproduzir a cobertura Brave exige avaliar integração de um motor de filtros e seus recursos de compatibilidade/scriptlets, com licença, atualizações e testes reais de reprodução antes de prometer remoção de anúncios.
+
 
 ### Correção da colagem de URLs
 

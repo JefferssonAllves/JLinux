@@ -81,6 +81,8 @@ def probe(binary, uri, env):
             assert process.returncode == 0, log
             result = next(json.loads(line) for line in log.splitlines() if line.startswith('{"engine"'))
             assert result["javascript"] is True, result
+            document = result["document"]
+            assert document["bodyChildren"] >= 2, document
             return dict(result, sampled_peak_tree_pss_kib=peak, samples=samples)
         finally:
             # Include sandbox/network descendants, also when a probe times out.

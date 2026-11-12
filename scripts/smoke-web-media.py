@@ -18,6 +18,9 @@ stop, wait_for = helpers['stop'], helpers['wait_for']
 class Handler(http.server.BaseHTTPRequestHandler):
     events = []
     clips = {}
+    crash_requests = 0
+    crash_first_request = threading.Event()
+    release_crash_first_request = threading.Event()
 
     def log_message(self, *args):
         pass
@@ -25,6 +28,26 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         route = urllib.parse.urlsplit(self.path).path
         Handler.events.append(self.path)
+        if route == '/crash-before-load':
+            Handler.crash_requests += 1
+            if Handler.crash_requests == 1:
+                Handler.crash_first_request.set()
+                Handler.release_crash_first_request.wait(10)
+            body = b"<!doctype html><title>Recovery</title><script>fetch('/recovered')</script>"
+            mime = 'text/html; charset=utf-8'
+            self.send_response(200)
+            self.send_header('Content-Type', mime)
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            try:
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            return
+        if route == '/recovered':
+            self.send_response(204)
+            self.end_headers()
+            return
         if route in self.clips:
             body = self.clips[route]
             mime = 'video/webm' if route.endswith('.webm') else 'video/mp4'
@@ -110,8 +133,19 @@ def main():
                 wait_for(lambda: 'JLinux compositor pronto:' in log(), processes, 'Wayland privado')
                 env['WAYLAND_DISPLAY'] = next(p.name for p in runtime.glob('wayland-*') if p.is_socket())
                 base = f'http://127.0.0.1:{server.server_port}'
-                client = subprocess.Popen([browser, base+'/mp4'], env=env, stdout=output, stderr=subprocess.STDOUT)
+                client = subprocess.Popen([browser, base+'/crash-before-load'], env=env, stdout=output, stderr=subprocess.STDOUT)
                 processes.append(client)
+                wait_for(lambda: Handler.crash_first_request.is_set(), processes, 'primeira requisição antes do carregamento')
+                victims = web_processes(client.pid)
+                assert victims, 'Processo web não encontrado durante o carregamento inicial'
+                for pid in victims:
+                    os.kill(pid, signal.SIGKILL)
+                wait_for(lambda: 'Processo web encerrado:' in log(), processes, 'falha do processo web')
+                wait_for(lambda: Handler.crash_requests == 2 and '/recovered' in Handler.events,
+                         processes, 'recuperação automática da navegação inicial')
+                assert 'repetindo uma vez' in log(), log()
+                Handler.release_crash_first_request.set()
+                keys('-M', 'ctrl', '-k', 'l', '-m', 'ctrl', base+'/mp4', '-k', 'Return')
                 for route in ('/mp4', '/webm', '/mse'):
                     marker = '/played?route=' + urllib.parse.quote(route, safe='')
                     if route != '/mp4':
@@ -141,6 +175,7 @@ def main():
             print(Handler.events, file=sys.stderr)
             raise
         finally:
+            Handler.release_crash_first_request.set()
             for process in reversed(processes):
                 stop(process)
             server.shutdown(); server.server_close(); thread.join()

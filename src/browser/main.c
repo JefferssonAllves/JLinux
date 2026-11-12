@@ -52,6 +52,8 @@ static void enable_network_retry(WebKitWebView *web, const char *uri) {
     g_object_set_data(G_OBJECT(web), "jlinux-network-retry", GINT_TO_POINTER(TRUE));
     g_object_set_data(G_OBJECT(web), "jlinux-network-retry-used", NULL);
     g_object_set_data_full(G_OBJECT(web), "jlinux-network-retry-uri", g_strdup(uri), g_free);
+    g_object_set_data(G_OBJECT(web), "jlinux-process-retry-used", NULL);
+    g_object_set_data_full(G_OBJECT(web), "jlinux-process-retry-uri", g_strdup(uri), g_free);
 }
 static void show_address(struct app *app) {
     app->chrome.error = FALSE;
@@ -203,9 +205,12 @@ static void js_finished(GObject *object, GAsyncResult *result, gpointer data) {
     if (!value || !jsc_value_to_boolean(value)) {
         g_printerr("JavaScript/DOM: %s\n", error ? error->message : "resultado inválido"); app->status = 1;
     } else {
-        g_print("{\"engine\":\"WPE WebKit %u.%u.%u\",\"startup_to_ready_ms\":%.3f,\"load_ms\":%.3f,\"javascript\":true}\n",
+        char *dom = jsc_value_to_string(value);
+        g_print("{\"engine\":\"WPE WebKit %u.%u.%u\",\"startup_to_ready_ms\":%.3f,\"load_ms\":%.3f,\"javascript\":true,\"document\":%s}\n",
             webkit_get_major_version(), webkit_get_minor_version(), webkit_get_micro_version(),
-            (g_get_monotonic_time() - app->started) / 1000.0, (g_get_monotonic_time() - app->load_started) / 1000.0);
+            (g_get_monotonic_time() - app->started) / 1000.0, (g_get_monotonic_time() - app->load_started) / 1000.0,
+            dom ? dom : "null");
+        g_free(dom);
     }
     g_clear_object(&value); g_clear_error(&error); quit(app);
 }
@@ -220,16 +225,22 @@ static void load_changed(WebKitWebView *web, WebKitLoadEvent event, gpointer dat
     if (event == WEBKIT_LOAD_REDIRECTED
         && GPOINTER_TO_INT(g_object_get_data(G_OBJECT(web), "jlinux-network-retry"))) {
         const char *uri = webkit_web_view_get_uri(web);
-        if (uri) { g_object_set_data_full(G_OBJECT(web), "jlinux-network-retry-uri", g_strdup(uri), g_free); }
+        if (uri) {
+            g_object_set_data_full(G_OBJECT(web), "jlinux-network-retry-uri", g_strdup(uri), g_free);
+            g_object_set_data_full(G_OBJECT(web), "jlinux-process-retry-uri", g_strdup(uri), g_free);
+        }
     }
     if (event != WEBKIT_LOAD_FINISHED) { return; }
     g_object_set_data(G_OBJECT(web), "jlinux-network-retry", NULL);
     g_object_set_data(G_OBJECT(web), "jlinux-network-retry-used", NULL);
     g_object_set_data(G_OBJECT(web), "jlinux-network-retry-uri", NULL);
+    g_object_set_data(G_OBJECT(web), "jlinux-process-retry-used", NULL);
+    g_object_set_data(G_OBJECT(web), "jlinux-process-retry-uri", NULL);
     if (app->status) { return; }
     if (app->probe) {
         webkit_web_view_evaluate_javascript(web,
-            "document.readyState === 'complete' && !!document.body && (6 * 7 === 42)", -1, NULL, NULL, NULL, js_finished, app);
+            "document.readyState === 'complete' && !!document.body && (6 * 7 === 42) && JSON.stringify({title:document.title,bodyChildren:document.body.childElementCount,youtubeApp:!!document.querySelector('ytd-app')})",
+            -1, NULL, NULL, NULL, js_finished, app);
     } else { g_print("Página carregada\n"); }
 }
 static gboolean load_failed(WebKitWebView *web, WebKitLoadEvent event, const char *uri, GError *error, gpointer data) {
@@ -415,9 +426,20 @@ static void download(WebKitNetworkSession *session, WebKitDownload *item, gpoint
     download_progress(item, NULL, app);
 }
 static void terminated(WebKitWebView *web, WebKitWebProcessTerminationReason reason, gpointer data) {
-    (void)web; struct app *app = data; g_printerr("Processo web encerrado: %d\n", reason);
+    struct app *app = data; g_printerr("Processo web encerrado: %d\n", reason);
     if (app->probe) { app->status = 1; quit(app); }
-    else { web_notice(app, web, "A página parou. Use Ctrl+R para tentar novamente."); }
+    else {
+        const char *uri = g_object_get_data(G_OBJECT(web), "jlinux-process-retry-uri");
+        if (uri && browser_uri_allowed(uri)
+            && !GPOINTER_TO_INT(g_object_get_data(G_OBJECT(web), "jlinux-process-retry-used"))) {
+            g_object_set_data(G_OBJECT(web), "jlinux-process-retry-used", GINT_TO_POINTER(TRUE));
+            g_printerr("Processo web caiu antes de concluir a navegação; repetindo uma vez.\n");
+            webkit_web_view_load_uri(web, uri);
+            return;
+        }
+        g_object_set_data(G_OBJECT(web), "jlinux-process-retry-uri", NULL);
+        web_notice(app, web, "A página parou. Use Ctrl+R para tentar novamente.");
+    }
 }
 static void closed(WPEView *view, gpointer data) { (void)view; quit(data); }
 static void disconnected(WPEDisplay *display, GError *error, gpointer data) {
