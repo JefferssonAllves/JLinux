@@ -32,7 +32,7 @@ struct app {
     gint64 started, load_started;
     int status, profile_lock;
 };
-static void new_tab(struct app *app, const char *uri);
+static WebKitWebView *new_tab(struct app *app, const char *uri, WebKitWebView *related);
 static void changed_title(WebKitWebView *web, GParamSpec *spec, gpointer data);
 static void open_downloads(void);
 static void select_tab(struct app *app, guint index);
@@ -114,7 +114,7 @@ static gboolean view_event(WPEView *view, WPEEvent *event, gpointer data) {
         if (ctrl && (key == XKB_KEY_l || key == XKB_KEY_L)) { show_address(app); }
         else if (ctrl && (modifiers & WPE_MODIFIER_KEYBOARD_SHIFT) && (key == XKB_KEY_b || key == XKB_KEY_B)) { toggle_blocker(app); }
         else if (ctrl && (key == XKB_KEY_j || key == XKB_KEY_J)) { open_downloads(); }
-        else if (ctrl && (key == XKB_KEY_t || key == XKB_KEY_T)) { new_tab(app, "about:blank"); }
+        else if (ctrl && (key == XKB_KEY_t || key == XKB_KEY_T)) { new_tab(app, "about:blank", NULL); }
         else if (ctrl && (key == XKB_KEY_w || key == XKB_KEY_W)) { close_tab(app, chrome->active_tab); }
         else if (ctrl && (key == XKB_KEY_Tab || key == XKB_KEY_ISO_Left_Tab)) {
             guint count = chrome->tabs->len;
@@ -161,7 +161,7 @@ static void chrome_clicked(struct browser_chrome *chrome, double x, double y, gp
     if (y < BROWSER_TAB_HEIGHT) {
         guint count = chrome->tabs->len;
         int add_x = browser_chrome_new_tab_x(chrome, width);
-        if (x >= add_x && x < add_x + 32) { new_tab(app, "about:blank"); }
+        if (x >= add_x && x < add_x + 32) { new_tab(app, "about:blank", NULL); }
         else {
             gboolean close=FALSE;guint index=browser_chrome_tab_at(chrome,width,x,&close);
             if(index<count){if(close){close_tab(app,index);}else{select_tab(app,index);}}
@@ -237,6 +237,11 @@ static void open_external(const char *uri) {
         g_app_info_launch_default_for_uri_async(uri,NULL,NULL,external_opened,NULL);
     }
 }
+static WebKitWebView *create_tab(WebKitWebView *source, WebKitNavigationAction *action, gpointer data) {
+    struct app *app = data;
+    if (app->whatsapp || !webkit_navigation_action_is_user_gesture(action)) { return NULL; }
+    return g_object_ref(new_tab(app, NULL, source));
+}
 static gboolean policy(WebKitWebView *web, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, gpointer data) {
     (void)web; struct app *app = data;
     if (app->whatsapp && type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE
@@ -245,12 +250,20 @@ static gboolean policy(WebKitWebView *web, WebKitPolicyDecision *decision, WebKi
         if (!browser_whatsapp_uri(uri)) { webkit_policy_decision_ignore(decision); return TRUE; }
     }
     if (type == WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION) {
+        WebKitNavigationAction *action = webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
+        const char *uri = webkit_uri_request_get_uri(webkit_navigation_action_get_request(action));
         if (app->whatsapp) {
-            WebKitNavigationAction *action=webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
-            if (webkit_navigation_action_is_user_gesture(action)) { open_external(webkit_uri_request_get_uri(webkit_navigation_action_get_request(action))); }
+            if (webkit_navigation_action_is_user_gesture(action)) { open_external(uri); }
+            webkit_policy_decision_ignore(decision);
+            return TRUE;
         }
-        webkit_policy_decision_ignore(decision);
-        web_notice(app, web, "Janelas adicionais ainda não estão disponíveis."); return TRUE;
+        if (uri && browser_uri_allowed(uri) && webkit_navigation_action_is_user_gesture(action)) {
+            webkit_policy_decision_use(decision);
+        } else {
+            webkit_policy_decision_ignore(decision);
+            web_notice(app, web, "Janela adicional bloqueada: somente links HTTP/HTTPS acionados pelo usuário são aceitos.");
+        }
+        return TRUE;
     }
     if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
         WebKitNavigationAction *action = webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
@@ -419,13 +432,16 @@ static void select_tab(struct app *app, guint index) {
     const char *message = g_object_get_data(G_OBJECT(web), "jlinux-notice");
     if (message) { notice(app, message); }
 }
-static void new_tab(struct app *app, const char *uri) {
+static WebKitWebView *new_tab(struct app *app, const char *uri, WebKitWebView *related) {
     WebKitSettings *settings = webkit_settings_new();
     webkit_settings_set_enable_media(settings, app->media_available);
     webkit_settings_set_enable_webaudio(settings, app->media_available);
     WebKitWebsitePolicies *policies = webkit_website_policies_new_with_policies("autoplay", WEBKIT_AUTOPLAY_ALLOW_WITHOUT_SOUND, NULL);
-    WebKitWebView *web = g_object_new(WEBKIT_TYPE_WEB_VIEW, "display", app->display, "network-session", app->session,
-        "settings", settings, "website-policies", policies, NULL);
+    WebKitWebView *web = related
+        ? g_object_new(WEBKIT_TYPE_WEB_VIEW, "related-view", related,
+            "settings", settings, "website-policies", policies, NULL)
+        : g_object_new(WEBKIT_TYPE_WEB_VIEW, "display", app->display, "network-session", app->session,
+            "settings", settings, "website-policies", policies, NULL);
     g_object_unref(settings); g_object_unref(policies);
     if (app->filter) {
         webkit_user_content_manager_add_filter(webkit_web_view_get_user_content_manager(web), app->filter);
@@ -439,6 +455,7 @@ static void new_tab(struct app *app, const char *uri) {
     g_signal_connect(web, "load-changed", G_CALLBACK(load_changed), app);
     g_signal_connect(web, "load-failed", G_CALLBACK(load_failed), app);
     g_signal_connect(web, "decide-policy", G_CALLBACK(policy), app);
+    if (!app->whatsapp && !app->probe) { g_signal_connect(web, "create", G_CALLBACK(create_tab), app); }
     g_signal_connect(web, "permission-request", G_CALLBACK(permission), app);
     g_signal_connect(web, "authenticate", G_CALLBACK(authenticate), app);
     g_signal_connect(web, "web-process-terminated", G_CALLBACK(terminated), app);
@@ -453,7 +470,8 @@ static void new_tab(struct app *app, const char *uri) {
         g_signal_connect(view, "notify::has-focus", G_CALLBACK(view_focus_changed), app);
         select_tab(app, app->chrome.tabs->len - 1);
     } else { app->web = web; }
-    webkit_web_view_load_uri(web, uri);
+    if (uri) { webkit_web_view_load_uri(web, uri); }
+    return web;
 }
 static void close_tab(struct app *app, guint index) {
     GPtrArray *tabs = app->chrome.tabs;
@@ -577,7 +595,7 @@ int main(int argc, char **argv) {
         app.toplevel = wpe_display_create_toplevel(display, 0);
         if (!app.toplevel) { app.status = 1; goto cleanup; }
     }
-    new_tab(&app, uri);
+    new_tab(&app, uri, NULL);
     WPEView *view = webkit_web_view_get_wpe_view(app.web);
     g_signal_connect(display, "disconnected", G_CALLBACK(disconnected), &app);
     app.downloads = g_ptr_array_new_with_free_func(g_object_unref);

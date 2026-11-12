@@ -42,6 +42,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             body = b"""<!doctype html><title>Image downloads</title>
             <button style='position:fixed;left:8px;top:0' onclick="fetch('/blob-click'); try { const a=document.createElement('a'); a.href=window.URL.createObjectURL(new Blob([Uint8Array.from(atob('PNG_BASE64'), c=>c.charCodeAt(0))],{type:'image/png'})); a.download='generated.png'; a.click(); fetch('/blob-dispatched'); } catch(e) {fetch('/blob-error?'+encodeURIComponent(e.message));}">Blob image</button>
             <script>addEventListener('pageshow',()=>fetch('/shown?path='+location.pathname));</script>""".replace(b"PNG_BASE64", PNG_BASE64.encode())
+        if self.path == "/links":
+            body = b"""<!doctype html><meta charset='utf-8'><title>Links</title><body>
+            <a href='/target' target='_blank' style='position:fixed;left:16px;top:16px'>new tab</a>
+            <a href='/same-page' style='position:fixed;left:120px;top:16px'>same tab</a>
+            <input autofocus oninput=\"fetch('/typed?value='+encodeURIComponent(this.value)+'&path='+location.pathname)\">
+            <script>addEventListener('pageshow',()=>fetch('/shown?path='+location.pathname));</script></body>"""
         self.send_response(200)
         if self.path in ("/download", "/download-broken"):
             self.send_header("Content-Disposition", 'attachment; filename="' + ("x" * 300 if self.path == "/download-broken" else "fixture.bin") + '"')
@@ -119,6 +125,17 @@ def main():
                 wait_for(lambda: "/shown?path=/direct-pasted" in Handler.events, processes, "URL colada com newline final")
                 assert "g_bytes_unref_to_data" not in log(), "Clipboard read called without required size output"
                 navigate("/first")
+                navigate("/links")
+                click(60, 196)
+                wait_for(lambda: "/shown?path=/target" in Handler.events, processes, "link target=_blank abre em nova aba")
+                typed("target", "target")
+                keys("-M", "ctrl", "-k", "Tab", "-m", "ctrl")
+                assert Handler.events.count("/shown?path=/links") == 1, "Voltar à aba anterior recarregou a página"
+                click(176, 196)
+                wait_for(lambda: "/shown?path=/same-page" in Handler.events, processes, "link normal navega na mesma aba")
+                keys("-M", "ctrl", "-k", "Tab", "-m", "ctrl")
+                keys("-M", "ctrl", "-k", "w", "-m", "ctrl")
+                typed("retained", "retained")
 
                 for number in (1, 2):
                     keys("-M", "ctrl", "-k", "l", "-m", "ctrl", base + "/download", "-k", "Return")

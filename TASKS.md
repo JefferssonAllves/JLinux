@@ -306,3 +306,10 @@ Corrigida saída de tamanho obrigatória da API de leitura do clipboard, antes n
 
 
 BROWSER-DIRECT-URL — instalado `0.1.0.r66.g38b9ed1-1`; check() 13/13 e integridade pacman confirmados. Colagem/navegação passou com navegador e compositor corrigidos instalados em runtime isolado. Perfil e processo existente preservados; reabrir para ativar. Backup/source em docs/browser.md. PR #77 enviado, sem merge.
+
+
+## BROWSER-LINK-TABS — feature/browser-link-tabs
+
+Links acionados pelo usuário com `target="_blank"` abrem em uma nova aba relacionada, carregando direto o destino. Views relacionadas reutilizam a sessão de rede e o processo WebKit da origem, sem criar processo independente para cada link. Links comuns continuam navegando na aba atual. Popups sem gesto e destinos fora da política HTTP/HTTPS/`about:blank` permanecem bloqueados. Endereços, TLS, bloqueador, perfil e sandbox não foram alterados.
+
+Validação local: 13 testes release passaram; `web-browser-wayland` passou com ASan/UBSan (`detect_leaks=0`). Clique Wayland local cobre nova aba, preservação da página de origem, navegação na mesma aba e fechamento. Teste headless/Pixman; sem benchmark de velocidade/energia, teste visual físico ou teste em DRM. Aguardar build/instalação do pacote e registrar versão, ativação e PR após concluir.
