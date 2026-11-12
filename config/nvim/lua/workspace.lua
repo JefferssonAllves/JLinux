@@ -98,7 +98,7 @@ function M.setup()
     end
     local toolbar = '%#WinBar# %f %m%=%#RunButton#%@v:lua.JLinuxRun@ ▶ Executar %X'
     _G.JLinuxWinbar = function()
-        if vim.bo.filetype == 'NvimTree' then return ' EXPLORADOR' end
+        if vim.bo.filetype == 'NvimTree' then return '' end
         if vim.bo.buftype == 'terminal' then return ' TERMINAL' end
         return toolbar
     end

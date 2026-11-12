@@ -13,3 +13,7 @@ Variação escura do perfil de #85, com painéis profundos, separadores violeta,
 ## NEOVIM-BOLD-NEON — implementado e instalado
 
 Atalho Neovim Code em FiraCode Nerd Font Mono Bold 12 pt, fundo escuro preservado, bordas e destaques neon reforçados. Base dependente de #86. UI RPC (cores, bold, recarga, layout e botão), Fontconfig, Foot e desktop entry validados. Backup anterior preservado; fonte nova na próxima abertura pelo menu. Sem mudança global na fonte dos outros terminais nem comparação visual física.
+
+## NEOVIM-TREE-POLISH — implementado e instalado
+
+Marcadores de status Git ocultos; borda da árvore ciano e outras divisórias violeta; texto da árvore mais claro e em negrito; removido “Explorador” da barra. Atalho `a` cria arquivos e pastas pelo caminho digitado. Configuração ativa copiada para `~/.config/nvim`; backup em `~/.config/nvim.before-tree-polish-20261112-2034`. UI RPC passou verificando cores, ausência do título/marcadores `?` e criação de pasta/arquivo. A instância já aberta precisa ser reaberta para carregar todas as alterações.

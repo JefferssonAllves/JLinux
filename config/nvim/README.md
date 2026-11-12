@@ -8,7 +8,7 @@ A árvore abre à esquerda, o editor à direita, e o terminal abaixo do editor. 
 
 - `i`: editar; `Esc`: voltar ao modo normal. No terminal, `Esc` sai da digitação; `i` volta a digitar nele.
 - `Ctrl+S`: salvar. Clique **▶ Executar** ou use `F5`: salva e executa o arquivo atual.
-- `Ctrl+B` no modo normal: mostrar/ocultar a árvore. Na árvore, Enter abre e `a` cria um arquivo.
+- `Ctrl+B` no modo normal: mostrar/ocultar a árvore. Na árvore, Enter abre; `a` cria arquivo ou pasta (termine o nome da pasta com `/`).
 - `Ctrl+crase`: mostrar/ocultar terminal. Alternativa no modo normal: Espaço, `t`, `t`.
 - `Ctrl+H/J/K/L`: trocar de painel no modo normal/terminal.
 - `Shift+H/L`: arquivo anterior/seguinte no modo normal.
@@ -58,3 +58,7 @@ A implementação fica em lua/appearance.lua e reaplica os destaques ao recarreg
 O atalho **Neovim Code** agora seleciona FiraCode Nerd Font Mono **Bold, 12 pt** (antes 11 pt). A cor de fundo continua #171126; bordas violeta #C77DFF e ciano #43F6FF, comentários roxo neon, constantes magenta e strings verde #8CFF9C. O texto base também recebe atributo bold no Neovim. São cores sólidas, sem efeito gráfico de glow.
 
 Feche e abra **Neovim Code pelo menu** para carregar a fonte e o tema. Quando iniciado com `nvim` em outro terminal, o tamanho da fonte continua sendo definido por esse terminal. Perfil anterior salvo em `~/.config/nvim.before-bold-neon-20261112-201642`. UI RPC validou fundo, bold, cores neon, recarga do tema, layout e execução pelo botão; Fontconfig confirmou a variante Bold, e Foot/desktop entry validaram a configuração. Sem avaliação visual física ou teste pixel a pixel.
+
+## Árvore sem status Git e bordas ciano/violeta
+
+A árvore não exibe os marcadores de status Git que apareciam como `?`. A borda da árvore fica ciano e as demais divisórias violeta; nomes de arquivos e pastas aparecem em tons mais claros e negrito. O cabeçalho “Explorador” foi removido. Para criar, pressione `a` na árvore: digite um nome de arquivo, ou termine o caminho da pasta com `/` e confirme com Enter. Alterações entram em vigor ao reabrir o Neovim.
