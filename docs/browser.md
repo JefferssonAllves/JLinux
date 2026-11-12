@@ -180,6 +180,10 @@ Em 12/11/2026, probe do YouTube retornou título `YouTube`, `ytd-app` presente e
 
 O filtro atual segue baseado em regras declarativas limitadas do WebKit e na lista AdAway; não bloqueia de forma confiável anúncios de vídeo do YouTube. Não bloqueamos o `googlevideo.com` inteiro porque isso também interromperia os vídeos. Reproduzir a cobertura Brave exige avaliar integração de um motor de filtros e seus recursos de compatibilidade/scriptlets, com licença, atualizações e testes reais de reprodução antes de prometer remoção de anúncios.
 
+Instalado em 12/11/2026: `jlinux-browser-git 0.1.0.r74.g8b92522-1`, commit **8b92522**, PR #84 sobre #83. Build Arch 13/13, `pacman -Qkk` 17/17 íntegros; `smoke-web-media.py` passou com os binários instalados, incluindo falha WPE simulada durante a navegação inicial e recuperação automática. `smoke-web-engine.py` passou e registrou a amostra em [browser-headless-2026-11-12.json](performance/browser-headless-2026-11-12.json). O perfil anterior não foi lido, copiado nem apagado. Backup do pacote r72 em `/var/backups/jlinux-browser-before-wpe-recovery-8b92522/`. O navegador aberto PID 741 continua no binário anterior; feche e reabra para ativar. Nenhum app ou sessão foi encerrado.
+
+O benchmark é um fixture local WPE headless, não YouTube. Inicializações aquecidas ficaram em 212–214 ms e carregamento local em 26–30 ms; PSS amostrado variou de 164 a 253 MiB, com apenas 8–26 amostras por execução. Isso não comprova redução de recursos nem mede GPU, vídeo, rede real ou energia. Nenhum tuning de desempenho foi adotado sem evidência repetível.
+
 
 ### Correção da colagem de URLs
 

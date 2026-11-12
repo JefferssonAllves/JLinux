@@ -324,7 +324,9 @@ Mitigação para falhas transitórias de rede em navegação GET iniciada pela b
 
 ## BROWSER-YOUTUBE-VIDEO — fix/browser-youtube-video-loading
 
-Recuperar uma vez uma navegação GET se o processo WPE cair antes do primeiro `LOAD_FINISHED`, sem recarregar páginas já em uso nem perder texto de formulários. Fixture local suspende a resposta, mata o processo web privado e valida nova requisição + JavaScript; manter a regressão de recarga manual para crash após página carregada. DOM remoto do YouTube carregou com bloqueador on/off e GLES2/Radeon, mas nenhum teste de pixels reproduziu a tela branca. Probe passou no modo headless. O perfil normal preserva cookies; login do usuário continua exigindo autenticação manual inicial.
+Recuperar uma vez uma navegação GET se o processo WPE cair antes do primeiro `LOAD_FINISHED`, sem recarregar páginas já em uso nem perder texto de formulários. Fixture local suspende a resposta, mata o processo web privado e valida nova requisição + JavaScript; regressão de Ctrl+R após crash em página carregada continua. DOM remoto do YouTube carregou com bloqueador on/off e GLES2/Radeon, mas nenhum teste de pixels reproduziu a tela branca. Instalado `0.1.0.r74.g8b92522-1`; pacote 13/13, integridade e smoke de vídeo/recovery com binários instalados passaram. Backup r72 em `/var/backups/jlinux-browser-before-wpe-recovery-8b92522/`; preservar processo 741 e reabrir para ativar. PR #84 sobre #83; CI verde, sem merge.
+
+Desempenho: baseline headless atual em [docs/performance/browser-headless-2026-11-12.json](docs/performance/browser-headless-2026-11-12.json). Amostras PSS têm baixa resolução e variam; nenhuma otimização foi comprovada ou aplicada. Próxima etapa exige perfil/carga real e captura de pixels no runtime aninhado.
 
 ### Pendente: anúncios de vídeo do YouTube
 
