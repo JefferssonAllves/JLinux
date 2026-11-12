@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Neovim Code
+Comment=Editor roxo com arquivos, terminal e suporte a linguagens
+Exec=foot --app-id=org.jlinux.Neovim "--font=FiraCode Nerd Font Mono:size=11" -e nvim %F
+TryExec=foot
+Icon=nvim
+Terminal=false
+Categories=Development;TextEditor;
+StartupWMClass=org.jlinux.Neovim
