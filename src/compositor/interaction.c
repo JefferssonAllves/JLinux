@@ -483,12 +483,10 @@ static void maximize_requested(struct wl_listener *listener, void *data) {
     set_maximized(view, view->xdg->requested.maximized);
     arrange(view->owner);
 }
-static void fullscreen_requested(struct wl_listener *listener, void *data) {
-    (void)data;
-    struct view *view = wl_container_of(listener, view, fullscreen);
+static void set_fullscreen(struct view *view, bool enabled) {
     if (!view->xdg->base->initialized) { return; }
-    bool enabled = view->xdg->requested.fullscreen;
     bool changed = view->is_fullscreen != enabled;
+    if (!changed) { return; }
     if (enabled && !view->is_fullscreen) {
         view->fullscreen_restore = (struct wlr_box){view->tree->node.x, view->tree->node.y,
             view->frame_width > 0 ? view->frame_width : view->xdg->scheduled.width,
@@ -518,6 +516,11 @@ static void fullscreen_requested(struct wl_listener *listener, void *data) {
         }
         arrange(view->owner);
     }
+}
+static void fullscreen_requested(struct wl_listener *listener, void *data) {
+    (void)data;
+    struct view *view = wl_container_of(listener, view, fullscreen);
+    set_fullscreen(view, view->xdg->requested.fullscreen);
 }
 
 static void view_destroyed(struct wl_listener *listener, void *data) {
@@ -652,6 +655,13 @@ static void terminal(struct interaction *state) {
 }
 
 static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t modifiers) {
+    if (symbol == XKB_KEY_F11 && modifiers == 0) {
+        if (state->focused) {
+            set_fullscreen(state->focused, !state->focused->is_fullscreen);
+            return true;
+        }
+        return false;
+    }
     if (state->session && symbol >= XKB_KEY_XF86Switch_VT_1 && symbol <= XKB_KEY_XF86Switch_VT_12) {
         wlr_session_change_vt(state->session, symbol - XKB_KEY_XF86Switch_VT_1 + 1); return true;
     }

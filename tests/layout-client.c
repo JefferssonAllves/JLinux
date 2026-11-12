@@ -56,9 +56,13 @@ static void sized(void *data, struct xdg_toplevel *top, int32_t width, int32_t h
     (void)top;
     struct window *window = data;
     window->width = width; window->height = height;
-    bool active = false; uint32_t *state;
-    wl_array_for_each(state, states) { active |= *state == XDG_TOPLEVEL_STATE_ACTIVATED; }
+    bool active = false, fullscreen = false; uint32_t *state;
+    wl_array_for_each(state, states) {
+        active |= *state == XDG_TOPLEVEL_STATE_ACTIVATED;
+        fullscreen |= *state == XDG_TOPLEVEL_STATE_FULLSCREEN;
+    }
     printf("active %d %d\n", window->id, active); fflush(stdout);
+    printf("fullscreen %d %d\n", window->id, fullscreen); fflush(stdout);
 }
 static void closed(void *data, struct xdg_toplevel *top) { (void)data; (void)top; }
 static const struct xdg_toplevel_listener top_listener = {.configure = sized, .close = closed};
