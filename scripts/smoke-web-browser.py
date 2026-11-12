@@ -125,9 +125,6 @@ def main():
                 wait_for(lambda: f"/viewport?w={window_width}&h={window_height - 100}" in Handler.events,
                          processes, "viewport desconta a altura do cabeçalho")
                 assert "/pagead/banner.js" not in Handler.events, "Default blocking did not prevent download"
-                navigate("/retry-once")
-                assert Handler.retry_requests == 2, f"Navegação GET deve ser repetida exatamente uma vez: {Handler.retry_requests}"
-                navigate("/first")
                 navigate("/copy-link")
                 wait_for(lambda: "/copy-ready" in Handler.events, processes, "foco do texto a copiar")
                 keys("-M", "ctrl", "-k", "a", "-k", "c", "-m", "ctrl")
@@ -135,6 +132,8 @@ def main():
                 keys("-M", "ctrl", "-k", "l", "-k", "v", "-m", "ctrl", "-k", "Return")
                 wait_for(lambda: "/shown?path=/direct-pasted" in Handler.events, processes, "URL colada com newline final")
                 assert "g_bytes_unref_to_data" not in log(), "Clipboard read called without required size output"
+                navigate("/retry-once")
+                assert Handler.retry_requests == 2, f"Navegação GET deve ser repetida exatamente uma vez: {Handler.retry_requests}"
                 navigate("/first")
                 navigate("/links")
                 click(60, 196)
