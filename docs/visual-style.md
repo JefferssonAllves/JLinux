@@ -120,3 +120,5 @@ Entrada/saída curtas com fade e deslocamento vertical; arraste com elevação d
 ### Data/hora com acabamento das molduras
 
 Bloco Glass de 28 px, raio de 5 px e texto central de 14 px. Preenchimento e contorno usam diretamente os helpers de janela, com tonalização, sombra e reflexão controladas separadamente. A barra externa segue retangular, com 36 px; bateria e ajustes mantidos.
+
+O centro de controle reutiliza o material de src/effects/dock.c e os contornos de janela, incluindo cartões e controles ativos. Prévia: [painel padronizado](design/control-center-standard.png).

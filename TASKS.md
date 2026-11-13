@@ -472,3 +472,7 @@ Captura física do dock 666×666 em saída 1600×900 obtida por leitura KMS/VAAP
 36 testes locais release passaram. Comparação de referência corrigida e render nativo em 1254×1254 inspecionada, com relatório de 18 amostras (9,296 níveis RGB médios); não há equivalência pixel a pixel. Sem benchmark ou ativação física do novo código. Dependência: feature/dock-apps-settings (#90). Pacote/instalação serão registrados na conclusão.
 
 DOCK-GRADIENT-IMAGE — instalado `0.5.0.r113.g702d672-1`, checks do pacote 36/36, 23 arquivos sem ausências e CI do código aprovado. PR #92 enviado, sem merge. Backup/source/limites em docs/arch-installation.md. Captura de origem física; resultado nativo comparado em preview, ativação no próximo login. Sem equivalência pixel a pixel ou benchmark.
+
+## Padronização do painel de controle — feature/control-panel-style
+
+Painel e cartões reutilizam o material grafite do dock e os reflexos finos das janelas. Prévia nativa em docs/design/control-center-standard.png inspecionada; alteração compilada em build-native. Instalação e validação na sessão DRM permanecem pendentes.
