@@ -156,3 +156,7 @@ Instalado `jlinux-desktop-git 0.5.0.r113.g702d672-1`, fonte 702d672, branch `fea
 Backup dos cinco executáveis anteriores e banco local em `/var/backups/jlinux-before-dock-gradient-702d672/`; pacote em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r113.g702d672-1-x86_64.pkg.tar.zst`. Print de origem privado em `~/Imagens/JLinux-dock-antes-degrade.png` (0600), obtido na sessão real por captura KMS/VAAPI, sem modeset/VT/reinício. grim e python-pillow foram instalados como ferramentas de captura/análise, sem novas dependências do runtime do desktop.
 
 A sessão ativa foi preservada: **o novo material entra no próximo login**. Referências geradas, render nativo e diferenças estão em docs/futurista.md; a comparação não mostrou identidade pixel a pixel. Não foi feita avaliação física do novo material em runtime nem benchmark de desempenho.
+
+### Login sem terminal automático
+
+A abertura automática foi retirada dos pontos de entrada do login: greeter/greetd e `data/wayland-sessions/jlinux.desktop` usam `jlinux-session --drm --no-terminal`. Reutiliza a opção existente, sem editar PAM ou a configuração do greetd. Super+Enter e o item Terminal do dock continuam abrindo terminais manualmente. As sessões headless/aninhadas mantêm seus padrões anteriores. Aplicação no próximo login; não encerrar a sessão do usuário durante a atualização.
