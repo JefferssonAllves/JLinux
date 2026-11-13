@@ -34,6 +34,8 @@
 #include <wlr/util/box.h>
 #include <wlr/util/log.h>
 #include "../renderer/backdrop.h"
+#include "../shell/apps.h"
+#include <unistd.h>
 #include <xkbcommon/xkbcommon.h>
 extern char **environ;
 
@@ -115,7 +117,9 @@ struct interaction {
     int window_x, window_y, width, height;
     struct wl_listener new_input, new_view, new_popup, virtual_keyboard, virtual_pointer, new_decoration;
     struct wl_listener motion, absolute, button, axis, frame, set_cursor, selection;
-    struct wl_event_source *child_exit;
+    struct wl_event_source *child_exit,*dock_requests;
+    int dock_fd;
+    double dock_pending[11];
 };
 
 static double animation_time(void) {
@@ -557,6 +561,7 @@ static void view_mapped(struct wl_listener *listener, void *data) {
     overview_close(view->owner,false);
     update_frame(view);
     view->mapped = true;view->minimized=false;
+    for(int index=0;index<11;index++){if(dock_app_matches(index,view->xdg->app_id,view->xdg->title)){view->owner->dock_pending[dock_app_key(index)]=0;}}
     parent_changed(&view->parent, NULL);
     wlr_scene_node_set_enabled(&view->tree->node, true);
     arrange(view->owner);
@@ -1170,6 +1175,28 @@ static int children_exited(int number, void *data) {
     return 0;
 }
 
+static int dock_requested(int fd,uint32_t mask,void *data){
+    (void)mask;struct interaction *state=data;unsigned char command[2];ssize_t count;
+    while((count=read(fd,command,sizeof(command)))>0){
+        if(count!=1||command[0]>=11||command[0]==5){continue;}
+        int index=command[0],key=dock_app_key(index);struct view *view;bool found=false;
+        wl_list_for_each(view,&state->views,link){
+            if(view->mapped&&dock_app_matches(index,view->xdg->app_id,view->xdg->title)){
+                overview_close(state,false);change_workspace(state,view->workspace,false);focus(state,view);
+                state->dock_pending[key]=0;found=true;wlr_log(WLR_INFO,"Aplicativo existente focado: %s",dock_app_name(index));break;
+            }
+        }
+        if(found){continue;}
+        double now=animation_time();
+        /* A launcher without a mapped window may be retried after ten seconds. */
+        if(now<state->dock_pending[key]){wlr_log(WLR_INFO,"Aplicativo em abertura: %s",dock_app_name(index));continue;}
+        GError *error=NULL;
+        if(dock_app_launch(index,&error)){state->dock_pending[key]=now+10;wlr_log(WLR_INFO,"Aplicativo iniciado: %s",dock_app_name(index));}
+        else{const char *message=error?error->message:"Falha ao abrir aplicativo";wlr_log(WLR_ERROR,"Falha ao abrir %s: %s",dock_app_name(index),message);shell_control_error(message);g_clear_error(&error);}
+    }
+    return 0;
+}
+
 static size_t listeners(struct interaction *state, struct wl_listener **items) {
     struct wl_listener *all[] = {&state->new_input, &state->new_view, &state->new_popup,
         &state->virtual_keyboard, &state->virtual_pointer, &state->new_decoration, &state->motion, &state->absolute,
@@ -1183,6 +1210,7 @@ struct interaction *interaction_create(struct wl_display *display,
     struct wlr_scene *scene, struct wlr_scene_tree *windows, struct wlr_scene_tree *fullscreens, struct wlr_scene_tree *overlays, struct wlr_session *session) {
     struct interaction *state = calloc(1, sizeof(*state));
     if (!state) { return NULL; }
+    state->dock_fd=-1;
     if (!jlinux_glass_settings(&state->glass)) { free(state); return NULL; }
     const char *reduced = getenv("JLINUX_REDUCED_MOTION");
     if (reduced && strcmp(reduced, "0") && strcmp(reduced, "1")) { free(state); return NULL; }
@@ -1218,6 +1246,9 @@ struct interaction *interaction_create(struct wl_display *display,
     listen(&state->selection, &state->seat->events.request_set_selection, selection_requested);
     state->child_exit = wl_event_loop_add_signal(wl_display_get_event_loop(display), SIGCHLD, children_exited, state);
     if (!state->child_exit) { interaction_destroy(state); return NULL; }
+    state->dock_fd=window_control_open();
+    if(state->dock_fd>=0){state->dock_requests=wl_event_loop_add_fd(wl_display_get_event_loop(display),state->dock_fd,WL_EVENT_READABLE,dock_requested,state);}
+    if(state->dock_fd<0||!state->dock_requests){interaction_destroy(state);return NULL;}
     /* Virtual input is opt-in only, for isolated automated tests. */
     const char *test_input = getenv("JLINUX_TEST_INPUT");
     if (test_input && strcmp(test_input, "1") == 0) {
@@ -1255,6 +1286,8 @@ void interaction_destroy(struct interaction *state) {
     size_t count = listeners(state, items);
     for (size_t i = 0; i < count; i++) { wl_list_remove(&items[i]->link); }
     if (state->child_exit) { wl_event_source_remove(state->child_exit); }
+    if(state->dock_requests){wl_event_source_remove(state->dock_requests);}
+    window_control_close(state->dock_fd);
     struct keyboard *keyboard, *next_keyboard;
     wl_list_for_each_safe(keyboard, next_keyboard, &state->keyboards, link) {
         keyboard_removed(&keyboard->destroy, NULL);

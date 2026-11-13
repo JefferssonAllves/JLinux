@@ -525,3 +525,15 @@ Ver docs/brave-session-audio.md; instalação persistente em conclusão.
 BRAVE-SESSION-AUDIO concluído: pacote `0.5.0.r132.g2d49501-1` instalado,
 43 testes do pacote passaram e ponte atual validada por pactl. PR #112.
 A guia pessoal ainda precisa ser recarregada/testada pelo usuário.
+
+## DOCK-SINGLE-WINDOW
+
+Implementado foco/restauração de janela existente pelo dock, incluindo outras
+áreas de trabalho e proteção contra cliques repetidos durante startup.
+Arquivos/Imagens/Vídeos compartilham identidade. Detalhes e evidências em
+[docs/dock-single-window.md](docs/dock-single-window.md).
+Checks de pacote e instalação em conclusão; ativação no próximo login.
+
+DOCK-SINGLE-WINDOW concluído: 45 testes release e do pacote passaram; quatro
+cenários ASan/UBSan passaram. Instalado `0.5.0.r136.g9a4596a-1`, PR #113.
+Ativação no próximo login, sem encerrar as janelas abertas do usuário.

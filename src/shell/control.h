@@ -4,4 +4,8 @@
 int shell_control_open(void);
 void shell_control_close(int fd);
 bool shell_control_dock(bool visible);
+int window_control_open(void);
+void window_control_close(int fd);
+bool window_control_launch(int index);
+bool shell_control_error(const char *message);
 #endif

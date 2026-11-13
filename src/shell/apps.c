@@ -5,20 +5,6 @@
 #include <librsvg/rsvg.h>
 #include <signal.h>
 #include <string.h>
-static const struct {const char *name, *desktop, *icon;} apps[] = {
-    {"Brave", "brave-browser.desktop", "brave-desktop"},
-    {"Terminal", "foot.desktop", "foot"},
-    {"Neovim", "Neovim-Code.desktop", "nvim"},
-    {"qBittorrent", "org.qbittorrent.qBittorrent.desktop", "qbittorrent"},
-    {"Arquivos", "org.jlinux.Files.desktop", "system-file-manager"},
-    {"Configurações", NULL, "preferences-system"},
-    {"Imagens", "org.jlinux.Files.desktop", "folder-pictures"},
-    {"Vídeos", "org.jlinux.Files.desktop", "folder-videos"},
-    {"Monitor", "btop.desktop", "btop"},
-    {"Spotube", "com.github.KRTirtho.Spotube.desktop", "org.jlinux.Spotube"},
-    {"WhatsApp", "org.jlinux.WhatsApp.desktop", "org.jlinux.WhatsApp"},
-};
-const char *dock_app_name(int index) { return index >= 0 && index < 11 ? apps[index].name : ""; }
 static cairo_surface_t *load_icon(const char *path) {
     if (!path || !g_file_test(path, G_FILE_TEST_IS_REGULAR)) { return NULL; }
     cairo_surface_t *image;
@@ -71,7 +57,7 @@ cairo_surface_t *dock_app_icon(int index) {
     if (index == 5) { return settings_icon(); }
     if (index == 9) { return find_icon("org.jlinux.Spotube"); }
     /* Folder shortcuts use their folder icons rather than the file manager's logo. */
-    GDesktopAppInfo *info = apps[index].desktop ? g_desktop_app_info_new(apps[index].desktop) : NULL;
+    GDesktopAppInfo *info = dock_app_desktop(index) ? g_desktop_app_info_new(dock_app_desktop(index)) : NULL;
     GIcon *icon = info && index != 6 && index != 7 ? g_app_info_get_icon(G_APP_INFO(info)) : NULL;
     cairo_surface_t *image = NULL;
     if (icon && G_IS_FILE_ICON(icon)) { image = load_icon(g_file_peek_path(g_file_icon_get_file(G_FILE_ICON(icon)))); }
@@ -79,28 +65,7 @@ cairo_surface_t *dock_app_icon(int index) {
         const char * const *names = g_themed_icon_get_names(G_THEMED_ICON(icon));
         for (int n=0; names[n] && !image; n++) { image = find_icon(names[n]); }
     }
-    if (!image) { image = find_icon(apps[index].icon); }
+    if (!image) { image = find_icon(dock_app_icon_name(index)); }
     if (info) { g_object_unref(info); }
     return image;
-}
-static void reset_signals(gpointer data) { (void)data; sigset_t empty; sigemptyset(&empty); sigprocmask(SIG_SETMASK, &empty, NULL); }
-bool dock_app_launch(int index, GError **error) {
-    if (index < 0 || index >= 11 || index == 5) { return false; }
-    if (index == 1 || index == 8) {
-        char *terminal[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL, NULL, NULL};
-        if (index == 8) { terminal[3] = "-e"; terminal[4] = "btop"; }
-        return g_spawn_async(NULL, terminal, NULL, G_SPAWN_SEARCH_PATH, reset_signals, NULL, NULL, error);
-    }
-    GDesktopAppInfo *info = g_desktop_app_info_new(apps[index].desktop);
-    if (!info) { g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "Aplicativo não instalado: %s", apps[index].name); return false; }
-    GList *files = NULL;
-    if (index == 6 || index == 7) {
-        const char *directory = g_get_user_special_dir(index == 6 ? G_USER_DIRECTORY_PICTURES : G_USER_DIRECTORY_VIDEOS);
-        files = g_list_append(files, g_file_new_for_path(directory ? directory : g_get_home_dir()));
-    }
-    GList *uris = files ? g_list_append(NULL, g_file_get_uri(files->data)) : NULL;
-    bool ok = g_desktop_app_info_launch_uris_as_manager(info, uris, NULL,
-        G_SPAWN_SEARCH_PATH, reset_signals, NULL, NULL, NULL, error);
-    g_list_free_full(uris, g_free);
-    g_list_free_full(files, g_object_unref); g_object_unref(info); return ok;
 }

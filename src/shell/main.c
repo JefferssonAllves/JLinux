@@ -415,11 +415,9 @@ static void launch_item(struct app *app, int index) {
         fprintf(stderr,"Configurações abertas.\n");
         return;
     }
-    GError *error=NULL;
-    if(!dock_app_launch(index,&error)){
-        snprintf(app->futurista.message,sizeof(app->futurista.message),"%s",error?error->message:"Falha ao abrir aplicativo");
-        g_clear_error(&error);app->launcher.dirty=true;
-    }else{fprintf(stderr,"Aplicativo iniciado: %s\n",dock_app_name(index));}
+    if(!window_control_launch(index)){
+        snprintf(app->futurista.message,sizeof(app->futurista.message),"Não foi possível solicitar o aplicativo ao compositor.");app->launcher.dirty=true;
+    }else{fprintf(stderr,"Aplicativo solicitado: %s\n",dock_app_name(index));}
 }
 static void apply_preferences(struct app *app) {
     struct shell_preferences p=app->futurista.prefs;
@@ -781,9 +779,13 @@ int main(int argc, char **argv) {
             if((now.tv_sec-app.bluetooth.started.tv_sec)*1000000000LL+now.tv_nsec-app.bluetooth.started.tv_nsec>=5000000000LL){kill(app.bluetooth.pid,SIGKILL);}
         }
         if (fds[3].revents & POLLIN) {
-            char command[32];ssize_t count;
+            char command[186];ssize_t count;
             while((count=recv(app.control,command,sizeof(command),0))>0){
-                if(count==4 && !memcmp(command,"show",4)){
+                if(count>6&&!memcmp(command,"error ",6)){
+                    char message[180];snprintf(message,sizeof(message),"%.*s",(int)count-6,command+6);notice(&app,message);
+                    snprintf(app.futurista.message,sizeof(app.futurista.message),"%s",message);app.launcher.dirty=app.launcher.wl!=NULL;
+                }
+                else if(count==4 && !memcmp(command,"show",4)){
                     if(app.launcher.wl && !app.showing_controls && app.dock_closing){
                         app.dock_closing=false;
                         transition_target(&app.dock_open,1,animation_now(),app.reduced_motion?0:.20);
