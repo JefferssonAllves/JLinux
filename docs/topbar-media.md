@@ -60,3 +60,10 @@ A referência neon anterior está superada por esta revisão.
 Prévia: [vidro discreto](design/topbar-subtle-glass-native.png).
 Os mesmos efeitos e controles MPRIS são preservados; hit testing acompanha
 a escala visual e a reserva de área útil passa a 40 px.
+
+Revisão discreta instalada: `jlinux-desktop-git 0.5.0.r122.g792b37d-1`.
+O commit `792b37d` combina esta revisão com a atualização Bluetooth já instalada
+(`0901601`), preservando-a. Os 39 testes locais e os mesmos 39 do pacote
+passaram; prévia também gerada pelo binário instalado. A sessão corrente foi
+preservada: o visual muda no próximo login. Pacote anterior disponível no
+cache de instalação. PR #108; a imagem neon inicial foi rejeitada pelo usuário.

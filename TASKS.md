@@ -491,3 +491,7 @@ Revisão TOPBAR-MEDIA: por pedido do usuário, estilo neon substituído por vidr
 discreto; barra de 40 px, reflexos leves e contorno translúcido. Prévia em
 `docs/design/topbar-subtle-glass-native.png`. Checks e instalação registrados
 em docs/topbar-media.md.
+
+Revisão discreta validada com 39 testes e instalada pelo pacman como
+`0.5.0.r122.g792b37d-1`, preservando a atualização Bluetooth concorrente.
+PR #108; ativação visual no próximo login, sem encerrar a sessão.
