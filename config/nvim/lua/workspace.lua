@@ -62,9 +62,9 @@ function M.command(file, filetype)
 end
 function M.execution_command(command, file)
     local wrapped = { 'sh', '-c', [[
-printf "\033[1;38;2;235;105;255mExecutando '%s'\033[0m\n" "$1"
+printf "\033[1;32m>\033[0m \033[1;38;2;235;105;255mExecutando '%s'\033[0m\n" "$1"
 shift
-trap 'status=$?; printf "\\n\\033[1;38;2;235;105;255mFim da execução (código %s)\\033[0m\\n" "$status"' 0
+trap 'status=$?; printf "\\n\\033[1;32m>\\033[0m \\033[1;38;2;235;105;255mFim da execução (código %s)\\033[0m\\n" "$status"' 0
 trap 'exit 130' INT
 "$@"
 exit $?
