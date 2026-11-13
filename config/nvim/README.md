@@ -119,3 +119,4 @@ Backup: ~/.config/nvim.before-development-20261112-213246. Feche e abra o Neovim
 A barra inferior mostra um botão discreto `▶ Executar · linguagem` para arquivos compatíveis com o executor. Clique para salvar e executar no terminal integrado; F5 mantém a mesma ação. Arquivos sem executor não mostram o botão.
 
 Execuções exibem nome do arquivo e fim da execução em negrito rosa-violeta no terminal, incluindo o código de saída. O código original do programa é preservado.
+As mensagens de início e fim recebem um `>` verde para facilitar a localização no terminal.
