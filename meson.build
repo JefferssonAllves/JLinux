@@ -72,6 +72,7 @@ if get_option('shell')
   install_data('packaging/greetd/config.toml', install_dir: get_option('datadir') / 'jlinux', rename: 'greetd.toml')
   install_data('packaging/arch/enable-login.sh', install_dir: get_option('libexecdir') / 'jlinux', install_mode: 'rwxr-xr-x')
   install_data('data/wayland-sessions/jlinux.desktop', install_dir: get_option('datadir') / 'wayland-sessions')
+  install_data('data/icons/spotify.svg', install_dir: get_option('datadir') / 'icons/hicolor/scalable/apps', rename: 'org.jlinux.Spotube.svg')
   install_data('data/futurista/README.md', install_dir: get_option('datadir') / 'licenses/jlinux-desktop-git', rename: 'futurista-assets.md')
   futurista_resources = import('gnome').compile_resources('futurista-resources', 'data/futurista/assets.xml', source_dir: 'data/futurista')
   shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/apps.c', 'src/shell/preferences.c', 'src/shell/battery.c', 'src/shell/volume.c', 'src/shell/bluetooth.c', 'src/shell/media.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/effects/dock.c', 'src/renderer/dock-transform.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,

@@ -65,7 +65,7 @@ struct app {
     struct surface wallpaper, panel, power, audio, launcher;
     struct futurista futurista;
     bool volume_dragging, showing_controls, dock_closing, reduced_motion;
-    struct transition dock_open, dock_hover[10];
+    struct transition dock_open, dock_hover[11];
     struct wl_callback *dock_frame;
     int control;
     struct volume volume;
@@ -90,7 +90,7 @@ static void destroy_launcher(struct app *app);
 static bool dock_animating(struct app *app, double now) {
     if (!app->launcher.wl || app->showing_controls) { return false; }
     if (transition_active(&app->dock_open, now)) { return true; }
-    for (int i = 0; i < 10; i++) { if (transition_active(&app->dock_hover[i], now)) { return true; } }
+    for (int i = 0; i < 11; i++) { if (transition_active(&app->dock_hover[i], now)) { return true; } }
     return false;
 }
 static void dock_frame_done(void *data, struct wl_callback *callback, uint32_t time) {
@@ -103,7 +103,7 @@ static void dock_frame_done(void *data, struct wl_callback *callback, uint32_t t
 static const struct wl_callback_listener dock_frame_listener = {.done = dock_frame_done};
 static void dock_select(struct app *app, int hit) {
     double now = animation_now();
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 11; i++) {
         transition_target(&app->dock_hover[i], i == hit ? 1 : 0, now, app->reduced_motion || (!app->futurista.prefs.zoom && !app->futurista.prefs.neon) ? 0 : .14);
     }
     app->launcher.dirty = true;
@@ -154,7 +154,7 @@ static void paint(struct surface *surface, cairo_t *cr) {
         surface->app->futurista.muted = surface->app->volume.muted;
         struct app *app = surface->app;
         double now = animation_now(), progress = transition_value(&app->dock_open, now);
-        for (int i = 0; i < 10; i++) { app->futurista.hover[i] = transition_value(&app->dock_hover[i], now); }
+        for (int i = 0; i < 11; i++) { app->futurista.hover[i] = transition_value(&app->dock_hover[i], now); }
         if (!app->showing_controls) {
             cairo_save(cr);
             struct ui_rect box = futurista_dock_bounds(width, height);
@@ -387,7 +387,7 @@ static void toggle_launcher(struct app *app, bool controls) {
     app->futurista.settings_open=false;
     app->dock_open = (struct transition){0};
     transition_target(&app->dock_open, 1, animation_now(), app->reduced_motion ? 0 : .20);
-    for(int i=0;i<10;i++){app->dock_hover[i]=(struct transition){0};}
+    for(int i=0;i<11;i++){app->dock_hover[i]=(struct transition){0};}
     dock_select(app,app->futurista.selected);
     uint32_t all = ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
                    ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
@@ -402,7 +402,7 @@ static void toggle_launcher(struct app *app, bool controls) {
     fprintf(stderr,"%s\n",controls?"Painel de controle aberto.":"Dock circular aberto.");
 }
 static void launch_item(struct app *app, int index) {
-    if(index<0 || index>=10){return;}
+    if(index<0 || index>=11){return;}
     if(index==5){
         if(app->launcher.wl){destroy_launcher(app);}
         toggle_launcher(app,true);
@@ -468,13 +468,13 @@ static void launcher_action(struct app *app, int hit) {
         g_clear_error(&error);return;
     }
 
-    if (hit >= 0 && hit < 10) {
+    if (hit >= 0 && hit < 11) {
         app->futurista.selected = hit;
         dock_select(app,hit);
         launch_item(app, hit);
         return;
     }
-    if (hit == 10) {
+    if (hit == 11) {
         launch_item(app, app->futurista.selected);
         return;
     }
@@ -513,7 +513,7 @@ static int launcher_hit(struct app *app) {
 static void update_launcher_selection(struct app *app) {
     if(app->pointer_surface != &app->launcher){return;}
     int hit=launcher_hit(app);
-    if(hit>=0 && hit<10 && hit!=app->futurista.selected){
+    if(hit>=0 && hit<11 && hit!=app->futurista.selected){
         app->futurista.selected=hit;
         if(!app->showing_controls){dock_select(app,hit);}
         app->launcher.dirty=true;

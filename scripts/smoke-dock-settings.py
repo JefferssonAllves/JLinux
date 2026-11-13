@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Click real dock/settings surfaces; application launches use private desktop fixtures."""
+import math
 import json
 import os
 from pathlib import Path
@@ -30,12 +31,13 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
 ''');mock.chmod(0o755)
     (commands/'foot').symlink_to(mock)
     entries={'brave-browser.desktop':'brave','Neovim-Code.desktop':'nvim','org.qbittorrent.qBittorrent.desktop':'torrent',
-             'org.jlinux.Files.desktop':'files','org.jlinux.WhatsApp.desktop':'whatsapp'}
+             'org.jlinux.Files.desktop':'files','org.jlinux.WhatsApp.desktop':'whatsapp',
+             'com.github.KRTirtho.Spotube.desktop':'spotube'}
     for entry,name in entries.items():
         (apps/entry).write_text(f'[Desktop Entry]\nType=Application\nName={name}\nExec=dock-test {name} %f\n')
     def log():return logfile.read_text(errors='replace')
     def recorded():return [json.loads(x) for x in calls.read_text().splitlines()] if calls.exists() else []
-    scale=min(1280/1672,(720-56)/889);dx=(1280-1672*scale)/2;dy=56+(720-52-889*scale)/2-52*scale
+    scale=min(1280/1672,(720-52)/889);dx=(1280-1672*scale)/2;dy=52+(720-52-889*scale)/2-52*scale
     def click(x,y):subprocess.run([pointer,str(round(dx+x*scale)),str(round(dy+y*scale))],env=env,check=True,timeout=4)
     def dock():
         count=log().count('Dock circular aberto.')
@@ -50,12 +52,12 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
             client=subprocess.Popen([shell],env=env,stdout=out,stderr=subprocess.STDOUT);processes.append(client)
             wait(lambda:'Interface mapeada: jlinux-panel' in log(),processes,'shell')
             dock()
-            positions=((836,216),(994,270),(1077,407),(1076,552),(983,674),(837,714),(690,674),(597,552),(593,405),(674,277))
-            for i in (0,1,2,3,4,6,7,8,9):
+            positions=tuple((836+250*math.cos(math.radians(-90+i*360/11)),469+250*math.sin(math.radians(-90+i*360/11))) for i in range(11))
+            for i in (0,1,2,3,4,6,7,8,9,10):
                 before=len(recorded());click(*positions[i])
                 wait(lambda:len(recorded())>before,processes,f'app {i}')
             data=recorded()
-            for name in ('brave','nvim','torrent','files','whatsapp'):assert any(name in row for row in data),name
+            for name in ('brave','nvim','torrent','files','spotube','whatsapp'):assert any(name in row for row in data),name
             assert any(str(root/'Pictures') in row for row in data),'pictures folder argument'
             assert any(str(root/'Videos') in row for row in data),'videos folder argument'
             assert any('btop' in row for row in data),'monitor command'
