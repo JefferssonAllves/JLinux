@@ -160,3 +160,7 @@ A sessão ativa foi preservada: **o novo material entra no próximo login**. Ref
 ### Login sem terminal automático
 
 A abertura automática foi retirada dos pontos de entrada do login: greeter/greetd e `data/wayland-sessions/jlinux.desktop` usam `jlinux-session --drm --no-terminal`. Reutiliza a opção existente, sem editar PAM ou a configuração do greetd. Super+Enter e o item Terminal do dock continuam abrindo terminais manualmente. As sessões headless/aninhadas mantêm seus padrões anteriores. Aplicação no próximo login; não encerrar a sessão do usuário durante a atualização.
+
+Instalado `jlinux-desktop-git 0.5.0.r129.g7df42e2-1`, source 7df42e2, PR #110. O check() do pacote passou 39/39; o fluxo do greeter também passou com os binários instalados em runtime headless isolado, verificando o comando com `--no-terminal`. Pacman confirmou 28 arquivos e zero alterações. Preservados dock com Spotube, Bluetooth e barra atual.
+
+Backup da instalação anterior r127/8cc19f9 e banco local em `/var/backups/jlinux-before-no-terminal-login-7df42e2/`; pacote novo em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r129.g7df42e2-1-x86_64.pkg.tar.zst`. Processos existentes 691/692/716 preservaram os inodes; são evidência deste boot, não PIDs a reutilizar. A sessão atual e os terminais abertos não foram encerrados; login PAM real não foi repetido para testar.
