@@ -27,3 +27,7 @@ Evidência: sugestões reais em 14 tipos (schemas locais JSON/YAML e módulos Go
 ## Botão executar no nvimcode — feature/neovim-run-button
 
 Componente clicável discreto na lualine, condicionado ao executor existente e ao arquivo atual. Reutiliza workspace.run/F5. Configuração instalada em ~/.config/nvim; backup anterior em /tmp/jlinux-nvim-init-before-run-button.lua. Sintaxe Lua e carregamento headless conferidos. Instâncias abertas precisam reabrir para carregar a configuração.
+
+## Mensagens do executor nvimcode
+
+Início com nome do arquivo e término com código de saída em ANSI rosa-violeta/negrito. Configuração aplicada ao usuário, preservando backup em /tmp/jlinux-workspace-before-messages.lua. Execução de teste com saída 7 validou ambas as mensagens e preservação do código.
