@@ -17,8 +17,10 @@ cairo = dependency('cairo')
 pango = dependency('pangocairo')
 pixman = dependency('pixman-1')
 fontconfig = dependency('fontconfig')
-compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/window-effects.c', 'src/renderer/overview.c', 'src/renderer/blur.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
+compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/backdrop.c', 'src/renderer/blur.c', 'src/renderer/window-effects.c', 'src/renderer/overview.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
   dependencies: [wlroots, wayland, xkb, cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
+backdrop_test = executable('jlinux-test-backdrop', 'tests/backdrop.c', 'src/renderer/backdrop.c', 'src/renderer/renderer.c', 'src/renderer/window-effects.c', 'src/renderer/blur.c', 'src/effects/window.c', 'src/effects/glass.c', 'src/toolkit/painter.c', dependencies: [wlroots, wayland, cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'])
+test('live-backdrop', backdrop_test, env: ['WLR_RENDERER=pixman'])
 frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
   'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
   dependencies: [wlroots, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
@@ -134,6 +136,8 @@ if foot.found() and wtype.found()
   endif
   test('window-side-snap', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], timeout: 40)
   test('snap-reduced-motion', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 40)
+  test('window-minimize', find_program('scripts/smoke-minimize.py'), args: [compositor, foot, wtype, pointer_test, layout_client], timeout: 25)
+  test('minimize-reduced-motion', find_program('scripts/smoke-minimize.py'), args: [compositor, foot, wtype, pointer_test, layout_client], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 25)
   test('window-frame-input', find_program('scripts/smoke-window-frame.py'), args: [compositor, pointer_test, foot, wtype], timeout: 35)
   terminal_test = find_program('scripts/smoke-terminal.py')
   test('terminal-input-headless', terminal_test, args: [compositor, pointer_test, foot, wtype], timeout: 40)

@@ -32,6 +32,8 @@ else:(root/'state').write_text(sys.argv[-1])
     logfile=root/'server.log'
     def log():return logfile.read_text(errors='replace')
     def calls():return (root/'calls').read_text() if (root/'calls').exists() else ''
+    def ready(value):
+        wait(lambda:[line for line in log().splitlines() if line.startswith("Bluetooth pronto:")][-1:]==[f"Bluetooth pronto: {int(value)}"],processes,"Bluetooth query completion")
     def click(x,y):subprocess.run([pointer,str(round(x)),str(round(y))],env=env,check=True,timeout=4);time.sleep(.2)
     scale=min(1280/1672,668/889);offset=(1280-1672*scale)/2;top=52-52*scale
     def tile(y):click(offset+1400*scale,top+y*scale)
@@ -44,10 +46,11 @@ else:(root/'state').write_text(sys.argv[-1])
             wait(lambda:'Interface mapeada: jlinux-panel' in log(),processes,'panel')
             click(1240,18)
             wait(lambda:'get-property' in calls(),processes,'query on open')
-            time.sleep(.2);tile(170)
+            ready(False);tile(170)
             wait(lambda:(root/'state').exists() and (root/'state').read_text()=='true',processes,'power on')
-            time.sleep(.2);tile(170)
+            ready(True);tile(170)
             wait(lambda:(root/'state').read_text()=='false',processes,'power off')
+            ready(False)
             (root/'fail').touch();tile(170);time.sleep(.2);assert client.poll() is None
             (root/'fail').unlink();tile(170)
             wait(lambda:(root/'state').read_text()=='true',processes,'retry after failure')

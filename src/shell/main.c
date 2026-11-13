@@ -88,7 +88,8 @@ static double animation_now(void) {
 }
 static void destroy_launcher(struct app *app);
 static bool dock_animating(struct app *app, double now) {
-    if (!app->launcher.wl || app->showing_controls) { return false; }
+    if (!app->launcher.wl) { return false; }
+    if(app->showing_controls){return transition_active(&app->dock_open,now);}
     if (transition_active(&app->dock_open, now)) { return true; }
     for (int i = 0; i < 11; i++) { if (transition_active(&app->dock_hover[i], now)) { return true; } }
     return false;
@@ -163,7 +164,9 @@ static void paint(struct surface *surface, cairo_t *cr) {
             cairo_transform(cr, &matrix);
             cairo_push_group(cr);
         }
+        if(app->showing_controls){cairo_save(cr);cairo_translate(cr,(1-progress)*12,0);cairo_push_group(cr);}
         futurista_overlay(&app->futurista, cr, width, height, app->showing_controls);
+        if(app->showing_controls){cairo_pop_group_to_source(cr);cairo_paint_with_alpha(cr,progress);cairo_restore(cr);}
         if (!app->showing_controls) {
             cairo_pop_group_to_source(cr); cairo_paint_with_alpha(cr, progress); cairo_restore(cr);
         }
@@ -368,7 +371,7 @@ static void destroy_launcher(struct app *app) {
 static void close_launcher(struct app *app) {
     app->volume_dragging = false;
     if (!app->launcher.wl || app->dock_closing) { return; }
-    if (app->showing_controls || app->reduced_motion) { destroy_launcher(app); return; }
+    if (app->reduced_motion) { destroy_launcher(app); return; }
     app->dock_closing = true;
     transition_target(&app->dock_open, 0, animation_now(), .16);
     struct wl_region *empty = wl_compositor_create_region(app->compositor);
@@ -379,7 +382,7 @@ static void close_launcher(struct app *app) {
 static void toggle_launcher(struct app *app, bool controls) {
     if(app->launcher.wl){
         bool same=app->showing_controls==controls;
-        if(same && !controls){close_launcher(app);return;}
+        if(same){close_launcher(app);return;}
         destroy_launcher(app);
         if(same){return;}
     }
@@ -683,6 +686,7 @@ static int preview_power(const char *path, bool volume) {
 int main(int argc, char **argv) {
     bool volume_panel = argc == 2 && !strcmp(argv[1], "--volume-panel");
     bool power_panel = argc == 2 && !strcmp(argv[1], "--power-panel");
+    if(argc>1&&g_str_has_prefix(argv[1],"--preview")){setenv("JLINUX_STATIC_PREVIEW","1",1);}
     if (argc == 3 && !strcmp(argv[1], "--preview-volume")) { return preview_power(argv[2], true); }
     if (argc == 3 && !strcmp(argv[1], "--preview-power")) { return preview_power(argv[2], false); }
     if (argc == 3 && !strcmp(argv[1], "--preview-dock")) { return preview_futurista(argv[2],false,false,true); }
@@ -804,6 +808,7 @@ int main(int argc, char **argv) {
                             volume_complete(&app.volume, status); app.launcher.dirty=app.launcher.wl!=NULL; app.audio.dirty = true;
                         } else if (child == app.bluetooth.pid) {
                             bluetooth_complete(&app.bluetooth,status);
+                            if(!app.bluetooth.pid&&!app.bluetooth.error[0]){fprintf(stderr,"Bluetooth pronto: %d\n",app.bluetooth.powered);}
                             if(app.bluetooth.error[0]){snprintf(app.futurista.message,sizeof(app.futurista.message),"%s",app.bluetooth.error);}
                             else{app.futurista.message[0]=0;}
                             app.launcher.dirty=app.launcher.wl!=NULL;

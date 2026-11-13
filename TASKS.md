@@ -504,3 +504,11 @@ DOCK-SPOTUBE-ENTRY — instalado r127/8cc19f9, preservando barra/Bluetooth de r1
 ## LOGIN-NO-TERMINAL — fix/no-terminal-on-login
 
 Login pelo greeter/greetd e pela entrada de sessão Wayland agora passam `--no-terminal` ao iniciador existente. Os argumentos do comando e as variáveis de ambiente são serializados em loops separados com seus próprios limites. Não altera PAM, atalho Super+Enter ou o comportamento de sessões de desenvolvimento. Três testes direcionados passaram (login-auth, login-flow-headless e session-headless) após build completo; nenhuma sessão real encerrada para teste.
+
+## NEON-GLASS-WINDOWS
+
+Minimização implementada por botão, Super+M e pedido xdg; restauração por
+Alt+Tab/visão de janelas. Tema escuro translúcido com bordas neon, brilho de foco,
+transições e blur real do conteúdo atrás das superfícies nativas. Detalhes,
+limites e evidências em [docs/neon-glass-windows.md](docs/neon-glass-windows.md).
+42 testes release passaram; checks de memória/instalação em conclusão.

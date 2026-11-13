@@ -16,8 +16,8 @@ void window_aura_paint(cairo_t *cr, struct ui_rect window, bool shadow, bool tin
         if(shadow){cairo_set_source_rgba(cr,.003,.005,.018,strength*.19);}
         else{
             cairo_pattern_t *p=cairo_pattern_create_linear(window.x,window.y,window.x+window.width,window.y+window.height);
-            cairo_pattern_add_color_stop_rgba(p,0,tint?.14:.6,tint?.47:.6,tint?1:.6,strength*.20);
-            cairo_pattern_add_color_stop_rgba(p,1,tint?.73:.6,tint?.26:.6,tint?.96:.6,strength*.20);
+            cairo_pattern_add_color_stop_rgba(p,0,tint?.14:.6,tint?.47:.6,tint?1:.6,strength*.42);
+            cairo_pattern_add_color_stop_rgba(p,1,tint?.73:.6,tint?.26:.6,tint?.96:.6,strength*.42);
             cairo_set_source(cr,p);cairo_pattern_destroy(p);
         }
         cairo_set_line_width(cr,2);cairo_stroke(cr);

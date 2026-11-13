@@ -21,6 +21,7 @@
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_subcompositor.h>
 #include <wlr/util/log.h>
+#include "../renderer/backdrop.h"
 
 struct desktop {
     struct wl_display *display;
@@ -92,9 +93,13 @@ static void layout_changed(struct wl_listener *listener, void *data) {
     arrange_desktop(desktop);
 }
 
+static void attach_backdrop(struct wlr_scene_buffer *buffer,int x,int y,void *data){
+    (void)x;(void)y;(void)data;if(wlr_scene_surface_try_from_buffer(buffer)){jlinux_backdrop_attach(buffer);}
+}
 static void shell_committed(struct wl_listener *listener, void *data) {
     (void)data;
     struct shell_surface *surface = wl_container_of(listener, surface, commit);
+    if(surface->layer->namespace&&strcmp(surface->layer->namespace,"jlinux-wallpaper")){wlr_scene_node_for_each_buffer(&surface->scene->tree->node,attach_backdrop,NULL);}
     uint32_t changed = surface->layer->current.committed;
     if (surface->layer->initial_commit || changed) {
         unsigned int level = surface->layer->current.layer;
@@ -162,6 +167,7 @@ static void render_frame(struct wl_listener *listener, void *data) {
     (void)data;
     struct monitor *monitor = wl_container_of(listener, monitor, frame);
     bool animating = interaction_animate(monitor->desktop->interaction);
+    jlinux_backdrop_update(monitor->desktop->scene,&monitor->desktop->render);
     if (!jlinux_renderer_present(monitor->scene_output)) {
         wlr_log(WLR_ERROR, "Falha ao apresentar quadro em %s", monitor->output->name);
         return;

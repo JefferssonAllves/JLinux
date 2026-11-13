@@ -105,12 +105,12 @@ static void activate(struct app *app) {
 }
 static void paint(struct app *app, cairo_t *cr) {
     cairo_pattern_t *background = cairo_pattern_create_linear(0, 0, app->width, app->height);
-    cairo_pattern_add_color_stop_rgb(background, 0, .095, .13, .21);
-    cairo_pattern_add_color_stop_rgb(background, .55, .065, .09, .16);
-    cairo_pattern_add_color_stop_rgb(background, 1, .09, .095, .18);
+    cairo_pattern_add_color_stop_rgba(background, 0, .025, .035, .085, .66);
+    cairo_pattern_add_color_stop_rgba(background, .55, .012, .018, .05, .60);
+    cairo_pattern_add_color_stop_rgba(background, 1, .045, .018, .09, .68);
     cairo_set_source(cr, background); cairo_paint(cr); cairo_pattern_destroy(background);
     struct ui_rect toolbar = {12, 12, app->width - 24, 50};
-    struct jlinux_glass material = app->glass; material.reflection = false;
+    struct jlinux_glass material = app->glass;
     jlinux_glass_paint(cr, toolbar, 6, NULL, 0, 0, material);
     if (app->glass.reflection) { jlinux_glass_window_reflections(cr, toolbar, 6, 50); }
     ui_icon(cr, UI_HOME, 26, 25, 23, 0xdde6fa);
@@ -143,6 +143,10 @@ static void paint(struct app *app, cairo_t *cr) {
     for (size_t row = 0; row < visible && row + app->scroll < app->browser.count; row++) {
         size_t index = row + app->scroll; double y = 100 + row * 38;
         struct file_entry *entry = &app->browser.entries[index];
+        if(app->mouse_x>=CONTENT_X&&app->mouse_y>=y&&app->mouse_y<y+36){
+            cairo_set_source_rgba(cr,.55,.24,1,.16);cairo_rectangle(cr,CONTENT_X,y,app->width-CONTENT_X-14,36);cairo_fill_preserve(cr);
+            if(app->glass.reflection){cairo_set_source_rgba(cr,.50,.67,1,.65);cairo_set_line_width(cr,1);cairo_stroke(cr);}else{cairo_new_path(cr);}
+        }
         if (index == app->selected) {
             cairo_set_source_rgba(cr, .26, .34, .58, .34); cairo_rectangle(cr, CONTENT_X, y, app->width - CONTENT_X - 14, 36); cairo_fill(cr);
         }
@@ -241,8 +245,14 @@ static void pointer_enter(void *data, struct wl_pointer *pointer, uint32_t seria
         wl_surface_attach(app->cursor_surface, wl_cursor_image_get_buffer(image), 0, 0); wl_surface_damage(app->cursor_surface, 0, 0, image->width, image->height); wl_surface_commit(app->cursor_surface);
     }
 }
-static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface) { (void)data; (void)pointer; (void)serial; (void)surface; }
-static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y) { (void)pointer; (void)time; struct app *app = data; app->mouse_x = wl_fixed_to_double(x); app->mouse_y = wl_fixed_to_double(y); }
+static void pointer_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface) { (void)pointer; (void)serial; (void)surface;struct app *app=data;app->mouse_x=app->mouse_y=-1;app->dirty=true; }
+static void pointer_motion(void *data, struct wl_pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y) {
+    (void)pointer;(void)time;struct app *app=data;
+    int before=app->mouse_x>=CONTENT_X&&app->mouse_y>=100?(int)(app->mouse_y-100)/38:-1;
+    app->mouse_x=wl_fixed_to_double(x);app->mouse_y=wl_fixed_to_double(y);
+    int after=app->mouse_x>=CONTENT_X&&app->mouse_y>=100?(int)(app->mouse_y-100)/38:-1;
+    if(before!=after){app->dirty=true;}
+}
 static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
     (void)pointer; (void)serial; struct app *app = data;
     if (button != 272 || state != WL_POINTER_BUTTON_STATE_RELEASED) { return; }
@@ -291,10 +301,7 @@ static void removed(void *data, struct wl_registry *registry, uint32_t name) { (
 static const struct wl_registry_listener registry_listener = {.global = global, .global_remove = removed};
 static void configured(void *data, struct xdg_surface *surface, uint32_t serial) {
     struct app *app = data; xdg_surface_ack_configure(surface, serial);
-    struct wl_region *opaque = wl_compositor_create_region(app->compositor);
-    if (!opaque) { app->running = false; return; }
-    wl_region_add(opaque, 0, 0, app->width, app->height);
-    wl_surface_set_opaque_region(app->surface, opaque); wl_region_destroy(opaque);
+    wl_surface_set_opaque_region(app->surface, NULL);
     app->configured = true; app->dirty = true;
 }
 static const struct xdg_surface_listener surface_listener = {.configure = configured};

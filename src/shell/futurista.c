@@ -120,18 +120,18 @@ static void material(cairo_t *cr, double x, double y, double w, double h, double
     if (active && effects.tint) {
         cairo_pattern_add_color_stop_rgba(p, 0, .53, .25, 1, .98);
         cairo_pattern_add_color_stop_rgba(p, .5, w > 200 ? .51 : .35, w > 200 ? .27 : .20,
-                                          w > 200 ? .97 : .83, .97);
+                                          w > 200 ? .97 : .83, .72);
         cairo_pattern_add_color_stop_rgba(p, 1, .50, .29, .96, .98);
     } else {
         cairo_pattern_add_color_stop_rgba(p, 0, effects.tint ? (panel ? .08 : .17) : .18,
                                           effects.tint ? (panel ? .10 : .19) : .18,
-                                          effects.tint ? (panel ? .24 : .35) : .18, .97);
+                                          effects.tint ? (panel ? .24 : .35) : .18, .72);
         cairo_pattern_add_color_stop_rgba(p, .42, effects.tint ? (panel ? .055 : .11) : .12,
                                           effects.tint ? (panel ? .07 : .14) : .12,
-                                          effects.tint ? (panel ? .18 : .28) : .12, .97);
+                                          effects.tint ? (panel ? .18 : .28) : .12, .72);
         cairo_pattern_add_color_stop_rgba(p, 1, effects.tint ? (panel ? .15 : .20) : .18,
                                           effects.tint ? (panel ? .10 : .18) : .18,
-                                          effects.tint ? (panel ? .30 : .37) : .18, .97);
+                                          effects.tint ? (panel ? .30 : .37) : .18, .72);
     }
     cairo_set_source(cr, p);
     cairo_fill_preserve(cr);
@@ -149,12 +149,12 @@ static void material(cairo_t *cr, double x, double y, double w, double h, double
         cairo_pattern_destroy(light);
         cairo_restore(cr);
         p = cairo_pattern_create_linear(x, y, x, y + h);
-        cairo_pattern_add_color_stop_rgba(p, 0, .70, .73, 1, active ? .95 : .42);
-        cairo_pattern_add_color_stop_rgba(p, .4, .49, .43, .80, .16);
+        cairo_pattern_add_color_stop_rgba(p, 0, .70, .73, 1, active ? 1 : .82);
+        cairo_pattern_add_color_stop_rgba(p, .4, .38, .62, 1, .70);
         cairo_pattern_add_color_stop_rgba(p, 1, .78, .35, 1, active || panel ? 1 : .50);
         if (panel || active) {
             cairo_set_source_rgba(cr, .69, .30, 1, .12);
-            cairo_set_line_width(cr, panel ? 10 : 7);
+            cairo_set_line_width(cr, panel ? 8 : 6);
             cairo_stroke_preserve(cr);
             cairo_set_source_rgba(cr, .77, .41, 1, .22);
             cairo_set_line_width(cr, 3);
@@ -303,7 +303,7 @@ void futurista_wallpaper(struct futurista *s, cairo_t *cr, int width, int height
     cairo_restore(cr);
 }
 static void blurred_backdrop(struct futurista *s, cairo_t *cr, int width, int height) {
-    if (!s->blurred) {
+    if (!s->blurred || !getenv("JLINUX_STATIC_PREVIEW")) {
         return;
     }
     cairo_save(cr);
@@ -329,7 +329,7 @@ static void panel_card(cairo_t *cr,double x,double y,double w,double h,struct jl
     cairo_pattern_add_color_stop_rgba(p,.5,.035,.045,.09,.18);
     cairo_pattern_add_color_stop_rgba(p,1,.08,.10,.18,glass.shadow?.26:.12);
     cairo_set_source(cr,p);cairo_fill_preserve(cr);cairo_pattern_destroy(p);
-    cairo_set_source_rgba(cr,.72,.77,.94,glass.reflection?.22:.08);cairo_set_line_width(cr,.8);cairo_stroke(cr);
+    cairo_set_source_rgba(cr,.48,.64,1,glass.reflection?.95:.08);cairo_set_line_width(cr,1.6);cairo_stroke(cr);
     if(glass.reflection){
         cairo_save(cr);roundrect(cr,x+1,y+1,w-2,h-2,9);cairo_clip(cr);
         cairo_pattern_t *sheen=cairo_pattern_create_linear(x,y,x,y+h*.55);
@@ -513,7 +513,7 @@ static void controls(struct futurista *s, cairo_t *cr, int width, int height) {
     if (s->message[0]) {
         cairo_save(cr);
         roundrect(cr, 1210, 704, 444, 74, 15);
-        cairo_set_source_rgba(cr, .06, .04, .16, .97);
+        cairo_set_source_rgba(cr, .06, .04, .16, .72);
         cairo_fill(cr);
         cairo_rectangle(cr, 1220, 712, 425, 56);
         cairo_clip(cr);

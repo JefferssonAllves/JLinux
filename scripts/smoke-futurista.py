@@ -71,6 +71,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
                 keys('-M','logo','-k','q','-m','logo')
                 mouse(1240,24)
                 wait(lambda:log().count('Painel de controle aberto.')>control,processes,'right button opens controls')
+                time.sleep(.25)  # Wait for the control panel's entrance animation.
                 control_closed=log().count('Painel de controle fechado.')
                 mouse(1240,24)
                 wait(lambda:log().count('Painel de controle fechado.')>control_closed,processes,'right button closes controls')

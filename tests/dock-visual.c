@@ -34,6 +34,7 @@ int main(void) {
     uint32_t upper=pixels[8*64+8],middle=pixels[32*64+32];
     CHECK(((upper>>16)&255)>((middle>>16)&255)+10);
     CHECK((middle&255)>8 && (upper&255)>((upper>>16)&255));
+    cairo_set_operator(cr,CAIRO_OPERATOR_CLEAR);cairo_paint(cr);cairo_set_operator(cr,CAIRO_OPERATOR_OVER);
     cairo_rectangle(cr,0,0,64,64);jlinux_dock_material(cr,0,0,64,64,0,(struct jlinux_glass){0});cairo_new_path(cr);cairo_surface_flush(image);
     uint32_t gray=pixels[32*64+32];
     CHECK(abs((int)(gray&255)-(int)((gray>>16)&255))<=1);

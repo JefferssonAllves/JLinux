@@ -89,7 +89,7 @@ void jlinux_glass_paint(cairo_t *cr, struct ui_rect rect, double radius,
     if (effects.reflection) {
         rounded(cr, rect, radius);
         cairo_pattern_t *edge = rim_colors(rect, radius, horizontal);
-        cairo_set_source(cr, edge); cairo_set_line_width(cr, thin_rim ? .75 : 1); cairo_stroke(cr);
+        cairo_set_source(cr, edge); cairo_set_line_width(cr, thin_rim ? 1.1 : 1.6); cairo_stroke(cr);
         if (!thin_rim) {
             struct ui_rect inner = {rect.x + 2, rect.y + 2, rect.width - 4, rect.height - 4};
             rounded(cr, inner, radius - 2); cairo_set_source_rgba(cr, .75, .83, 1, .12);
@@ -130,7 +130,7 @@ bool jlinux_glass_settings(struct jlinux_glass *effects) {
 
 void jlinux_glass_window_tint(cairo_t *cr, struct ui_rect rect, double radius) {
     cairo_save(cr); rounded(cr, rect, radius);
-    cairo_set_source_rgba(cr, .004, .006, .012, .94); cairo_fill(cr);
+    cairo_set_source_rgba(cr, .012, .018, .045, .64); cairo_fill(cr);
     cairo_restore(cr);
 }
 
