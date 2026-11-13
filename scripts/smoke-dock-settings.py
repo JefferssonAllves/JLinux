@@ -1,3 +1,4 @@
+import math
 #!/usr/bin/env python3
 """Click real dock/settings surfaces; application launches use private desktop fixtures."""
 import json
@@ -50,8 +51,8 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
             client=subprocess.Popen([shell],env=env,stdout=out,stderr=subprocess.STDOUT);processes.append(client)
             wait(lambda:'Interface mapeada: jlinux-panel' in log(),processes,'shell')
             dock()
-            positions=((836,216),(994,270),(1077,407),(1076,552),(983,674),(837,714),(690,674),(597,552),(593,405),(674,277))
-            for i in (0,1,2,3,4,6,7,8,9):
+            positions=tuple((836+250*math.cos(math.radians(-90+i*360/11)),469+250*math.sin(math.radians(-90+i*360/11))) for i in range(11))
+            for i in (0,1,2,3,4,6,7,8,10):
                 before=len(recorded());click(*positions[i])
                 wait(lambda:len(recorded())>before,processes,f'app {i}')
             data=recorded()
