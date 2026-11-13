@@ -511,4 +511,6 @@ Minimização implementada por botão, Super+M e pedido xdg; restauração por
 Alt+Tab/visão de janelas. Tema escuro translúcido com bordas neon, brilho de foco,
 transições e blur real do conteúdo atrás das superfícies nativas. Detalhes,
 limites e evidências em [docs/neon-glass-windows.md](docs/neon-glass-windows.md).
-42 testes release passaram; checks de memória/instalação em conclusão.
+42 testes release e do pacote passaram; cinco cenários ASan/UBSan passaram.
+Instalado `jlinux-desktop-git 0.5.0.r130.g267b274-1`; PR #111.
+Ativação visual no próximo login; sessão pessoal preservada.

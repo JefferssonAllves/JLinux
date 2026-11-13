@@ -67,3 +67,17 @@ a sincronização implícita existente. Não foi feito benchmark comparativo.
 
 A atualização de binários não reinicia o compositor/shell em execução. A sessão
 pessoal será preservada e a ativação ocorrerá no próximo login.
+
+## Instalação concluída
+
+Instalado pelo pacman: `jlinux-desktop-git 0.5.0.r130.g267b274-1`, código
+`267b274`, em 13/11/2026. Os 42 testes do pacote também passaram. O binário
+instalado do compositor foi comparado ao do pacote e o shell instalado gerou
+prévia sem erro. Cinco cenários (backdrop, dois modos de minimizar, Arquivos,
+painel/dock) passaram com ASan/UBSan e detecção de vazamentos habilitada.
+
+Pacote recuperável anterior:
+`jlinux-desktop-git-0.5.0.r129.g7df42e2-1-x86_64.pkg.tar.zst` (cache não localizado)
+(se o cache tiver sido movido, localizar o pacote pelo commit `7df42e2`).
+A sessão pessoal não foi encerrada. PR #111; sem merge, tag ou release.
+O consumo/FPS na sessão de trabalho permanece sem medição.
