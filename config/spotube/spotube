@@ -3,4 +3,12 @@
 if [ -z "${PULSE_SERVER:-}" ] && [ -S "/run/user/$(id -u)/pulse/native" ]; then
     export PULSE_SERVER="unix:/run/user/$(id -u)/pulse/native"
 fi
+# Flatpak e portal precisam compartilhar o diretório de instâncias do usuário.
+if [ -d "/run/user/$(id -u)" ]; then
+    case "${WAYLAND_DISPLAY:-}" in
+        ''|/*) ;;
+        *) export WAYLAND_DISPLAY="${XDG_RUNTIME_DIR:?}/$WAYLAND_DISPLAY" ;;
+    esac
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+fi
 exec /usr/bin/flatpak run com.github.KRTirtho.Spotube "$@"
