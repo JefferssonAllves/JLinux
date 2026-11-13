@@ -462,13 +462,14 @@ static void controls(struct futurista *s, cairo_t *cr, int width, int height) {
     const char *states[] = {s->wifi == 1   ? "Conectado"
                             : s->wifi == 0 ? "Desconectado"
                                            : "Indisponível",
-                            "Indisponível", "Indisponível"};
+                            s->bluetooth_busy ? "Aguarde…" : s->bluetooth == 1 ? "Ativado" : s->bluetooth == 0 ? "Desativado" : "Indisponível", "Indisponível"};
     for (int i = 0; i < 3; i++) {
         double x = 1223 + i * 145;
-        material(cr, x, 125, 124, 120, 26, i == 0 && s->wifi == 1, s->glass);
+        material(cr, x, 125, 124, 120, 26, (i == 0 && s->wifi == 1) || (i == 1 && s->bluetooth == 1), s->glass);
         line_icon(cr, i, x + 45, 143, 34, 0xffffff);
-        text(cr, labels[i], x + (i == 2 ? 16 : 34), 194, 17, true, 0xffffff);
-        text(cr, states[i], x + 12, 218, 14, false, 0xd8daee);
+        text(cr, labels[i], x + (i == 2 ? 16 : 24), i==1?185:194, 17, true, 0xffffff);
+        text(cr, states[i], x + 12, i==1?207:218, 14, false, 0xd8daee);
+        if(i==1){text(cr,"Dispositivos ›",x+12,228,12,false,0xd8daee);}
     }
     for (int i = 0; i < 2; i++) {
         double y = 272 + i * 72;
@@ -623,6 +624,7 @@ int futurista_hit(double x, double y, int width, int height, bool control_panel)
         }
         return -1;
     }
+    if (x >= 1368 && x < 1492 && y >= 224 && y < 245) { return 36; }
     if (x >= 1223 && x < 1637 && y >= 125 && y < 245) {
         return 20 + (int)((x - 1223) / 145);
     }

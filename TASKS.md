@@ -472,3 +472,8 @@ Captura física do dock 666×666 em saída 1600×900 obtida por leitura KMS/VAAP
 36 testes locais release passaram. Comparação de referência corrigida e render nativo em 1254×1254 inspecionada, com relatório de 18 amostras (9,296 níveis RGB médios); não há equivalência pixel a pixel. Sem benchmark ou ativação física do novo código. Dependência: feature/dock-apps-settings (#90). Pacote/instalação serão registrados na conclusão.
 
 DOCK-GRADIENT-IMAGE — instalado `0.5.0.r113.g702d672-1`, checks do pacote 36/36, 23 arquivos sem ausências e CI do código aprovado. PR #92 enviado, sem merge. Backup/source/limites em docs/arch-installation.md. Captura de origem física; resultado nativo comparado em preview, ativação no próximo login. Sem equivalência pixel a pixel ou benchmark.
+
+
+## CONTROL-BLUETOOTH — feature/control-bluetooth
+
+Cartão ligado ao estado real BlueZ, liga/desliga assíncrono e acesso Dispositivos ao Blueman para busca/pareamento/conexão. Sem sudo no shell, operações limitadas por timeout; atualização ao abrir e no tick existente enquanto painel aberto. BlueZ/Blueman instalados neste host, serviço habilitado/ativo e bloqueio por software removido; alternância real Powered off/on validada, final ligado. 38 testes release e três direcionados ASan/UBSan passaram; regressões de falha/timeout e gerenciador cobertas. Blueman real mapeado em sessão isolada; pareamento físico pendente. Ver docs/bluetooth.md.

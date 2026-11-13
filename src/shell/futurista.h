@@ -3,6 +3,8 @@
 #include "../effects/glass.h"
 #include "preferences.h"
 struct futurista {
+    int bluetooth;
+    bool bluetooth_busy;
     cairo_surface_t *wallpaper, *blurred, *icons[10];
     struct jlinux_glass glass;
     int selected, wifi, battery, settings_category;
