@@ -36,3 +36,15 @@ atualiza apenas o comportamento de ambiente do iniciador. A ponte da sessão
 atual continua conectando ao servidor de áudio; não houve reinício de Brave,
 sessão ou serviços. PR #112. O ambiente persistente será herdado no próximo
 login; a correção ao vivo permite reconexão agora.
+
+## Complemento para processos sem ambiente de runtime
+
+O Brave aberto continuou sem criar streams. Também se reproduziu Connection
+refused com `env -u XDG_RUNTIME_DIR -u PULSE_SERVER pactl info`: libpulse usava
+um runtime de fallback antigo em `~/.config/pulse/<machine-id>-runtime`.
+Foi criado `~/.config/pulse/client.conf` (antes inexistente), modo 0600,
+com `default-server = unix:/run/user/1001/pulse/native`. Após isso, a consulta
+sem essas duas variáveis conectou ao servidor correto. Não se alterou cookie,
+volumes, saída escolhida, perfil do Brave nem abas. A configuração pode ser
+revertida removendo somente essa linha/arquivo criado nesta correção.
+A reprodução no navegador pessoal ainda aguarda confirmação do usuário.
