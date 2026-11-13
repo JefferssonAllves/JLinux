@@ -497,3 +497,6 @@ CONTROL-BLUETOOTH — instalado r119/0901601, preservando barra de mídia d98dcd
 ## DOCK-SPOTUBE-ENTRY
 
 Spotube acrescentado como 11º item com logo do Spotify; atalhos anteriores, Bluetooth e barra de vidro compacta preservados. Setores/hover/seleção angular ajustados. Teste de clique cobre Spotube e WhatsApp, além dos demais apps; ícones e limites das onze entradas validados. Prévia nativa inspecionada. Instalação/source e checks finais registrados ao concluir pacote; sem teste de reprodução musical.
+
+
+DOCK-SPOTUBE-ENTRY — instalado r127/8cc19f9, preservando barra/Bluetooth de r122. Pacote 39/39; dois direcionados ASan/UBSan; 11 ícones e cliques com binários instalados validados. PR #109 enviado sem merge. Nova sessão para ativar, reprodução pendente. Backup/source em docs/futurista.md.
