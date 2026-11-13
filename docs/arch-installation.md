@@ -148,3 +148,11 @@ Instalado `jlinux-desktop-git 0.5.0.r111.g829b795-1`, commit 829b795, branch `fe
 Brave, Neovim, qBittorrent e btop já estavam instalados. Foi instalado qt6-wayland para o qBittorrent. Catálogo, ícones, categorias e limites estão em docs/futurista.md; preferências novas são gravadas no usuário quando alteradas, sem editar regras do sistema ou contas de aplicativos.
 
 Backup dos cinco executáveis anteriores e banco local do pacote em `/var/backups/jlinux-before-dock-settings-829b795/`; pacote novo em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r111.g829b795-1-x86_64.pkg.tar.zst`. A sessão ativa foi preservada: **ativar saindo e entrando novamente**. Nenhum teste de VT, reinício de greetd, compositor DRM paralelo, alteração PAM/kernel ou benchmark foi feito. Prévias são renderizações nativas estáticas; os testes de lançamento usam executáveis/desktop entries simulados, sem abrir contas pessoais.
+
+## Dock com degradê derivado de imagem — 12/11/2026
+
+Instalado `jlinux-desktop-git 0.5.0.r113.g702d672-1`, fonte 702d672, branch `feature/dock-gradient-image`, PR #92 dependente de #90. Preserva o catálogo, ícones e configurações da instalação 829b795. 36 testes release locais e 36 no check() do pacote passaram; CI do código 702d672 aprovado. Pacman confirmou 23 arquivos sem ausências e shell root:root 0755.
+
+Backup dos cinco executáveis anteriores e banco local em `/var/backups/jlinux-before-dock-gradient-702d672/`; pacote em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r113.g702d672-1-x86_64.pkg.tar.zst`. Print de origem privado em `~/Imagens/JLinux-dock-antes-degrade.png` (0600), obtido na sessão real por captura KMS/VAAPI, sem modeset/VT/reinício. grim e python-pillow foram instalados como ferramentas de captura/análise, sem novas dependências do runtime do desktop.
+
+A sessão ativa foi preservada: **o novo material entra no próximo login**. Referências geradas, render nativo e diferenças estão em docs/futurista.md; a comparação não mostrou identidade pixel a pixel. Não foi feita avaliação física do novo material em runtime nem benchmark de desempenho.

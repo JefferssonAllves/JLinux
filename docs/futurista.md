@@ -93,3 +93,19 @@ Prévia nativa: [dock](design/futurista-dock-only.png), [configurações](design
 ### Validação
 
 Teste headless verifica os nove destinos de abertura com desktop entries/executáveis simulados, argumentos reais das pastas, categorias, preferências após reiniciar o shell e confirmação de energia sem executá-la. Testes unitários verificam decodificação/seleção de ícones e persistência/arquivo inválido/permissões. Probe local confirmou ícones da instalação e versões executáveis de Brave, Neovim, qBittorrent e btop; não abriu contas pessoais. A máscara de sinais do shell passou a ser configurada antes dos carregadores GIO/SVG criarem threads, preservando encerramento, limpeza do runtime e coleta dos comandos de áudio/energia. Checks completos e pacote são registrados na conclusão. Sem benchmark, login em serviços externos ou avaliação física de fluidez.
+
+## Degradê derivado de imagem — 12/11/2026
+
+Pedido: dock menos preto, com degradê, recriado pelo modelo de imagem a partir de um print e reproduzido nativamente. Captura real feita na saída 1600×900 da sessão ativa, com recorte 666×666 do dock. O compositor atual não expõe screencopy ao grim; a captura foi obtida por leitura KMS e conversão VAAPI do FFmpeg, sem modeset, troca de VT ou reinício. O recorte original ficou privado em `~/Imagens/JLinux-dock-antes-degrade.png`, modo 0600, pois os cantos contêm trechos das janelas abertas. Não foi enviado ao repositório; a captura completa temporária foi removida após o recorte.
+
+A geração de imagem editou esse print: faces em grafite/azul-preto, violeta na borda interna e reflexão acetinada. Uma segunda edição corrigiu o ícone do WhatsApp, que o primeiro resultado havia trocado pelo telefone: o ícone instalado usa W. As referências públicas têm o fundo externo limpo, sem os fragmentos das janelas. [Primeira proposta](design/dock-gradient-reference.png), [referência corrigida](design/dock-gradient-reference-v2.png), [implementação nativa](design/dock-gradient-native.png).
+
+`effects/dock.c` implementa o material com gradiente externo→interno em cada setor, gradiente radial no centro e reflexão radial suave independente. A seleção recebe camadas de contorno para suavizar o halo e manter um núcleo violeta/ciano. O dock continua desenhando os ícones reais dos aplicativos; as imagens geradas são referências de design, não a interface interativa. Não foram introduzidos loops de animação permanentes. TINT/REFLECTION e preferências de neon/zoom/movimento reduzido permanecem independentes.
+
+Comparação em 1254×1254 com o WhatsApp selecionado, mesma geometria canônica e fundo neutro no exportador `jlinux-shell --preview-dock arquivo.png`. A comparação visual foi inspecionada; o relatório `design/dock-gradient-comparison.json` registra erro médio de 9,296 níveis RGB em 18 pontos de material fora dos ícones e do setor selecionado. Essa amostragem não mede equivalência da imagem inteira e não demonstra identidade pixel a pixel: rasterização de texto, ícones, textura/reflexo gerado e bordas ainda diferem. Comando reproduzível (ferramenta de análise requer python-pillow):
+
+```sh
+scripts/compare-dock-gradient.py docs/design/dock-gradient-reference-v2.png docs/design/dock-gradient-native.png
+```
+
+36 testes release passaram, incluindo gradiente não uniforme/mais claro, ausência de preto absoluto no meio e fallback sem tonalização, além de abertura de apps, preferências e transições. O novo material não foi ativado na sessão física durante os testes; instalação/ativação registradas na conclusão. Sem benchmark, novo teste de VT ou promessa de reprodução exata.

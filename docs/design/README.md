@@ -82,3 +82,7 @@ Gerada pelo teste de renderer com conteúdo ilustrativo e blur desativado. Mostr
 ## Dock funcional e configurações nativas
 
 [Dock com ícones instalados e bordas neon](futurista-dock-only.png) · [Configurações por categoria](futurista-settings.png). Prévias Cairo de 12/11/2026; não são capturas da sessão física. Implementação, estados ilustrativos, catálogo e limites em docs/futurista.md.
+
+## Degradê do dock a partir do print
+
+[Referência gerada corrigida](dock-gradient-reference-v2.png) · [Renderização nativa](dock-gradient-native.png) · [Comparação amostrada](dock-gradient-comparison.json). O print de origem é uma captura física, preservada apenas no diretório privado de Imagens do usuário; as imagens públicas removem as janelas externas ao dock. Fonte, geração, método e diferenças em docs/futurista.md. Comparação na mesma resolução não demonstrou igualdade pixel a pixel.
