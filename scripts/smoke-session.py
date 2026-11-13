@@ -35,6 +35,12 @@ try:
             try:
                 entries = Path(f"/proc/{child}/environ").read_bytes().split(b"\0")
                 assert any(entry.startswith(b"LANG=") for entry in entries), "LANG ausente no filho da sessão"
+                audio_runtime = Path('/run/user') / str(os.getuid())
+                if audio_runtime.is_dir() and audio_runtime.stat().st_uid == os.getuid():
+                    expected_pulse = clean_env.get('PULSE_SERVER', f'unix:{audio_runtime}/pulse/native')
+                    expected_pipewire = clean_env.get('PIPEWIRE_RUNTIME_DIR', str(audio_runtime))
+                    assert f'PULSE_SERVER={expected_pulse}'.encode() in entries, 'PulseAudio runtime lost'
+                    assert f'PIPEWIRE_RUNTIME_DIR={expected_pipewire}'.encode() in entries, 'PipeWire runtime lost'
             except FileNotFoundError:
                 continue
     process.send_signal(signal.SIGTERM)

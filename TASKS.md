@@ -514,3 +514,10 @@ limites e evidências em [docs/neon-glass-windows.md](docs/neon-glass-windows.md
 42 testes release e do pacote passaram; cinco cenários ASan/UBSan passaram.
 Instalado `jlinux-desktop-git 0.5.0.r130.g267b274-1`; PR #111.
 Ativação visual no próximo login; sessão pessoal preservada.
+
+## BRAVE-SESSION-AUDIO
+
+Corrigida conexão de áudio no runtime privado: ponte para o socket na sessão
+aberta e ambiente de PulseAudio/PipeWire preservado no iniciador C. Teste
+anônimo isolado com fluxo ativo/sem mute e dois testes de ambiente passaram.
+Ver docs/brave-session-audio.md; instalação persistente em conclusão.

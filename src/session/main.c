@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/signalfd.h>
+#include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -74,6 +75,14 @@ int main(int argc, char **argv) {
     char search_path[16384];
     if (home && snprintf(search_path, sizeof(search_path), "%s/.local/bin:%s", home, path ? path : "/usr/bin") < (int)sizeof(search_path)) {
         setenv("PATH", search_path, 1);
+    }
+    /* Audio remains in the PAM runtime when Wayland gets a private runtime. */
+    char audio_runtime[64],pulse_server[96];struct stat audio_stat;
+    snprintf(audio_runtime,sizeof(audio_runtime),"/run/user/%lu",(unsigned long)getuid());
+    if(!stat(audio_runtime,&audio_stat)&&S_ISDIR(audio_stat.st_mode)&&audio_stat.st_uid==getuid()){
+        snprintf(pulse_server,sizeof(pulse_server),"unix:%s/pulse/native",audio_runtime);
+        if(!getenv("PULSE_SERVER")&&setenv("PULSE_SERVER",pulse_server,1)){return 1;}
+        if(!getenv("PIPEWIRE_RUNTIME_DIR")&&setenv("PIPEWIRE_RUNTIME_DIR",audio_runtime,1)){return 1;}
     }
     char runtime[] = "/tmp/jlinux-session-XXXXXX";
     if (!mkdtemp(runtime)) { return 1; }

@@ -1,0 +1,31 @@
+# Áudio do Brave, incluindo modo anônimo
+
+A sessão usa XDG_RUNTIME_DIR privado (`/tmp/jlinux-session-*`), enquanto o áudio
+PipeWire/PulseAudio do usuário reside em `/run/user/UID`. Sem configuração
+explícita, libpulse procurava `pulse/native` no runtime privado e falhava com
+Connection refused. O perfil Brave não tinha bloqueio de som salvo.
+
+O iniciador C agora exporta PULSE_SERVER e PIPEWIRE_RUNTIME_DIR apontando para
+o runtime de áudio canônico do próprio usuário, quando esse diretório existe
+e pertence a ele. Valores personalizados já definidos são preservados. Não
+altera cookies, conteúdo anônimo, permissões dos sites nem configurações de
+sandbox do navegador. Não depende de o servidor de áudio já ter criado seu
+socket no instante do login.
+
+Na sessão corrente, foi criado somente o link `pulse/native` no runtime
+privado para o socket existente do usuário. Isso corrige novas conexões do
+Brave já aberto sem encerrá-lo. O link desaparece junto com o runtime; nos
+próximos logins a correção persistente é o ambiente exportado pelo iniciador.
+
+Verificações:
+- Antes do link, pactl no ambiente da sessão retornava Connection refused;
+  depois, conectou ao PulseAudio sobre PipeWire e identificou a saída padrão.
+- Brave em Wayland headless, perfil descartável e `--incognito` abriu fluxo de
+  áudio (sink-input 86) com `mute=false` e `corked=false`. O teste usou uma página
+  local com WebAudio e autoplay autorizado por flag, sem acessar sites/contas.
+- Os dois testes do iniciador passaram: caminhos padrão herdados pelos filhos
+  e preservação de servidores de áudio personalizados.
+- Não houve audição física nem teste no site/guia pessoal do usuário. Recarregar
+  a guia e iniciar a reprodução novamente permite repetir a conexão.
+
+Instalação do iniciador atualizado será registrada após os checks do pacote.
