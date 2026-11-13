@@ -533,3 +533,7 @@ Implementado foco/restauração de janela existente pelo dock, incluindo outras
 Arquivos/Imagens/Vídeos compartilham identidade. Detalhes e evidências em
 [docs/dock-single-window.md](docs/dock-single-window.md).
 Checks de pacote e instalação em conclusão; ativação no próximo login.
+
+DOCK-SINGLE-WINDOW concluído: 45 testes release e do pacote passaram; quatro
+cenários ASan/UBSan passaram. Instalado `0.5.0.r136.g9a4596a-1`, PR #113.
+Ativação no próximo login, sem encerrar as janelas abertas do usuário.

@@ -49,3 +49,12 @@ Resultado local: os 45 testes release passaram. Quatro cenários (alvos,
 reutilização, configurações e reinício do shell) passaram com ASan/UBSan e
 detecção de vazamentos. São testes Wayland headless com clientes/launchers de
 teste, não inspeção das janelas pessoais abertas do usuário.
+
+## Instalação
+
+Instalado via pacman: `jlinux-desktop-git 0.5.0.r136.g9a4596a-1`, código
+`9a4596a`. Os mesmos 45 testes do pacote passaram. O compositor em `/usr/bin`
+foi comparado ao binário empacotado. Pacote anterior recuperável em
+`~/.cache/jlinux-brave-audio-package/jlinux-desktop-git-0.5.0.r132.g2d49501-1-x86_64.pkg.tar.zst`.
+A sessão aberta foi preservada: o novo controle passa a existir no próximo
+login. PR #113, sem merge/tag/release. Falta confirmação visual na sessão real.
