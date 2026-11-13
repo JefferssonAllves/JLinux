@@ -74,10 +74,12 @@ if get_option('shell')
   install_data('data/wayland-sessions/jlinux.desktop', install_dir: get_option('datadir') / 'wayland-sessions')
   install_data('data/futurista/README.md', install_dir: get_option('datadir') / 'licenses/jlinux-desktop-git', rename: 'futurista-assets.md')
   futurista_resources = import('gnome').compile_resources('futurista-resources', 'data/futurista/assets.xml', source_dir: 'data/futurista')
-  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/apps.c', 'src/shell/preferences.c', 'src/shell/battery.c', 'src/shell/volume.c', 'src/shell/bluetooth.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/effects/dock.c', 'src/renderer/dock-transform.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
+  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/apps.c', 'src/shell/preferences.c', 'src/shell/battery.c', 'src/shell/volume.c', 'src/shell/bluetooth.c', 'src/shell/media.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/effects/dock.c', 'src/renderer/dock-transform.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
     c_args: ['-Wno-overlength-strings'], dependencies: [client, cursor, cairo, pango, fontconfig, math, dependency('gio-2.0'), dependency('gio-unix-2.0'), dependency('librsvg-2.0')], install: true)
   preferences_test = executable('jlinux-test-shell-preferences', 'tests/shell-preferences.c', 'src/shell/preferences.c', dependencies: glib)
   test('shell-preferences', preferences_test)
+  media_test = executable('jlinux-test-media', 'tests/media.c', 'src/shell/media.c', dependencies: [dependency('gio-2.0')])
+  test('media-mpris', find_program('dbus-run-session'), args: ['--', media_test], timeout: 15)
   icons_test = executable('jlinux-test-shell-icons', 'tests/shell-icons.c', 'src/shell/apps.c', dependencies: [cairo, dependency('gio-unix-2.0'), dependency('librsvg-2.0')])
   test('shell-app-icons', icons_test)
   volume_test = executable('jlinux-test-volume', 'tests/volume.c', 'src/shell/volume.c', dependencies: [glib, math])

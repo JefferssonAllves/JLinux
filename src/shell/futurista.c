@@ -314,73 +314,62 @@ static void blurred_backdrop(struct futurista *s, cairo_t *cr, int width, int he
     cairo_paint(cr);
     cairo_restore(cr);
 }
-void futurista_panel(struct futurista *s, cairo_t *cr, int width) {
+static int media_width(int width) { return MIN(476, MAX(180,(width-360)/2-24)); }
+int futurista_media_hit(double x,double y,int width) {
+    if(width<800&&width>0){double scale=800./width;x*=scale;y*=scale;width=800;}
+    int right=18+media_width(width);
+    if(y<6||y>48||x<right-138||x>=right-6){return -1;}
+    return (int)(x-(right-138))/44;
+}
+static void panel_card(cairo_t *cr,double x,double y,double w,double h,struct jlinux_glass glass) {
+    roundrect(cr,x,y,w,h,15);
+    cairo_pattern_t *p=cairo_pattern_create_linear(x,y,x,y+h);
+    cairo_pattern_add_color_stop_rgb(p,0,glass.tint?.12:.08,.055,glass.tint?.22:.08);
+    cairo_pattern_add_color_stop_rgb(p,.5,.045,.025,.10);
+    cairo_pattern_add_color_stop_rgb(p,1,.075,.035,glass.shadow?.15:.20);
+    cairo_set_source(cr,p);cairo_fill_preserve(cr);cairo_pattern_destroy(p);
+    cairo_set_source_rgba(cr,.72,.23,1,glass.reflection?.95:.25);cairo_set_line_width(cr,1.2);cairo_stroke(cr);
+}
+static void media_symbol(cairo_t *cr,int action,bool playing,double x,double y,bool enabled) {
+    cairo_save(cr);cairo_translate(cr,x,y);cairo_set_source_rgba(cr,.97,.94,1,enabled?1:.35);
+    cairo_set_line_width(cr,2);cairo_set_line_join(cr,CAIRO_LINE_JOIN_ROUND);
+    if(action==1&&playing){cairo_rectangle(cr,-6,-8,3,16);cairo_rectangle(cr,3,-8,3,16);cairo_fill(cr);}
+    else if(action==1){cairo_move_to(cr,-6,-9);cairo_line_to(cr,9,0);cairo_line_to(cr,-6,9);cairo_close_path(cr);cairo_stroke(cr);}
+    else {if(action==0){cairo_scale(cr,-1,1);}cairo_move_to(cr,-6,-7);cairo_line_to(cr,5,0);cairo_line_to(cr,-6,7);cairo_close_path(cr);cairo_fill(cr);cairo_move_to(cr,7,-8);cairo_line_to(cr,7,8);cairo_stroke(cr);}
+    cairo_restore(cr);
+}
+void futurista_panel(struct futurista *s,cairo_t *cr,int width) {
     cairo_save(cr);
-    cairo_rectangle(cr, 0, 0, width, 36);
-    blurred_backdrop(s, cr, width, 941);
-    cairo_rectangle(cr, 0, 0, width, 36);
-    cairo_pattern_t *header = cairo_pattern_create_linear(0, 0, width, 52);
-    cairo_pattern_add_color_stop_rgba(header, 0, s->glass.tint ? .045 : .07, s->glass.tint ? .055 : .07,
-                                      s->glass.tint ? .13 : .07, .97);
-    cairo_pattern_add_color_stop_rgba(header, .46, s->glass.tint ? .075 : .10, s->glass.tint ? .09 : .10,
-                                      s->glass.tint ? .22 : .10, .97);
-    cairo_pattern_add_color_stop_rgba(header, 1, s->glass.tint ? .08 : .10, s->glass.tint ? .09 : .10,
-                                      s->glass.tint ? .22 : .10, .97);
-    cairo_set_source(cr, header);
-    cairo_fill_preserve(cr);
-    cairo_pattern_destroy(header);
-    if (s->glass.reflection) {
-        cairo_set_source_rgba(cr, .48, .45, .90, .55);
-        cairo_set_line_width(cr, 1);
-        cairo_stroke(cr);
-    } else {
-        cairo_new_path(cr);
-    }
-    cairo_translate(cr, 0, -8);
-    cairo_set_source_rgb(cr, .94, .94, 1);
-    roundrect(cr, width - 176, 17, 27, 14, 2);
-    cairo_set_line_width(cr, 1.4);
-    cairo_stroke(cr);
-    cairo_rectangle(cr, width - 147, 21, 3, 6);
-    cairo_fill(cr);
-    if (s->battery >= 0) {
-        cairo_rectangle(cr, width - 173, 20, 21 * s->battery / 100., 8);
-        cairo_fill(cr);
-    }
-    if (s->charging) {
-        cairo_set_source_rgb(cr, .55, .91, .88);
-        cairo_move_to(cr, width - 191, 15); cairo_line_to(cr, width - 200, 25);
-        cairo_line_to(cr, width - 194, 25); cairo_line_to(cr, width - 198, 33);
-        cairo_line_to(cr, width - 186, 22); cairo_line_to(cr, width - 192, 22);
-        cairo_close_path(cr); cairo_fill(cr);
-    }
-    char battery[20];
-    snprintf(battery, sizeof(battery), s->battery >= 0 ? "%d%%" : "—", s->battery);
-    text(cr, battery, width - 137, 15, 16, false, 0xf1f2ff);
-    time_t now = time(NULL);
-    struct tm t;
-    localtime_r(&now, &t);
-    char clock[80];
-    static const char *days[] = {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"};
-    static const char *months[] = {"Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
-                                   "Jul", "Ago", "Set", "Out", "Nov", "Dez"};
-    snprintf(clock, sizeof(clock), "%s, %02d de %s  %02d:%02d", days[t.tm_wday], t.tm_mday, months[t.tm_mon],
-             t.tm_hour, t.tm_min);
-    PangoLayout *label = pango_cairo_create_layout(cr);
-    PangoFontDescription *font = pango_font_description_from_string("Adwaita Sans 14px");
-    pango_layout_set_font_description(label, font);
-    pango_layout_set_text(label, clock, -1);
-    int clock_width;
-    pango_layout_get_pixel_size(label, &clock_width, NULL);
-    struct ui_rect clock_box = {(width - clock_width) / 2. - 14, 12, clock_width + 28, 28};
-    if (s->glass.tint) { jlinux_glass_window_tint(cr, clock_box, 5); }
-    if (s->glass.shadow) { jlinux_glass_window_shading(cr, clock_box, 5); }
-    if (s->glass.reflection) { jlinux_glass_window_reflections(cr, clock_box, 5, clock_box.height); }
-    text(cr, clock, (width - clock_width) / 2., 17, 14, false, 0xf1f2ff);
-    pango_font_description_free(font);
-    g_object_unref(label);
-    material(cr, width - 57, 11, 39, 30, 4, false, s->glass);
-    line_icon(cr, 13, width - 49, 16, 22, 0xf1f2ff);
+    if(width<800&&width>0){cairo_scale(cr,width/800.,width/800.);width=800;}
+    cairo_pattern_t *p=cairo_pattern_create_linear(0,0,width,56);
+    cairo_pattern_add_color_stop_rgb(p,0,.035,.035,.09);cairo_pattern_add_color_stop_rgb(p,1,.075,.045,.15);
+    cairo_rectangle(cr,0,0,width,56);blurred_backdrop(s,cr,width,941);
+    cairo_rectangle(cr,0,0,width,56);cairo_set_source(cr,p);cairo_clip(cr);cairo_paint_with_alpha(cr,.97);cairo_reset_clip(cr);cairo_pattern_destroy(p);
+    cairo_set_source_rgba(cr,.72,.23,1,.85);cairo_set_line_width(cr,1);cairo_move_to(cr,0,55.5);cairo_line_to(cr,width,55.5);cairo_stroke(cr);
+    int mw=media_width(width),right=18+mw;
+    panel_card(cr,18,6,mw,42,s->glass);
+    text(cr,"♫",32,6,30,true,0xbd48ff);
+    struct media *m=s->media;
+    cairo_save(cr);cairo_rectangle(cr,82,8,MAX(0,mw-222),38);cairo_clip(cr);
+    text(cr,m&&m->player?(m->title[0]?m->title:"Mídia em reprodução"):"Nenhuma mídia",82,8,15,true,0xf4edff);
+    text(cr,m&&m->player?(m->artist[0]?m->artist:(m->playing?"Reproduzindo":"Pausado")):"Abra um player",82,26,13,false,0xd5c2ee);cairo_restore(cr);
+    for(int i=0;i<3;i++){bool enabled=m&&m->can_control&&m->player&&(i==0?m->can_previous:i==2?m->can_next:m->playing?m->can_pause:m->can_play);media_symbol(cr,i,m&&m->playing,right-116+i*44,27,enabled);}
+    double cx=(width-350)/2.;panel_card(cr,cx,6,350,42,s->glass);
+    /* Calendar outline and binding rings share the reference's purple accent. */
+    cairo_set_source_rgb(cr,.73,.25,1);roundrect(cr,cx+20,17,23,22,3);cairo_set_line_width(cr,2);cairo_stroke(cr);
+    cairo_move_to(cr,cx+20,24);cairo_line_to(cr,cx+43,24);cairo_move_to(cr,cx+26,13);cairo_line_to(cr,cx+26,20);cairo_move_to(cr,cx+37,13);cairo_line_to(cr,cx+37,20);cairo_stroke(cr);
+    for(int row=0;row<2;row++)for(int col=0;col<3;col++){cairo_rectangle(cr,cx+25+col*6,28+row*5,2,2);cairo_fill(cr);}
+    time_t now=time(NULL);struct tm t;localtime_r(&now,&t);
+    static const char *days[]={"Dom","Seg","Ter","Qua","Qui","Sex","Sáb"};
+    static const char *months[]={"Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"};
+    char date[64],clock[16];snprintf(date,sizeof(date),"%s, %02d %s",days[t.tm_wday],t.tm_mday,months[t.tm_mon]);snprintf(clock,sizeof(clock),"%02d:%02d",t.tm_hour,t.tm_min);
+    text(cr,date,cx+64,14,20,true,0xf4edff);
+    cairo_set_source_rgba(cr,.72,.23,1,.9);cairo_move_to(cr,cx+224,13);cairo_line_to(cr,cx+224,41);cairo_stroke(cr);
+    text(cr,clock,cx+246,11,26,true,0xfaf5ff);
+    cairo_set_source_rgb(cr,.94,.94,1);roundrect(cr,width-181,18,29,16,3);cairo_set_line_width(cr,1.5);cairo_stroke(cr);cairo_rectangle(cr,width-150,23,3,6);cairo_fill(cr);
+    if(s->battery>=0){cairo_rectangle(cr,width-178,21,23*s->battery/100.,10);cairo_fill(cr);}
+    char battery[20];snprintf(battery,sizeof(battery),s->battery>=0?"%d%%":"—",s->battery);text(cr,battery,width-134,14,20,true,0xf4edff);
+    line_icon(cr,13,width-46,16,24,0xf1eaff);
     cairo_restore(cr);
 }
 static void sector(cairo_t *cr, int index, double focus, struct jlinux_glass effects) {
