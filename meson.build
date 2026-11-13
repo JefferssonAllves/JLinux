@@ -97,6 +97,7 @@ if get_option('shell')
   test('session-locale', locale_test)
   session_smoke = find_program('scripts/smoke-session.py')
   test('session-headless', session_smoke, args: [session], timeout: 20)
+  test('session-audio-overrides', session_smoke, args: [session], env: ['PULSE_SERVER=unix:/tmp/jlinux-test-custom-pulse', 'PIPEWIRE_RUNTIME_DIR=/tmp/jlinux-test-custom-pipewire'], timeout: 20)
   shell_smoke = find_program('scripts/smoke-shell.py')
 endif
 smoke = find_program('scripts/smoke-compositor.sh')
