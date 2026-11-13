@@ -1,9 +1,11 @@
 #define _GNU_SOURCE
 #include "../toolkit/painter.h"
 #include "volume.h"
+#include "bluetooth.h"
 #include "apps.h"
 #include "preferences.h"
 #include <glib.h>
+#include <gio/gdesktopappinfo.h>
 #include "futurista.h"
 #include "control.h"
 #include <sys/socket.h>
@@ -32,7 +34,7 @@
 #include <wayland-cursor.h>
 #include "layer-shell-client.h"
 extern char **environ;
-enum { PANEL_BODY_HEIGHT = 56, PANEL_FADE_HEIGHT = 0,
+enum { PANEL_BODY_HEIGHT = FUTURISTA_PANEL_HEIGHT, PANEL_FADE_HEIGHT = 0,
     PANEL_HEIGHT = PANEL_BODY_HEIGHT + PANEL_FADE_HEIGHT, PANEL_MARGIN = 6, PANEL_ZONE = PANEL_HEIGHT };
 struct app;
 struct surface {
@@ -67,6 +69,7 @@ struct app {
     struct wl_callback *dock_frame;
     int control;
     struct volume volume;
+    struct bluetooth bluetooth;
     struct media media;
     struct surface *pointer_surface;
     struct wl_list buffers;
@@ -394,7 +397,7 @@ static void toggle_launcher(struct app *app, bool controls) {
         return;
     }
     futurista_status(&app->futurista);
-    if(controls){volume_start(&app->volume, 0);}
+    if(controls){volume_start(&app->volume, 0);bluetooth_start(&app->bluetooth,-1);}
     app->futurista.message[0] = 0;
     fprintf(stderr,"%s\n",controls?"Painel de controle aberto.":"Dock circular aberto.");
 }
@@ -423,6 +426,19 @@ static void apply_preferences(struct app *app) {
     app->futurista.glass.shadow=p.shadow;
     app->panel.dirty=true;app->launcher.dirty=true;
 }
+static bool bluetooth_manager_open(GError **error) {
+    /* The session creates its private Wayland socket after the D-Bus daemon starts. */
+    GDBusConnection *bus=g_bus_get_sync(G_BUS_TYPE_SESSION,NULL,error);
+    if(!bus){return false;}
+    GVariantBuilder values;g_variant_builder_init(&values,G_VARIANT_TYPE("a{ss}"));
+    const char *names[]={"WAYLAND_DISPLAY","XDG_RUNTIME_DIR"};
+    for(unsigned i=0;i<2;i++){const char *value=getenv(names[i]);if(value){g_variant_builder_add(&values,"{ss}",names[i],value);}}
+    GVariant *reply=g_dbus_connection_call_sync(bus,"org.freedesktop.DBus","/org/freedesktop/DBus","org.freedesktop.DBus","UpdateActivationEnvironment",g_variant_new("(a{ss})",&values),G_VARIANT_TYPE("()"),G_DBUS_CALL_FLAGS_NONE,1000,NULL,error);
+    g_object_unref(bus);if(!reply){return false;}g_variant_unref(reply);
+    GDesktopAppInfo *info=g_desktop_app_info_new("blueman-manager.desktop");
+    if(!info){g_set_error_literal(error,G_IO_ERROR,G_IO_ERROR_NOT_FOUND,"Instale o gerenciador Blueman.");return false;}
+    bool opened=g_app_info_launch(G_APP_INFO(info),NULL,NULL,error);g_object_unref(info);return opened;
+}
 static void launcher_action(struct app *app, int hit) {
     if(app->futurista.settings_open && hit>=100 && hit<=102){app->futurista.settings_category=hit-100;app->launcher.dirty=true;return;}
     if(app->futurista.settings_open && ((hit>=110 && hit<=112)||(hit>=120 && hit<=122))){
@@ -440,6 +456,17 @@ static void launcher_action(struct app *app, int hit) {
     if(app->futurista.settings_open && hit==130){app->futurista.settings_open=false;volume_start(&app->volume,0);app->launcher.dirty=true;return;}
     if(app->futurista.settings_open && (hit==131 || hit==132)){launch_item(app,hit==131?4:8);return;}
     if(hit==40){return;}
+    if(hit==21){
+        if(!app->bluetooth.pid){bluetooth_start(&app->bluetooth,app->bluetooth.available ? !app->bluetooth.powered : -1);}
+        app->launcher.dirty=true;return;
+    }
+    if(hit==36){
+        GError *error=NULL;
+        bool opened=bluetooth_manager_open(&error);
+        if(opened){close_launcher(app);}
+        else{snprintf(app->futurista.message,sizeof(app->futurista.message),"%s",error?error->message:"Instale o gerenciador Blueman.");app->launcher.dirty=true;}
+        g_clear_error(&error);return;
+    }
 
     if (hit >= 0 && hit < 10) {
         app->futurista.selected = hit;
@@ -703,10 +730,13 @@ int main(int argc, char **argv) {
     }
     struct itimerspec timer = {.it_value = {.tv_sec = 30}, .it_interval = {.tv_sec = 30}};
     if (timerfd_settime(app.timer, 0, &timer, NULL)) { goto cleanup; }
+    app.futurista.bluetooth=-1;
     media_init(&app.media);app.futurista.media=&app.media;
     while (app.running) {
         while(g_main_context_iteration(NULL,false)){}
         if(app.media.dirty){app.panel.dirty=true;app.media.dirty=false;}
+        app.futurista.bluetooth=app.bluetooth.available ? app.bluetooth.powered : -1;
+        app.futurista.bluetooth_busy=app.bluetooth.pid!=0;
         if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
         if (!draw(&app.wallpaper) || !draw(&app.panel) || !draw(&app.power) || !draw(&app.audio) || !draw(&app.launcher)) { goto cleanup; }
         while (wl_display_prepare_read(app.display) != 0) {
@@ -730,7 +760,7 @@ int main(int argc, char **argv) {
         memcpy(fds,base_fds,sizeof(base_fds));
         for(int i=0;i<count;i++){fds[i+4]=(struct pollfd){gio_fds[i].fd,gio_fds[i].events,0};}
         if(immediate){timeout=0;}
-        if(app.volume.pid&&(timeout<0||timeout>100)){timeout=100;}
+        if((app.volume.pid||app.bluetooth.pid)&&(timeout<0||timeout>100)){timeout=100;}
         int ready = poll(fds, 4+count, timeout);
         for(int i=0;i<count;i++){gio_fds[i].revents=fds[i+4].revents;}
         if(ready>=0&&g_main_context_check(context,priority,gio_fds,count)){g_main_context_dispatch(context);}
@@ -741,6 +771,10 @@ int main(int argc, char **argv) {
         if (app.volume.pid) {
             struct timespec now; clock_gettime(CLOCK_MONOTONIC, &now);
             if ((now.tv_sec - app.volume.started.tv_sec) * 1000000000LL + now.tv_nsec - app.volume.started.tv_nsec >= 3000000000LL) { kill(app.volume.pid, SIGKILL); }
+        }
+        if(app.bluetooth.pid){
+            struct timespec now;clock_gettime(CLOCK_MONOTONIC,&now);
+            if((now.tv_sec-app.bluetooth.started.tv_sec)*1000000000LL+now.tv_nsec-app.bluetooth.started.tv_nsec>=5000000000LL){kill(app.bluetooth.pid,SIGKILL);}
         }
         if (fds[3].revents & POLLIN) {
             char command[32];ssize_t count;
@@ -759,7 +793,7 @@ int main(int argc, char **argv) {
             }
         }
         if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) { goto cleanup; }
-        if (fds[1].revents & POLLIN) { uint64_t ticks; if (read(app.timer, &ticks, sizeof(ticks)) > 0) { app.panel.dirty = true; futurista_status(&app.futurista); if(app.launcher.wl){app.launcher.dirty=true;} if (app.audio.wl) { volume_start(&app.volume, 0); app.audio.dirty = true; } } }
+        if (fds[1].revents & POLLIN) { uint64_t ticks; if (read(app.timer, &ticks, sizeof(ticks)) > 0) { app.panel.dirty = true; futurista_status(&app.futurista); if(app.launcher.wl && app.showing_controls){bluetooth_start(&app.bluetooth,-1);} if(app.launcher.wl){app.launcher.dirty=true;} if (app.audio.wl) { volume_start(&app.volume, 0); app.audio.dirty = true; } } }
         if (fds[2].revents & POLLIN) {
             struct signalfd_siginfo event;
             while (read(app.signals, &event, sizeof(event)) == sizeof(event)) {
@@ -768,6 +802,11 @@ int main(int argc, char **argv) {
                     while ((child = waitpid(-1, &status, WNOHANG)) > 0) {
                         if (child == app.volume.pid) {
                             volume_complete(&app.volume, status); app.launcher.dirty=app.launcher.wl!=NULL; app.audio.dirty = true;
+                        } else if (child == app.bluetooth.pid) {
+                            bluetooth_complete(&app.bluetooth,status);
+                            if(app.bluetooth.error[0]){snprintf(app.futurista.message,sizeof(app.futurista.message),"%s",app.bluetooth.error);}
+                            else{app.futurista.message[0]=0;}
+                            app.launcher.dirty=app.launcher.wl!=NULL;
                         } else if (child == app.power_pid) {
                             app.power_pid = 0;
                             if (!WIFEXITED(status) || WEXITSTATUS(status)) {
@@ -789,6 +828,7 @@ cleanup:
     if(app.media.cancel){media_finish(&app.media);}
     shell_control_close(app.control);
     futurista_finish(&app.futurista);
+    bluetooth_finish(&app.bluetooth);
     volume_finish(&app.volume);
     if (app.pointer) { wl_pointer_destroy(app.pointer); }
     if (app.seat) { wl_seat_destroy(app.seat); }

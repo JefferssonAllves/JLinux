@@ -473,6 +473,11 @@ Captura física do dock 666×666 em saída 1600×900 obtida por leitura KMS/VAAP
 
 DOCK-GRADIENT-IMAGE — instalado `0.5.0.r113.g702d672-1`, checks do pacote 36/36, 23 arquivos sem ausências e CI do código aprovado. PR #92 enviado, sem merge. Backup/source/limites em docs/arch-installation.md. Captura de origem física; resultado nativo comparado em preview, ativação no próximo login. Sem equivalência pixel a pixel ou benchmark.
 
+
+## CONTROL-BLUETOOTH — feature/control-bluetooth
+
+Cartão ligado ao estado real BlueZ, liga/desliga assíncrono e acesso Dispositivos ao Blueman para busca/pareamento/conexão. Sem sudo no shell, operações limitadas por timeout; atualização ao abrir e no tick existente enquanto painel aberto. BlueZ/Blueman instalados neste host, serviço habilitado/ativo e bloqueio por software removido; alternância real Powered off/on validada, final ligado. 38 testes release e três direcionados ASan/UBSan passaram; regressões de falha/timeout e gerenciador cobertas. Blueman real mapeado em sessão isolada; pareamento físico pendente. Ver docs/bluetooth.md.
+
 ## TOPBAR-MEDIA — barra de mídia e relógio neon
 
 Implementado na branch feature/topbar-media: controles MPRIS nativos e card de
@@ -481,3 +486,12 @@ referência, prévia e limites em [docs/topbar-media.md](docs/topbar-media.md).
 Validação concluída: 37 testes locais/do pacote, teste MPRIS também ASan/UBSan.
 Instalado `jlinux-desktop-git 0.5.0.r116.gd98dcd2-1`; PR #106.
 Ativação na sessão pessoal requer novo login; nenhum aplicativo foi encerrado.
+
+Revisão TOPBAR-MEDIA: por pedido do usuário, estilo neon substituído por vidro
+discreto; barra de 40 px, reflexos leves e contorno translúcido. Prévia em
+`docs/design/topbar-subtle-glass-native.png`. Checks e instalação registrados
+em docs/topbar-media.md.
+
+Revisão discreta validada com 39 testes e instalada pelo pacman como
+`0.5.0.r122.g792b37d-1`, preservando a atualização Bluetooth concorrente.
+PR #108; ativação visual no próximo login, sem encerrar a sessão.

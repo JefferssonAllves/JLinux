@@ -5,12 +5,12 @@ pkgdesc='Compositor, shell e login Wayland nativos do JLinux'
 arch=('x86_64')
 url='https://github.com/JefferssonAllves/JLinux'
 license=('custom')
-depends=('wlroots0.20' 'pixman' 'wayland' 'libxkbcommon' 'cairo' 'pango' 'fontconfig' 'json-c' 'glib2' 'librsvg' 'foot' 'ttf-dejavu' 'adwaita-fonts' 'dbus' 'systemd' 'wireplumber' 'xdg-utils')
+depends=('wlroots0.20' 'pixman' 'wayland' 'libxkbcommon' 'cairo' 'pango' 'fontconfig' 'json-c' 'glib2' 'librsvg' 'foot' 'ttf-dejavu' 'adwaita-fonts' 'dbus' 'systemd' 'wireplumber' 'xdg-utils' 'bluez' 'blueman')
 makedepends=('git' 'meson' 'ninja' 'pkgconf' 'wayland-protocols' 'python')
 checkdepends=('wtype')
 optdepends=('brave-bin: navegador Brave do dock' 'neovim: editor do dock' 'qbittorrent: cliente de torrents do dock' 'qt6-wayland: execução Wayland do qBittorrent' 'btop: monitor do dock' 'greetd: login na inicialização' 'cage: compositor isolado da tela de login' 'jlinux-browser-git: app WhatsApp do dock')
 provides=('jlinux-desktop')
-source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/dock-gradient-image')
+source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/control-bluetooth')
 sha256sums=('SKIP')
 
 pkgver() {
