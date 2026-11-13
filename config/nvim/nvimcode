@@ -1,6 +1,8 @@
 #!/bin/sh
 if [ "${JLINUX_REPLACE_TERMINAL:-0}" = 1 ]; then
     unset JLINUX_REPLACE_TERMINAL
-    exec setsid --fork foot --app-id=org.jlinux.Neovim --font='FiraCode Nerd Font Mono:style=Bold:size=12' -e nvim -- "$@" </dev/null >/dev/null 2>&1
+    # The old terminal can hang up before the child finishes setsid.
+    trap '' HUP
+    exec setsid --fork env --default-signal=HUP foot --app-id=org.jlinux.Neovim --font='FiraCode Nerd Font Mono:style=Bold:size=12' -e nvim -- "$@" </dev/null >/dev/null 2>&1
 fi
 exec foot --app-id=org.jlinux.Neovim --font='FiraCode Nerd Font Mono:style=Bold:size=12' -e nvim -- "$@"

@@ -122,3 +122,6 @@ Execuções exibem nome do arquivo e fim da execução em negrito rosa-violeta n
 As mensagens de início e fim recebem um `>` verde para facilitar a localização no terminal.
 
 Para o comando nvimcode fechar o terminal de origem sem alterar fonte ou aparência, instalar `nvimcode` em ~/.local/bin e carregar `nvimcode.bash` pelo ~/.bashrc. A função preserva o terminal se houver jobs ou se estiver dentro do terminal integrado do Neovim. Novos shells carregam a função automaticamente; nos atuais, usar `source ~/.bashrc`. A janela dedicada mantém os mesmos argumentos Foot do atalho de aplicativos.
+
+
+Correção do iniciador destacado: o fechamento do terminal de origem podia enviar SIGHUP durante a corrida de `setsid --fork`. O wrapper ignora HUP somente até a nova sessão existir e `env --default-signal=HUP` restaura o comportamento normal antes de iniciar Foot/Neovim. Preserva fonte/app-id e proteção de shells com jobs. Regressão em `python config/nvim/tests/launcher.py`: três editores reais mapearam após o fechamento dos terminais de origem em compositor headless isolado. Script do usuário atualizado com backup `~/.local/bin/nvimcode.before-hup-fix`; não precisa recarregar a função Bash existente.
