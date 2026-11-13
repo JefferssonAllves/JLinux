@@ -45,6 +45,7 @@ static void names_ready(GObject *source,GAsyncResult *result,gpointer data){
 static void list_players(struct media *m){m->pending++;g_dbus_connection_call(m->bus,"org.freedesktop.DBus","/org/freedesktop/DBus","org.freedesktop.DBus","ListNames",NULL,G_VARIANT_TYPE("(as)"),G_DBUS_CALL_FLAGS_NONE,2000,m->cancel,names_ready,m);}
 static void changed(GDBusConnection *bus,const char *sender,const char *path,const char *interface,const char *signal,GVariant *params,gpointer data){
     (void)bus;(void)sender;(void)path;(void)interface;(void)signal;
+    if(!g_variant_is_of_type(params,G_VARIANT_TYPE("(sa{sv}as)"))){return;}
     struct media *m=data;const char *iface;GVariant *props,*invalid;
     g_variant_get(params,"(&s@a{sv}@as)",&iface,&props,&invalid);
     /* Only the chosen player's properties may change this panel. */

@@ -22,6 +22,7 @@ int main(void){
     struct media m;media_init(&m);spin();g_assert_nonnull(m.player);g_assert_true(m.playing);g_assert_cmpstr(m.title,==,"Faixa de teste");g_assert_cmpstr(m.artist,==,"Artista");
     for(int i=0;i<3;i++){media_action(&m,i);}spin();for(int i=0;i<3;i++){g_assert_cmpint(calls[i],==,1);}
     m.can_next=false;media_action(&m,2);media_action(&m,9);spin();g_assert_cmpint(calls[2],==,1);
+    g_dbus_connection_emit_signal(bus,NULL,"/org/mpris/MediaPlayer2","org.freedesktop.DBus.Properties","PropertiesChanged",g_variant_new("(s)","invalid"),NULL);spin();g_assert_true(m.playing);
     GVariantBuilder b;g_variant_builder_init(&b,G_VARIANT_TYPE_VARDICT);g_variant_builder_add(&b,"{sv}","PlaybackStatus",g_variant_new_string("Paused"));g_dbus_connection_emit_signal(bus,NULL,"/org/mpris/MediaPlayer2","org.freedesktop.DBus.Properties","PropertiesChanged",g_variant_new("(sa{sv}as)","org.mpris.MediaPlayer2.Player",&b,NULL),NULL);spin();g_assert_false(m.playing);
     reply=g_dbus_connection_call_sync(bus,"org.freedesktop.DBus","/org/freedesktop/DBus","org.freedesktop.DBus","ReleaseName",g_variant_new("(s)","org.mpris.MediaPlayer2.JLinuxTest"),NULL,0,2000,NULL,NULL);g_assert_nonnull(reply);g_variant_unref(reply);spin();g_assert_null(m.player);g_assert_false(m.can_play);
     media_finish(&m);
