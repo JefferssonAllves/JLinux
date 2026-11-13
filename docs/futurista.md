@@ -109,3 +109,6 @@ scripts/compare-dock-gradient.py docs/design/dock-gradient-reference-v2.png docs
 ```
 
 36 testes release passaram, incluindo gradiente não uniforme/mais claro, ausência de preto absoluto no meio e fallback sem tonalização, além de abertura de apps, preferências e transições. O novo material não foi ativado na sessão física durante os testes; instalação/ativação registradas na conclusão. Sem benchmark, novo teste de VT ou promessa de reprodução exata.
+
+
+O cartão [Bluetooth](bluetooth.md) agora consulta/controla o adaptador real. A parte superior liga/desliga; Dispositivos abre o gerenciador Blueman com busca, emparelhamento e conexão. Os demais controles sem backend continuam indisponíveis; isso não implementa modo avião ou Wi-Fi.
