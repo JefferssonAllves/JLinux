@@ -23,3 +23,7 @@ Mockup detalhado em `docs/design/neovim-workspace-preview.png`. Marcadores de st
 Baseado no layout vigente de feature/neovim-tree-polish (#89). Ctrl+D seleciona ocorrências, Ctrl+; comenta, atalhos cobrem busca/clipboard/undo/mover/duplicar/LSP/formatação. Autosave nativo ~1 s e ao sair do arquivo, com proteção para readonly, nomes ausentes e alteração externa. Busca sob demanda, LSP por filetype, dois plugins novos sem atualizar os anteriores. Pacotes fzf, ruff e shfmt instalados.
 
 Evidência: sugestões reais em 14 tipos (schemas locais JSON/YAML e módulos Go/Rust), UI confirmou edição múltipla, comentários, temporização/proteções, Ctrl+P, Ctrl+Espaço/Enter e formatação Python. Regressões de layout/criação/F5 e runner passaram. Backup e guia em config/nvim/README.md. Sem benchmark de memória/CPU, suporte universal a linguagens, depurador novo ou encerramento da sessão. Ativação na próxima abertura do editor; PR para revisão sem merge.
+
+## NVIMCODE-COMMAND — implementado e instalado
+
+Comando pessoal ~/.local/bin/nvimcode [caminho], com a mesma fonte/app-id do atalho Neovim Code. PATH já existente preservado. Sintaxe, resolução no Bash interativo e preservação literal de argumentos validadas com Foot simulado; nenhuma janela pessoal foi aberta/encerrada. Fonte em config/nvim/nvimcode, sem dependências novas. Base dependente de feature/neovim-development (#95); commit/push/PR sem merge.

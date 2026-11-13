@@ -115,3 +115,18 @@ Testes em config/nvim/tests/development.py e intellisense.lua: seleção múltip
 Execute o teste de UI com python config/nvim/tests/development.py. Para o teste LSP headless, execute dofile de config/nvim/tests/intellisense.lua via pcall e cquit 1 em erro, como nas instruções do PR. Requer perfil/ferramentas instalados; não é teste da CI C/Wayland.
 
 Backup: ~/.config/nvim.before-development-20261112-213246. Feche e abra o Neovim para ativar; a instalação não encerrou editores ou sessão. Busca sob demanda e LSP por tipo de arquivo reduzem trabalho ocioso, mas não foi medido consumo ou feito benchmark em projetos grandes. Java e outros servidores têm custo próprio. Não foram adicionados depurador com breakpoints, assistente de IA ou indexador global.
+
+## Comando nvimcode
+
+Atalho instalado em `~/.local/bin/nvimcode`, já no PATH do usuário. Abre uma janela Foot com o mesmo app-id e a fonte FiraCode Nerd Font Mono Bold 12 do atalho Neovim Code, usando o perfil normal do Neovim.
+
+```sh
+nvimcode
+nvimcode .
+nvimcode "/caminho/com espaços/projeto"
+nvimcode arquivo.py
+```
+
+Os argumentos são passados literalmente após `--`, sem avaliação pelo shell, e aceitam vários caminhos. Sem argumento, abre o editor normalmente. Reinstalação: `install -m755 config/nvim/nvimcode ~/.local/bin/nvimcode`.
+
+Validação: sintaxe POSIX com sh -n, resolução em Bash interativo e captura de argv usando Foot simulado (sem argumentos, espaços, vários arquivos e nomes começando com hífen/ponto-e-vírgula). Nenhuma janela de teste foi aberta; não requer reiniciar o editor ou a sessão para usar o comando.
