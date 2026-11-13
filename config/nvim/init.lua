@@ -32,14 +32,16 @@ vim.opt.rtp:prepend(lazy)
 require('lazy').setup({
     { 'necrogoru/shades-of-purple.nvim', priority = 1000, config = function() require('appearance').setup() end },
     { 'nvim-tree/nvim-web-devicons' },
+    { 'mg979/vim-visual-multi', init = function() vim.g.VM_maps = { ['Select All'] = '<C-d>', ['Visual All'] = '<C-d>' } end },
+    { 'ibhagwan/fzf-lua', cmd = 'FzfLua', opts = { winopts = { border = 'rounded' } } },
     { 'nvim-tree/nvim-tree.lua', opts = { hijack_directories = { enable = false }, view = { width = 26 }, update_focused_file = { enable = true }, filters = { dotfiles = false }, git = { enable = false }, renderer = { icons = { show = { git = false } } } } },
     { 'akinsho/bufferline.nvim', version = '*', opts = { options = { diagnostics = 'nvim_lsp' } } },
     { 'nvim-lualine/lualine.nvim', opts = { options = { theme = 'auto', globalstatus = true }, sections = { lualine_c = { { 'filename', path = 1 } }, lualine_x = { 'diagnostics', 'filetype' } } } },
-    { 'saghen/blink.cmp', version = '1.*', opts = { keymap = { preset = 'super-tab' }, fuzzy = { implementation = 'lua' }, completion = { menu = { border = 'rounded' }, documentation = { auto_show = true, window = { border = 'rounded' } } }, signature = { enabled = true, window = { border = 'rounded' } } } },
+    { 'saghen/blink.cmp', version = '1.*', opts = { keymap = { preset = 'super-tab', ['<C-space>'] = { 'show', 'show_documentation', 'hide_documentation' }, ['<CR>'] = { 'accept', 'fallback' } }, fuzzy = { implementation = 'lua' }, completion = { menu = { border = 'rounded' }, documentation = { auto_show = true, window = { border = 'rounded' } } }, signature = { enabled = true, window = { border = 'rounded' } } } },
     { 'mason-org/mason.nvim', opts = { ui = { border = 'rounded' } } },
     { 'neovim/nvim-lspconfig', config = function()
         local capabilities = require('blink.cmp').get_lsp_capabilities()
-        for _, server in ipairs({ 'clangd', 'pyright', 'ts_ls', 'html', 'cssls', 'jsonls', 'yamlls', 'lua_ls', 'bashls', 'gopls', 'rust_analyzer', 'jdtls' }) do
+        for _, server in ipairs({ 'clangd', 'pyright', 'ruff', 'ts_ls', 'html', 'cssls', 'jsonls', 'yamlls', 'lua_ls', 'bashls', 'gopls', 'rust_analyzer', 'jdtls' }) do
             vim.lsp.config(server, { capabilities = capabilities })
             vim.lsp.enable(server)
         end
@@ -47,3 +49,4 @@ require('lazy').setup({
 }, { checker = { enabled = false }, change_detection = { notify = false } })
 vim.diagnostic.config({ virtual_text = true, underline = true, severity_sort = true })
 require('workspace').setup()
+require('development').setup()

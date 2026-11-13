@@ -62,3 +62,56 @@ Feche e abra **Neovim Code pelo menu** para carregar a fonte e o tema. Quando in
 ## Árvore sem status Git e bordas discretas
 
 A árvore não exibe os marcadores de status Git que apareciam como `?`. A borda da árvore usa azul-ardósia e as demais divisórias violeta escuro, ambas sem brilho/negrito. Nomes de arquivos e pastas aparecem em tons mais claros e negrito. O cabeçalho “Explorador” e as barras extras acima da árvore, editor e terminal foram removidos para corresponder ao mockup. Para criar, pressione `a` na árvore: digite um nome de arquivo, ou termine o caminho da pasta com `/` e confirme com Enter. Alterações entram em vigor ao reabrir o Neovim.
+
+## Desenvolvimento e autosave — 12/11/2026
+
+Atualização instalada sobre o layout de #89. Dois plugins novos: vim-visual-multi (seleção múltipla) e fzf-lua (busca carregada sob demanda). Plugins anteriores mantiveram suas revisões; novos commits fixados em lazy-lock.json. Pacotes adicionais: fzf, ruff e shfmt. Ruff complementa o Pyright com lint/formatação Python; shfmt fornece formatação ao servidor Bash.
+
+### IntelliSense
+
+Sugestões automáticas via Blink/LSP, documentação, assinaturas e snippets fornecidos pelos servidores. Ctrl+Espaço mostra sugestões, Enter aceita a selecionada e Tab mantém o preset existente. Servidores iniciam conforme o arquivo aberto. Suporte configurado: C/C++, Java, Python, JS/TypeScript (e tipos React do ts_ls), HTML/CSS, JSON/YAML, Lua, Bash, Go e Rust. Outras linguagens exigem seu servidor e configuração; bibliotecas, includes, ambientes virtuais e schemas dependem do projeto.
+
+Foram verificadas sugestões reais em 14 tipos de arquivo. JSON/YAML usam schemas locais nas fixtures; Go/Rust usam módulos locais sem dependências externas. A UI confirmou Ctrl+Espaço exibindo a sugestão value do LSP Python e Enter aceitando-a. Inicializar um servidor não foi tratado como prova suficiente de completion.
+
+### Atalhos
+
+| Atalho | Função |
+| --- | --- |
+| Ctrl+D | Selecionar todas as ocorrências da palavra inteira, também a partir da inserção |
+| Ctrl+N no modo normal | Adicionar a próxima ocorrência |
+| c depois da seleção múltipla | Substituir as ocorrências; digite e pressione Esc; outro Esc sai da seleção múltipla |
+| Ctrl+; | Comentar/descomentar linha ou seleção pela linguagem |
+| Ctrl+/ ou gcc/gc | Alternativas quando o terminal não transmitir Ctrl+; |
+| Ctrl+S | Salvar manualmente |
+| Ctrl+A | Selecionar o arquivo inteiro |
+| Ctrl+C / Ctrl+X | Copiar/recortar seleção, ou linha no modo normal/inserção |
+| Ctrl+V | Colar no modo normal/inserção |
+| Ctrl+Z / Ctrl+Y ou Ctrl+Shift+Z | Desfazer/refazer |
+| Ctrl+F / F3 / Shift+F3 | Buscar no arquivo/próximo/anterior |
+| Ctrl+P | Buscar e abrir arquivo |
+| Ctrl+Shift+F | Buscar texto no projeto |
+| Ctrl+Shift+P | Paleta de comandos do Neovim |
+| Alt+↑ / Alt+↓ | Mover linha |
+| Alt+Shift+↑ / Alt+Shift+↓ | Duplicar linha |
+| F12 / Shift+F12 | Definição/referências pelo LSP |
+| F2 | Renomear símbolo pelo LSP |
+| Alt+Enter | Ações de código |
+| Alt+Shift+F | Formatar com LSP quando a linguagem oferece formatador |
+| F8 / Shift+F8 | Próximo/anterior diagnóstico, no modo normal |
+| F5 | Executar o arquivo, como antes |
+
+O editor continua modal: use c para substituir uma seleção múltipla. No terminal, Ctrl+C continua interrompendo o programa. Ctrl+H/J/K/L mantém a navegação entre painéis. Teclas estendidas dependem do terminal; gcc/gc funcionam sem Ctrl+;. Comentários, copiar seleção, selecionar tudo e seleção múltipla também têm mapas visuais.
+
+### Autosave
+
+Grava após aproximadamente 1 segundo sem digitar, inclusive em inserção, via CursorHold/CursorHoldI e updatetime=1000. Também grava ao sair do buffer/perder foco. Sem plugin de autosave, timer de polling ou watcher adicional.
+
+Só escreve arquivos nomeados, modificados, editáveis e sem readonly; ignora terminais, árvore e buffers sem nome. Compara identidade, tamanho, mtime e ctime com a leitura/última gravação. Se houver alteração/exclusão externa, suspende o autosave, avisa e preserva a edição local. Renomear o buffer exige gravação manual para estabelecer a nova referência. Usa :update sem força e mostra falhas de escrita. A formatação é manual, não roda em cada autosave.
+
+### Validação e ativação
+
+Testes em config/nvim/tests/development.py e intellisense.lua: seleção múltipla normal/inserção, edição simultânea, comentários em linha/seleção, temporização real do autosave, proteção de alterações externas/readonly/sem nome, gravação ao sair, mover/duplicar/undo/redo, clipboard simulado, Ctrl+P real, Ctrl+Espaço/Enter e formatação Python. Também passaram regressões de layout/criação/F5 e runner C/C++/Java/Python/JS/HTML. Testes usam arquivos temporários e o teste novo de edição isola o clipboard.
+
+Execute o teste de UI com python config/nvim/tests/development.py. Para o teste LSP headless, execute dofile de config/nvim/tests/intellisense.lua via pcall e cquit 1 em erro, como nas instruções do PR. Requer perfil/ferramentas instalados; não é teste da CI C/Wayland.
+
+Backup: ~/.config/nvim.before-development-20261112-213246. Feche e abra o Neovim para ativar; a instalação não encerrou editores ou sessão. Busca sob demanda e LSP por tipo de arquivo reduzem trabalho ocioso, mas não foi medido consumo ou feito benchmark em projetos grandes. Java e outros servidores têm custo próprio. Não foram adicionados depurador com breakpoints, assistente de IA ou indexador global.
