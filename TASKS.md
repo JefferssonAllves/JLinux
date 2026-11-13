@@ -521,3 +521,7 @@ Corrigida conexão de áudio no runtime privado: ponte para o socket na sessão
 aberta e ambiente de PulseAudio/PipeWire preservado no iniciador C. Teste
 anônimo isolado com fluxo ativo/sem mute e dois testes de ambiente passaram.
 Ver docs/brave-session-audio.md; instalação persistente em conclusão.
+
+BRAVE-SESSION-AUDIO concluído: pacote `0.5.0.r132.g2d49501-1` instalado,
+43 testes do pacote passaram e ponte atual validada por pactl. PR #112.
+A guia pessoal ainda precisa ser recarregada/testada pelo usuário.

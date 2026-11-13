@@ -29,3 +29,10 @@ Verificações:
   a guia e iniciar a reprodução novamente permite repetir a conexão.
 
 Instalação do iniciador atualizado será registrada após os checks do pacote.
+
+Instalado `jlinux-desktop-git 0.5.0.r132.g2d49501-1` via pacman. Os 43 testes
+do pacote passaram. A instalação preserva a versão anterior `267b274` e
+atualiza apenas o comportamento de ambiente do iniciador. A ponte da sessão
+atual continua conectando ao servidor de áudio; não houve reinício de Brave,
+sessão ou serviços. PR #112. O ambiente persistente será herdado no próximo
+login; a correção ao vivo permite reconexão agora.
