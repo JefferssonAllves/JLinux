@@ -1,0 +1,2 @@
+#!/bin/sh
+exec foot --app-id=org.jlinux.Neovim --font='FiraCode Nerd Font Mono:style=Bold:size=12' -e nvim -- "$@"
