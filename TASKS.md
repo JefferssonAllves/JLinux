@@ -493,3 +493,7 @@ discreto; barra de 40 px, reflexos leves e contorno translúcido. Prévia em
 em docs/topbar-media.md.
 
 CONTROL-BLUETOOTH — instalado r119/0901601, preservando barra de mídia d98dcd2/r116. Pacote/checks 39/39, integridade pacman confirmada, três direcionados ASan/UBSan e fluxo do painel com binários instalados passaram. Serviço ativo/habilitado e rádio ligado. Ativação do painel no próximo login; pareamento físico pendente. Backup e limites em docs/bluetooth.md; PR #107 enviado, sem merge.
+
+## DOCK-SPOTUBE-ENTRY
+
+Spotube acrescentado como 11º item com logo do Spotify; atalhos anteriores, Bluetooth e barra de vidro compacta preservados. Setores/hover/seleção angular ajustados. Teste de clique cobre Spotube e WhatsApp, além dos demais apps; ícones e limites das onze entradas validados. Prévia nativa inspecionada. Instalação/source e checks finais registrados ao concluir pacote; sem teste de reprodução musical.

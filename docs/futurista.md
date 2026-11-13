@@ -112,3 +112,9 @@ scripts/compare-dock-gradient.py docs/design/dock-gradient-reference-v2.png docs
 
 
 O cartão [Bluetooth](bluetooth.md) agora consulta/controla o adaptador real. A parte superior liga/desliga; Dispositivos abre o gerenciador Blueman com busca, emparelhamento e conexão. Os demais controles sem backend continuam indisponíveis; isso não implementa modo avião ou Wi-Fi.
+
+### Spotube no dock
+
+O dock passa a ter onze itens, mantendo os dez anteriores e acrescentando Spotube antes do WhatsApp. Setores, ícones, hover e hit testing usam a mesma divisão em onze partes. O item abre `com.github.KRTirtho.Spotube.desktop`, reutilizando o iniciador local já instalado para o Flatpak e seu ajuste de runtime/portal.
+
+Por pedido do usuário, o Spotube usa o ícone do Spotify, reutilizado do asset local existente. O SVG é instalado como `org.jlinux.Spotube.svg`, evitando conflito com arquivos do aplicativo Spotify. O nome exibido continua Spotube. Prévia nativa inspecionada; reprodução/conta musical não foram alteradas nem testadas nesta mudança.

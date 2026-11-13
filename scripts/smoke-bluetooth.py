@@ -33,7 +33,7 @@ else:(root/'state').write_text(sys.argv[-1])
     def log():return logfile.read_text(errors='replace')
     def calls():return (root/'calls').read_text() if (root/'calls').exists() else ''
     def click(x,y):subprocess.run([pointer,str(round(x)),str(round(y))],env=env,check=True,timeout=4);time.sleep(.2)
-    scale=min(1280/1672,680/889);offset=(1280-1672*scale)/2;top=40+(720-52-889*scale)/2-52*scale
+    scale=min(1280/1672,668/889);offset=(1280-1672*scale)/2;top=52-52*scale
     def tile(y):click(offset+1400*scale,top+y*scale)
     try:
         with logfile.open('w') as out:
