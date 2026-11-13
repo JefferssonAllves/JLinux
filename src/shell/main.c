@@ -34,7 +34,7 @@
 #include <wayland-cursor.h>
 #include "layer-shell-client.h"
 extern char **environ;
-enum { PANEL_BODY_HEIGHT = 56, PANEL_FADE_HEIGHT = 0,
+enum { PANEL_BODY_HEIGHT = FUTURISTA_PANEL_HEIGHT, PANEL_FADE_HEIGHT = 0,
     PANEL_HEIGHT = PANEL_BODY_HEIGHT + PANEL_FADE_HEIGHT, PANEL_MARGIN = 6, PANEL_ZONE = PANEL_HEIGHT };
 struct app;
 struct surface {

@@ -3,6 +3,7 @@
 #include "../effects/glass.h"
 #include "preferences.h"
 #include "media.h"
+enum { FUTURISTA_PANEL_HEIGHT = 40 };
 struct futurista {
     int bluetooth;
     bool bluetooth_busy;

@@ -483,7 +483,13 @@ Cartão ligado ao estado real BlueZ, liga/desliga assíncrono e acesso Dispositi
 Implementado na branch feature/topbar-media: controles MPRIS nativos e card de
 data/hora baseado em referência imagegen. A barra reserva 56 px. Detalhes,
 referência, prévia e limites em [docs/topbar-media.md](docs/topbar-media.md).
-Validação/instalação em andamento; ativação requer novo login seguro.
+Validação concluída: 37 testes locais/do pacote, teste MPRIS também ASan/UBSan.
+Instalado `jlinux-desktop-git 0.5.0.r116.gd98dcd2-1`; PR #106.
+Ativação na sessão pessoal requer novo login; nenhum aplicativo foi encerrado.
 
+Revisão TOPBAR-MEDIA: por pedido do usuário, estilo neon substituído por vidro
+discreto; barra de 40 px, reflexos leves e contorno translúcido. Prévia em
+`docs/design/topbar-subtle-glass-native.png`. Checks e instalação registrados
+em docs/topbar-media.md.
 
 CONTROL-BLUETOOTH — instalado r119/0901601, preservando barra de mídia d98dcd2/r116. Pacote/checks 39/39, integridade pacman confirmada, três direcionados ASan/UBSan e fluxo do painel com binários instalados passaram. Serviço ativo/habilitado e rádio ligado. Ativação do painel no próximo login; pareamento físico pendente. Backup e limites em docs/bluetooth.md; PR #107 enviado, sem merge.
