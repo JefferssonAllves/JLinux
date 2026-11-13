@@ -1,0 +1,314 @@
+{
+  "reference": "dock-gradient-reference-v2.png",
+  "native": "dock-gradient-native.png",
+  "scope": "18 fixed material points, excluding icons and selected sector; not full-image equivalence",
+  "sample_mae_rgb": 9.296,
+  "samples": [
+    {
+      "sector": 0,
+      "point": [
+        627,
+        297
+      ],
+      "reference": [
+        40,
+        24,
+        66
+      ],
+      "native": [
+        44,
+        26,
+        68
+      ]
+    },
+    {
+      "sector": 0,
+      "point": [
+        627,
+        67
+      ],
+      "reference": [
+        37,
+        44,
+        72
+      ],
+      "native": [
+        42,
+        53,
+        81
+      ]
+    },
+    {
+      "sector": 1,
+      "point": [
+        821,
+        360
+      ],
+      "reference": [
+        42,
+        24,
+        65
+      ],
+      "native": [
+        46,
+        27,
+        69
+      ]
+    },
+    {
+      "sector": 1,
+      "point": [
+        956,
+        174
+      ],
+      "reference": [
+        31,
+        38,
+        64
+      ],
+      "native": [
+        40,
+        50,
+        78
+      ]
+    },
+    {
+      "sector": 2,
+      "point": [
+        941,
+        525
+      ],
+      "reference": [
+        38,
+        24,
+        61
+      ],
+      "native": [
+        46,
+        28,
+        71
+      ]
+    },
+    {
+      "sector": 2,
+      "point": [
+        1160,
+        454
+      ],
+      "reference": [
+        27,
+        34,
+        60
+      ],
+      "native": [
+        38,
+        47,
+        71
+      ]
+    },
+    {
+      "sector": 3,
+      "point": [
+        941,
+        729
+      ],
+      "reference": [
+        43,
+        31,
+        69
+      ],
+      "native": [
+        51,
+        36,
+        80
+      ]
+    },
+    {
+      "sector": 3,
+      "point": [
+        1160,
+        800
+      ],
+      "reference": [
+        27,
+        33,
+        56
+      ],
+      "native": [
+        38,
+        48,
+        72
+      ]
+    },
+    {
+      "sector": 4,
+      "point": [
+        821,
+        894
+      ],
+      "reference": [
+        46,
+        33,
+        73
+      ],
+      "native": [
+        52,
+        38,
+        82
+      ]
+    },
+    {
+      "sector": 4,
+      "point": [
+        956,
+        1080
+      ],
+      "reference": [
+        26,
+        35,
+        61
+      ],
+      "native": [
+        38,
+        47,
+        72
+      ]
+    },
+    {
+      "sector": 5,
+      "point": [
+        627,
+        957
+      ],
+      "reference": [
+        41,
+        25,
+        65
+      ],
+      "native": [
+        49,
+        35,
+        78
+      ]
+    },
+    {
+      "sector": 5,
+      "point": [
+        627,
+        1187
+      ],
+      "reference": [
+        25,
+        32,
+        57
+      ],
+      "native": [
+        38,
+        46,
+        72
+      ]
+    },
+    {
+      "sector": 6,
+      "point": [
+        433,
+        894
+      ],
+      "reference": [
+        40,
+        24,
+        61
+      ],
+      "native": [
+        46,
+        30,
+        72
+      ]
+    },
+    {
+      "sector": 6,
+      "point": [
+        298,
+        1080
+      ],
+      "reference": [
+        27,
+        34,
+        58
+      ],
+      "native": [
+        38,
+        47,
+        74
+      ]
+    },
+    {
+      "sector": 7,
+      "point": [
+        313,
+        729
+      ],
+      "reference": [
+        36,
+        23,
+        56
+      ],
+      "native": [
+        46,
+        28,
+        71
+      ]
+    },
+    {
+      "sector": 7,
+      "point": [
+        94,
+        800
+      ],
+      "reference": [
+        29,
+        36,
+        61
+      ],
+      "native": [
+        40,
+        50,
+        78
+      ]
+    },
+    {
+      "sector": 8,
+      "point": [
+        313,
+        525
+      ],
+      "reference": [
+        37,
+        23,
+        57
+      ],
+      "native": [
+        45,
+        25,
+        67
+      ]
+    },
+    {
+      "sector": 8,
+      "point": [
+        94,
+        454
+      ],
+      "reference": [
+        46,
+        55,
+        87
+      ],
+      "native": [
+        40,
+        51,
+        78
+      ]
+    }
+  ]
+}

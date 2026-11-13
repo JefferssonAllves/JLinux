@@ -609,7 +609,7 @@ static int preview(const char *path) {
     ui_finish();
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
-static int preview_futurista(const char *path, bool controls, bool settings) {
+static int preview_futurista(const char *path, bool controls, bool settings, bool dock_crop) {
     struct futurista scene;
     struct jlinux_glass effects;
     if (!jlinux_glass_settings(&effects)) { return 1; }
@@ -620,10 +620,16 @@ static int preview_futurista(const char *path, bool controls, bool settings) {
     scene.settings_open = settings;
     scene.volume = .40;
     scene.brightness = .53;
-    cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1672, 941);
+    cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, dock_crop ? 1254 : 1672, dock_crop ? 1254 : 941);
     cairo_t *cr = cairo_create(image);
-    futurista_wallpaper(&scene, cr, 1672, 941);
-    futurista_panel(&scene, cr, 1672);
+    if(dock_crop){
+        scene.hover[0]=0;scene.selected=9;scene.hover[9]=1;
+        cairo_set_source_rgb(cr,17/255.,16/255.,28/255.);cairo_paint(cr);
+        cairo_scale(cr,1254/700.,1254/700.);cairo_translate(cr,-486,-119);
+    }else{
+        futurista_wallpaper(&scene, cr, 1672, 941);
+        futurista_panel(&scene, cr, 1672);
+    }
     futurista_overlay(&scene, cr, 1672, 941, controls);
     cairo_status_t status = cairo_surface_write_to_png(image, path);
     cairo_destroy(cr);
@@ -649,9 +655,10 @@ int main(int argc, char **argv) {
     bool power_panel = argc == 2 && !strcmp(argv[1], "--power-panel");
     if (argc == 3 && !strcmp(argv[1], "--preview-volume")) { return preview_power(argv[2], true); }
     if (argc == 3 && !strcmp(argv[1], "--preview-power")) { return preview_power(argv[2], false); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-settings")) { return preview_futurista(argv[2],true,true); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-control-center")) { return preview_futurista(argv[2],true,false); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-futurista")) { return preview_futurista(argv[2],false,false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-dock")) { return preview_futurista(argv[2],false,false,true); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-settings")) { return preview_futurista(argv[2],true,true,false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-control-center")) { return preview_futurista(argv[2],true,false,false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-futurista")) { return preview_futurista(argv[2],false,false,false); }
     if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2]); }
     if (argc != 1 && !power_panel && !volume_panel) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-power arquivo.png | --power-panel | --volume-panel]\n"); return 1; }
     struct app app = {.running = true, .power_panel = power_panel, .volume_panel = volume_panel, .power_action = -1, .timer = -1, .signals = -1, .control = -1}; wl_list_init(&app.buffers);

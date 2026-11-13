@@ -383,13 +383,6 @@ void futurista_panel(struct futurista *s, cairo_t *cr, int width) {
     line_icon(cr, 13, width - 49, 16, 22, 0xf1f2ff);
     cairo_restore(cr);
 }
-static void tint_stop(cairo_pattern_t *pattern, double position, double r, double g, double b, double alpha,
-                      bool tint) {
-    if (!tint) {
-        r = g = b = (r + g + b) / 3;
-    }
-    cairo_pattern_add_color_stop_rgba(pattern, position, r, g, b, alpha);
-}
 static void sector(cairo_t *cr, int index, double focus, struct jlinux_glass effects) {
     double a = (-108 + index * 36 + .6) * pi / 180, b = (-72 + index * 36 - .6) * pi / 180;
     double outer = 326 + 4 * focus, inner = 176 - 11 * focus;
@@ -408,24 +401,10 @@ static void sector(cairo_t *cr, int index, double focus, struct jlinux_glass eff
     cairo_curve_to(cr, 836 + outer * cos(a), 469 + outer * sin(a), 836 + outer * cos(a), 469 + outer * sin(a),
                    836 + outer * cos(a + corner / outer), 469 + outer * sin(a + corner / outer));
     cairo_close_path(cr);
-    double mid = (a + b) / 2;
-    cairo_pattern_t *p = cairo_pattern_create_linear(836 + outer * cos(mid), 469 + outer * sin(mid),
-                                                     836 + inner * cos(mid), 469 + inner * sin(mid));
-    tint_stop(p, 0, .016 + .025 * focus, .021 + .012 * focus, .042 + .065 * focus, .98, effects.tint);
-    tint_stop(p, .5, .009 + .020 * focus, .012 + .009 * focus, .024 + .045 * focus, .98, effects.tint);
-    tint_stop(p, 1, .018 + .045 * focus, .012 + .012 * focus, .038 + .070 * focus, .98, effects.tint);
-    cairo_set_source(cr, p);
-    cairo_fill_preserve(cr);
-    cairo_pattern_destroy(p);
+    double mid=(a+b)/2;
+    jlinux_dock_material(cr,836+outer*cos(mid),469+outer*sin(mid),836+inner*cos(mid),469+inner*sin(mid),focus,effects);
     if (effects.reflection) {
-        if (focus > 0) {
-            cairo_set_source_rgba(cr, .16, .72, 1, .28 * focus);
-            cairo_set_line_width(cr, 13);
-            cairo_stroke_preserve(cr);
-            cairo_set_source_rgba(cr, .88, .28, 1, .55 * focus);
-            cairo_set_line_width(cr, 5);
-            cairo_stroke_preserve(cr);
-        }
+        jlinux_dock_edge_glow(cr,focus);
         jlinux_glass_rim(cr, (struct ui_rect){506,139,660,660}, .75 + .25 * focus);
         cairo_new_path(cr);
     } else {
@@ -585,14 +564,8 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
         if (s->glass.reflection && s->prefs.neon) { jlinux_dock_halo(cr, positions[i][0], y, size * .9, s->hover[i]); }
         app_icon(s, cr, i, positions[i][0] - size / 2, y - size / 2, size);
     }
-    cairo_pattern_t *p = cairo_pattern_create_radial(820, 420, 20, 836, 469, 133);
-    cairo_pattern_add_color_stop_rgba(p, 0, .025, .028, .065, .97);
-    cairo_pattern_add_color_stop_rgba(p, .6, .012, .015, .035, .98);
-    cairo_pattern_add_color_stop_rgba(p, 1, .008, .012, .025, .98);
-    circle(cr, 836, 469, 132);
-    cairo_set_source(cr, p);
-    cairo_fill_preserve(cr);
-    cairo_pattern_destroy(p);
+    circle(cr,836,469,132);
+    jlinux_dock_center_material(cr,s->glass);
     if (s->glass.reflection) {
         cairo_set_source_rgba(cr, .67, .28, 1, .12);
         cairo_set_line_width(cr, 12);
@@ -600,7 +573,7 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
         cairo_set_source_rgba(cr, .78, .40, 1, .25);
         cairo_set_line_width(cr, 4);
         cairo_stroke_preserve(cr);
-        cairo_set_source_rgba(cr, .70, .42, 1, .95);
+        cairo_set_source_rgba(cr, .78, .28, 1, 1);
         cairo_set_line_width(cr, 1.6);
         cairo_stroke(cr);
     } else {
