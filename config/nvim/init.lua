@@ -36,7 +36,7 @@ require('lazy').setup({
     { 'ibhagwan/fzf-lua', cmd = 'FzfLua', opts = { winopts = { border = 'rounded' } } },
     { 'nvim-tree/nvim-tree.lua', opts = { hijack_directories = { enable = false }, view = { width = 26 }, update_focused_file = { enable = true }, filters = { dotfiles = false }, git = { enable = false }, renderer = { icons = { show = { git = false } } } } },
     { 'akinsho/bufferline.nvim', version = '*', opts = { options = { diagnostics = 'nvim_lsp' } } },
-    { 'nvim-lualine/lualine.nvim', opts = { options = { theme = 'auto', globalstatus = true }, sections = { lualine_c = { { 'filename', path = 1 } }, lualine_x = { 'diagnostics', 'filetype' } } } },
+    { 'nvim-lualine/lualine.nvim', opts = { options = { theme = 'auto', globalstatus = true }, sections = { lualine_c = { { 'filename', path = 1 } }, lualine_x = { { function() return '▶ Executar · ' .. vim.bo.filetype end, cond = function() return vim.bo.buftype == '' and vim.api.nvim_buf_get_name(0) ~= '' and require('workspace').command(vim.api.nvim_buf_get_name(0), vim.bo.filetype) ~= nil end, on_click = function() require('workspace').run() end, color = { fg = '#B5CFDE' } }, 'diagnostics', 'filetype' } } } },
     { 'saghen/blink.cmp', version = '1.*', opts = { keymap = { preset = 'super-tab', ['<C-space>'] = { 'show', 'show_documentation', 'hide_documentation' }, ['<CR>'] = { 'accept', 'fallback' } }, fuzzy = { implementation = 'lua' }, completion = { menu = { border = 'rounded' }, documentation = { auto_show = true, window = { border = 'rounded' } } }, signature = { enabled = true, window = { border = 'rounded' } } } },
     { 'mason-org/mason.nvim', opts = { ui = { border = 'rounded' } } },
     { 'neovim/nvim-lspconfig', config = function()

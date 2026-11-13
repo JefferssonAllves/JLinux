@@ -115,3 +115,5 @@ Testes em config/nvim/tests/development.py e intellisense.lua: seleção múltip
 Execute o teste de UI com python config/nvim/tests/development.py. Para o teste LSP headless, execute dofile de config/nvim/tests/intellisense.lua via pcall e cquit 1 em erro, como nas instruções do PR. Requer perfil/ferramentas instalados; não é teste da CI C/Wayland.
 
 Backup: ~/.config/nvim.before-development-20261112-213246. Feche e abra o Neovim para ativar; a instalação não encerrou editores ou sessão. Busca sob demanda e LSP por tipo de arquivo reduzem trabalho ocioso, mas não foi medido consumo ou feito benchmark em projetos grandes. Java e outros servidores têm custo próprio. Não foram adicionados depurador com breakpoints, assistente de IA ou indexador global.
+
+A barra inferior mostra um botão discreto `▶ Executar · linguagem` para arquivos compatíveis com o executor. Clique para salvar e executar no terminal integrado; F5 mantém a mesma ação. Arquivos sem executor não mostram o botão.
