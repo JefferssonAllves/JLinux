@@ -4,6 +4,8 @@
 #include "preferences.h"
 #include "media.h"
 struct futurista {
+    int bluetooth;
+    bool bluetooth_busy;
     cairo_surface_t *wallpaper, *blurred, *icons[10];
     struct jlinux_glass glass;
     struct media *media;
