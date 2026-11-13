@@ -35,3 +35,8 @@ Início com nome do arquivo e término com código de saída em ANSI rosa-violet
 ## Terminal de origem do nvimcode
 
 Iniciador e função Bash instalados no usuário: shell sem outros jobs é substituído por lançador destacado, preservando fonte Bold 12 e app-id existentes. Terminal integrado e shells com jobs são preservados. Sintaxe shell/Bash validada; fechamento real da janela ativa não executado para preservar a sessão de trabalho.
+
+
+## NVIMCODE-HUP — fix/nvimcode-detach-hup
+
+Corrida de SIGHUP reproduzida: terminal de origem encerrava com status 1 e nenhum editor mapeava. Wrapper protege o intervalo de setsid e restaura HUP antes de executar Foot. Instalado no usuário, preservando fonte/argumentos. Teste isolado abriu três editores reais após origem sair com status zero; sintaxe sh validada. Sem encerramento dos terminais do usuário.
