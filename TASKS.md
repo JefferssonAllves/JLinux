@@ -31,3 +31,7 @@ Componente clicável discreto na lualine, condicionado ao executor existente e a
 ## Mensagens do executor nvimcode
 
 Início com nome do arquivo e término com código de saída em ANSI rosa-violeta/negrito. Configuração aplicada ao usuário, preservando backup em /tmp/jlinux-workspace-before-messages.lua. Execução de teste com saída 7 validou ambas as mensagens e preservação do código.
+
+## Terminal de origem do nvimcode
+
+Iniciador e função Bash instalados no usuário: shell sem outros jobs é substituído por lançador destacado, preservando fonte Bold 12 e app-id existentes. Terminal integrado e shells com jobs são preservados. Sintaxe shell/Bash validada; fechamento real da janela ativa não executado para preservar a sessão de trabalho.

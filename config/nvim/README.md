@@ -120,3 +120,5 @@ A barra inferior mostra um botão discreto `▶ Executar · linguagem` para arqu
 
 Execuções exibem nome do arquivo e fim da execução em negrito rosa-violeta no terminal, incluindo o código de saída. O código original do programa é preservado.
 As mensagens de início e fim recebem um `>` verde para facilitar a localização no terminal.
+
+Para o comando nvimcode fechar o terminal de origem sem alterar fonte ou aparência, instalar `nvimcode` em ~/.local/bin e carregar `nvimcode.bash` pelo ~/.bashrc. A função preserva o terminal se houver jobs ou se estiver dentro do terminal integrado do Neovim. Novos shells carregam a função automaticamente; nos atuais, usar `source ~/.bashrc`. A janela dedicada mantém os mesmos argumentos Foot do atalho de aplicativos.
