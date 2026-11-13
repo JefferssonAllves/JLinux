@@ -48,3 +48,15 @@ sem essas duas variáveis conectou ao servidor correto. Não se alterou cookie,
 volumes, saída escolhida, perfil do Brave nem abas. A configuração pode ser
 revertida removendo somente essa linha/arquivo criado nesta correção.
 A reprodução no navegador pessoal ainda aguarda confirmação do usuário.
+
+## Recuperação do Brave já aberto
+
+Após configurar o cliente PulseAudio, foi encerrado somente o processo auxiliar
+AudioService antigo do Brave (1267), que retinha a conexão falha. O processo
+principal 747 e as abas foram preservados. O navegador recriou o auxiliar como
+12556. O teste passou então no navegador pessoal existente: streams 414 e 461
+ativos (`corked=false`), sem mute, direcionados à saída Bluetooth MXS003
+(index 315). O usuário confirmou que deseja esse fone; ele foi mantido como
+saída padrão. O volume encontrado (60%) foi preservado. Foram abertas abas
+locais de teste WAV; nenhum conteúdo de abas pessoais foi inspecionado.
+A audição física pelo usuário ainda não foi confirmada.
