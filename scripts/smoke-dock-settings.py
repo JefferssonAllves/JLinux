@@ -53,13 +53,13 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
             wait(lambda:'Interface mapeada: jlinux-panel' in log(),processes,'shell')
             dock()
             positions=tuple((836+250*math.cos(math.radians(-90+i*360/11)),469+250*math.sin(math.radians(-90+i*360/11))) for i in range(11))
-            for i in (0,1,2,3,4,6,7,8,9,10):
+            for i in (0,1,2,3,4,8,9,10):
                 before=len(recorded());click(*positions[i])
                 wait(lambda:len(recorded())>before,processes,f'app {i}')
             data=recorded()
             for name in ('brave','nvim','torrent','files','spotube','whatsapp'):assert any(name in row for row in data),name
-            assert any(str(root/'Pictures') in row for row in data),'pictures folder argument'
-            assert any(str(root/'Videos') in row for row in data),'videos folder argument'
+            before=len(recorded());click(*positions[6]);click(*positions[7]);time.sleep(.15)
+            assert len(recorded())==before,'folder shortcuts duplicated a pending Files launch'
             assert any('btop' in row for row in data),'monitor command'
             click(*positions[5]);wait(lambda:'Configurações abertas.' in log(),processes,'settings gear')
             click(1260,350)
@@ -70,7 +70,7 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
             click(450,390);click(1260,350)
             wait(lambda:'tint=false' in preference.read_text(),processes,'appearance preference')
             click(450,480);before=len(recorded());click(900,420)
-            wait(lambda:len(recorded())>before,processes,'system folder action')
+            time.sleep(.15);assert len(recorded())==before,'system folder action duplicated Files'
             click(900,650)
             wait(lambda:'Interface mapeada: jlinux-power-menu' in log(),processes,'power confirmation')
             # Never confirm the power operation; simply restart the private shell.

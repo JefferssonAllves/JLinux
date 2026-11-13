@@ -17,10 +17,12 @@ cairo = dependency('cairo')
 pango = dependency('pangocairo')
 pixman = dependency('pixman-1')
 fontconfig = dependency('fontconfig')
-compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/backdrop.c', 'src/renderer/blur.c', 'src/renderer/window-effects.c', 'src/renderer/overview.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
-  dependencies: [wlroots, wayland, xkb, cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
+compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/apps-launch.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/backdrop.c', 'src/renderer/blur.c', 'src/renderer/window-effects.c', 'src/renderer/overview.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
+  dependencies: [wlroots, wayland, xkb, dependency('gio-unix-2.0'), cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
 backdrop_test = executable('jlinux-test-backdrop', 'tests/backdrop.c', 'src/renderer/backdrop.c', 'src/renderer/renderer.c', 'src/renderer/window-effects.c', 'src/renderer/blur.c', 'src/effects/window.c', 'src/effects/glass.c', 'src/toolkit/painter.c', dependencies: [wlroots, wayland, cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'])
 test('live-backdrop', backdrop_test, env: ['WLR_RENDERER=pixman'])
+app_targets_test = executable('jlinux-test-app-targets', 'tests/app-targets.c', 'src/shell/apps-launch.c', dependencies: [cairo, dependency('gio-unix-2.0')])
+test('dock-app-targets', app_targets_test)
 frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
   'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
   dependencies: [wlroots, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
@@ -77,13 +79,13 @@ if get_option('shell')
   install_data('data/icons/spotify.svg', install_dir: get_option('datadir') / 'icons/hicolor/scalable/apps', rename: 'org.jlinux.Spotube.svg')
   install_data('data/futurista/README.md', install_dir: get_option('datadir') / 'licenses/jlinux-desktop-git', rename: 'futurista-assets.md')
   futurista_resources = import('gnome').compile_resources('futurista-resources', 'data/futurista/assets.xml', source_dir: 'data/futurista')
-  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/apps.c', 'src/shell/preferences.c', 'src/shell/battery.c', 'src/shell/volume.c', 'src/shell/bluetooth.c', 'src/shell/media.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/effects/dock.c', 'src/renderer/dock-transform.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
+  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/apps.c', 'src/shell/apps-launch.c', 'src/shell/preferences.c', 'src/shell/battery.c', 'src/shell/volume.c', 'src/shell/bluetooth.c', 'src/shell/media.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/effects/dock.c', 'src/renderer/dock-transform.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
     c_args: ['-Wno-overlength-strings'], dependencies: [client, cursor, cairo, pango, fontconfig, math, dependency('gio-2.0'), dependency('gio-unix-2.0'), dependency('librsvg-2.0')], install: true)
   preferences_test = executable('jlinux-test-shell-preferences', 'tests/shell-preferences.c', 'src/shell/preferences.c', dependencies: glib)
   test('shell-preferences', preferences_test)
   media_test = executable('jlinux-test-media', 'tests/media.c', 'src/shell/media.c', dependencies: [dependency('gio-2.0')])
   test('media-mpris', find_program('dbus-run-session'), args: ['--', media_test], timeout: 15)
-  icons_test = executable('jlinux-test-shell-icons', 'tests/shell-icons.c', 'src/shell/apps.c', dependencies: [cairo, dependency('gio-unix-2.0'), dependency('librsvg-2.0')])
+  icons_test = executable('jlinux-test-shell-icons', 'tests/shell-icons.c', 'src/shell/apps.c', 'src/shell/apps-launch.c', dependencies: [cairo, dependency('gio-unix-2.0'), dependency('librsvg-2.0')])
   test('shell-app-icons', icons_test)
   volume_test = executable('jlinux-test-volume', 'tests/volume.c', 'src/shell/volume.c', dependencies: [glib, math])
   test('volume-response', volume_test)
@@ -137,6 +139,7 @@ if foot.found() and wtype.found()
   endif
   test('window-side-snap', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], timeout: 40)
   test('snap-reduced-motion', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 40)
+  test('dock-single-window', find_program('scripts/smoke-dock-single.py'), args: [compositor, foot, wtype], timeout: 30)
   test('window-minimize', find_program('scripts/smoke-minimize.py'), args: [compositor, foot, wtype, pointer_test, layout_client], timeout: 25)
   test('minimize-reduced-motion', find_program('scripts/smoke-minimize.py'), args: [compositor, foot, wtype, pointer_test, layout_client], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 25)
   test('window-frame-input', find_program('scripts/smoke-window-frame.py'), args: [compositor, pointer_test, foot, wtype], timeout: 35)
