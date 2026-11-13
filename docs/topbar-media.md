@@ -37,7 +37,14 @@ independentes. O fundo e os ícones pessoais não são substituídos.
 O teste `media-mpris` cria um player em barramento privado, confere metadados,
 os três métodos, capacidades, sinal de pausa, saída do player e cancelamento
 na inicialização. Testes Wayland usam headless/pixman; não comprovam desempenho
-na GPU ou reprodução em um player pessoal. Instalação e versão serão
-registradas após os checks. Não existe recarga segura do shell ativo: encerrar
+na GPU ou reprodução em um player pessoal. Instalado pelo pacman: `jlinux-desktop-git 0.5.0.r116.gd98dcd2-1`,
+commit de código `d98dcd2`. Os 37 testes do pacote passaram; `media-mpris`
+também passou com AddressSanitizer/UBSan e detecção de vazamentos. Não existe recarga segura do shell ativo: encerrar
 o shell encerra a sessão supervisionada. A aplicação visual depende de novo
 login, sem encerrar aplicativos automaticamente.
+
+Backup recuperável: pacote anterior em
+`~/.cache/jlinux-dock-gradient-package/jlinux-desktop-git-0.5.0.r113.g702d672-1-x86_64.pkg.tar.zst`.
+O pacote foi construído com a receita Arch do projeto e fonte local fixada na
+branch feature/topbar-media. A instalação atualizou os binários em `/usr/bin`;
+a sessão que já estava aberta não foi reiniciada. PR #106.

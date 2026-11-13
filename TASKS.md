@@ -478,4 +478,6 @@ DOCK-GRADIENT-IMAGE — instalado `0.5.0.r113.g702d672-1`, checks do pacote 36/3
 Implementado na branch feature/topbar-media: controles MPRIS nativos e card de
 data/hora baseado em referência imagegen. A barra reserva 56 px. Detalhes,
 referência, prévia e limites em [docs/topbar-media.md](docs/topbar-media.md).
-Validação/instalação em andamento; ativação requer novo login seguro.
+Validação concluída: 37 testes locais/do pacote, teste MPRIS também ASan/UBSan.
+Instalado `jlinux-desktop-git 0.5.0.r116.gd98dcd2-1`; PR #106.
+Ativação na sessão pessoal requer novo login; nenhum aplicativo foi encerrado.
