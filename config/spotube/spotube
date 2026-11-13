@@ -1,0 +1,6 @@
+#!/bin/sh
+# A sessão JLinux pode ter XDG_RUNTIME_DIR separado do servidor de áudio.
+if [ -z "${PULSE_SERVER:-}" ] && [ -S "/run/user/$(id -u)/pulse/native" ]; then
+    export PULSE_SERVER="unix:/run/user/$(id -u)/pulse/native"
+fi
+exec /usr/bin/flatpak run com.github.KRTirtho.Spotube "$@"
