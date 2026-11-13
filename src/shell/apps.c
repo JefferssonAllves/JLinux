@@ -15,9 +15,10 @@ static const struct {const char *name, *desktop, *icon;} apps[] = {
     {"Imagens", "org.jlinux.Files.desktop", "folder-pictures"},
     {"Vídeos", "org.jlinux.Files.desktop", "folder-videos"},
     {"Monitor", "btop.desktop", "btop"},
+    {"Spotube", "com.github.KRTirtho.Spotube.desktop", "spotify"},
     {"WhatsApp", "org.jlinux.WhatsApp.desktop", "org.jlinux.WhatsApp"},
 };
-const char *dock_app_name(int index) { return index >= 0 && index < 10 ? apps[index].name : ""; }
+const char *dock_app_name(int index) { return index >= 0 && index < 11 ? apps[index].name : ""; }
 static cairo_surface_t *load_icon(const char *path) {
     if (!path || !g_file_test(path, G_FILE_TEST_IS_REGULAR)) { return NULL; }
     cairo_surface_t *image;
@@ -66,7 +67,7 @@ static cairo_surface_t *settings_icon(void) {
     return image;
 }
 cairo_surface_t *dock_app_icon(int index) {
-    if (index < 0 || index >= 10) { return NULL; }
+    if (index < 0 || index >= 11) { return NULL; }
     if (index == 5) { return settings_icon(); }
     /* Folder shortcuts use their folder icons rather than the file manager's logo. */
     GDesktopAppInfo *info = apps[index].desktop ? g_desktop_app_info_new(apps[index].desktop) : NULL;
@@ -83,7 +84,7 @@ cairo_surface_t *dock_app_icon(int index) {
 }
 static void reset_signals(gpointer data) { (void)data; sigset_t empty; sigemptyset(&empty); sigprocmask(SIG_SETMASK, &empty, NULL); }
 bool dock_app_launch(int index, GError **error) {
-    if (index < 0 || index >= 10 || index == 5) { return false; }
+    if (index < 0 || index >= 11 || index == 5) { return false; }
     if (index == 1 || index == 8) {
         char *terminal[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL, NULL, NULL};
         if (index == 8) { terminal[3] = "-e"; terminal[4] = "btop"; }

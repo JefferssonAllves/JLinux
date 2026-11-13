@@ -3,12 +3,12 @@
 #include "../effects/glass.h"
 #include "preferences.h"
 struct futurista {
-    cairo_surface_t *wallpaper, *blurred, *icons[10];
+    cairo_surface_t *wallpaper, *blurred, *icons[11];
     struct jlinux_glass glass;
     int selected, wifi, battery, settings_category;
     bool settings_open;
     struct shell_preferences prefs;
-    double volume, brightness, hover[10];
+    double volume, brightness, hover[11];
     bool muted, charging;
     char message[180];
 };

@@ -470,3 +470,7 @@ DOCK-APPS-SETTINGS — instalado `0.5.0.r111.g829b795-1`, 36/36 checks do pacote
 Captura física do dock 666×666 em saída 1600×900 obtida por leitura KMS/VAAPI, sem reiniciar ou trocar VT. Original privado em Imagens do usuário; modelos editados sem janelas externas versionados. Material grafite/azul/violeta e reflexão acetinada implementados nativamente, com centro radial e halo de seleção suavizado.
 
 36 testes locais release passaram. Comparação de referência corrigida e render nativo em 1254×1254 inspecionada, com relatório de 18 amostras (9,296 níveis RGB médios); não há equivalência pixel a pixel. Sem benchmark ou ativação física do novo código. Dependência: feature/dock-apps-settings (#90). Pacote/instalação serão registrados na conclusão.
+
+## Spotube no dock e acesso Bluetooth
+
+Dock ampliado para 11 itens, preservando aplicativos anteriores; Spotube usa ícone Spotify instalado no perfil do usuário. Botão Bluetooth abre Blueman para gerenciar energia, busca, pareamento e conexão. Não é gerenciamento incorporado ao desenho do painel: utiliza o gerenciador instalado. Adaptador BlueZ confirmado ligado/desbloqueado. Shell compilado e instalado sobre base 702d672; backup /var/lib/jlinux-backups/jlinux-shell-before-spotube-bluetooth. Ativação no próximo login; sessão atual preservada.
