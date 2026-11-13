@@ -13,3 +13,10 @@ Neste computador o adaptador hci0 existia, mas faltava BlueZ e havia bloqueio po
 38 testes locais release passaram; três direcionados ASan/UBSan passaram. Novos testes verificam parsing estrito de estado, erro sem atualização otimista, cliques para ligar/desligar, recuperação após falha, abertura do gerenciador e timeout/retentativa sem derrubar o shell. O teste do painel usa busctl e gerenciador falsos para não modificar rádios do host. Prévia nativa do componente inspecionada; status na prévia é ilustrativo. Não é benchmark nem validação de transmissão de áudio/arquivo.
 
 Instalar o pacote não troca o shell em execução. Ativar no próximo login; reiniciar somente o shell encerraria a sessão porque o iniciador monitora sua saída. Não encerrar aplicativos do usuário para aplicar esta alteração.
+
+
+## Instalação concluída
+
+Instalado `jlinux-desktop-git 0.5.0.r119.g0901601-1`, source **0901601**, PR #107. Preservada a barra de mídia da instalação que avançou para d98dcd2/r116 durante o trabalho. Após a integração, 39 testes release passaram; o próprio check() do pacote também passou 39/39. Três testes direcionados ASan/UBSan passaram, incluindo Bluetooth e MPRIS, e o fluxo Bluetooth com falha/timeout/gerenciador passou também usando os binários instalados.
+
+Pacman confirmou 23 arquivos e zero alterações; donos/permissões do arquivo de pacote foram conferidos. Backup da instalação anterior e banco do pacote em `/var/backups/jlinux-before-bluetooth-0901601/`; pacote novo em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r119.g0901601-1-x86_64.pkg.tar.zst`. Os processos existentes 82452/82453/82477 mantiveram seus inodes; são evidência desta atualização, não PIDs a reutilizar. Sessão e aplicativos preservados. O serviço Bluetooth já está ativo/habilitado e o rádio ligado; a mudança do painel ativa no próximo login. Emparelhamento físico segue pendente.

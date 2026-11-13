@@ -484,3 +484,6 @@ Implementado na branch feature/topbar-media: controles MPRIS nativos e card de
 data/hora baseado em referência imagegen. A barra reserva 56 px. Detalhes,
 referência, prévia e limites em [docs/topbar-media.md](docs/topbar-media.md).
 Validação/instalação em andamento; ativação requer novo login seguro.
+
+
+CONTROL-BLUETOOTH — instalado r119/0901601, preservando barra de mídia d98dcd2/r116. Pacote/checks 39/39, integridade pacman confirmada, três direcionados ASan/UBSan e fluxo do painel com binários instalados passaram. Serviço ativo/habilitado e rádio ligado. Ativação do painel no próximo login; pareamento físico pendente. Backup e limites em docs/bluetooth.md; PR #107 enviado, sem merge.
