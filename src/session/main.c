@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
             return !strcmp(argv[i], "--help") ? 0 : 1;
         }
     }
+    if (drm && !codex) { terminal = false; }
     if (!jlinux_session_locale("/etc/locale.conf")) { perror("LANG"); return 1; }
     if (drm && headless) { fprintf(stderr, "Escolha --drm ou --headless.\n"); return 1; }
     const char *parent_display = getenv("WAYLAND_DISPLAY"), *parent_runtime = getenv("XDG_RUNTIME_DIR");

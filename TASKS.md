@@ -470,3 +470,7 @@ DOCK-APPS-SETTINGS — instalado `0.5.0.r111.g829b795-1`, 36/36 checks do pacote
 Captura física do dock 666×666 em saída 1600×900 obtida por leitura KMS/VAAPI, sem reiniciar ou trocar VT. Original privado em Imagens do usuário; modelos editados sem janelas externas versionados. Material grafite/azul/violeta e reflexão acetinada implementados nativamente, com centro radial e halo de seleção suavizado.
 
 36 testes locais release passaram. Comparação de referência corrigida e render nativo em 1254×1254 inspecionada, com relatório de 18 amostras (9,296 níveis RGB médios); não há equivalência pixel a pixel. Sem benchmark ou ativação física do novo código. Dependência: feature/dock-apps-settings (#90). Pacote/instalação serão registrados na conclusão.
+
+## Login sem terminal automático
+
+Sessão --drm inicia sem terminal; --codex explícito preservado. Launcher compilado com cc e instalado em /usr/bin/jlinux-session sobre pacote 0.5.0.r113.g702d672-1; backup /var/lib/jlinux-backups/jlinux-session-702d672-before-no-terminal. Alteração vale no próximo login. Sessão ativa preservada.
