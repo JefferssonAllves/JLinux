@@ -1,0 +1,13 @@
+pkgname=jlinux-shutdown-cleanup
+pkgver=1
+pkgrel=1
+pkgdesc='Limpeza conservadora no desligamento do JLinux'
+arch=('any')
+license=('custom')
+depends=('pacman-contrib' 'systemd')
+source=('shutdown-cleanup.sh' 'jlinux-shutdown-cleanup.service')
+sha256sums=('SKIP' 'SKIP')
+package() {
+    install -Dm755 "$srcdir/shutdown-cleanup.sh" "$pkgdir/usr/lib/jlinux/shutdown-cleanup.sh"
+    install -Dm644 "$srcdir/jlinux-shutdown-cleanup.service" "$pkgdir/usr/lib/systemd/system/jlinux-shutdown-cleanup.service"
+}

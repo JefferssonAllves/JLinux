@@ -476,3 +476,9 @@ DOCK-GRADIENT-IMAGE — instalado `0.5.0.r113.g702d672-1`, checks do pacote 36/3
 ## Padronização do painel de controle — feature/control-panel-style
 
 Painel e cartões reutilizam o material grafite do dock e os reflexos finos das janelas. Prévia nativa em docs/design/control-center-standard.png inspecionada; alteração compilada em build-native. Instalação e validação na sessão DRM permanecem pendentes.
+
+## Limpeza conservadora no desligamento
+
+Serviço systemd e script nativo de shell: paccache mantém duas versões; tmpfiles respeita expiração do sistema; pacotes órfãos apenas registrados. Não classifica aplicativos como inúteis por frequência de uso.
+
+Instalado via makepkg/pacman como jlinux-shutdown-cleanup 1-1; serviço habilitado e active (exited). Sintaxe shell, verificação systemd e simulação paccache conferidas. Desligamento real ainda não testado.

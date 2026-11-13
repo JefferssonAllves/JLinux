@@ -1,0 +1,13 @@
+[Unit]
+Description=Limpeza conservadora do JLinux ao desligar
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/true
+ExecStop=/usr/lib/jlinux/shutdown-cleanup.sh
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

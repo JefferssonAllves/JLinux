@@ -156,3 +156,7 @@ Instalado `jlinux-desktop-git 0.5.0.r113.g702d672-1`, fonte 702d672, branch `fea
 Backup dos cinco executáveis anteriores e banco local em `/var/backups/jlinux-before-dock-gradient-702d672/`; pacote em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r113.g702d672-1-x86_64.pkg.tar.zst`. Print de origem privado em `~/Imagens/JLinux-dock-antes-degrade.png` (0600), obtido na sessão real por captura KMS/VAAPI, sem modeset/VT/reinício. grim e python-pillow foram instalados como ferramentas de captura/análise, sem novas dependências do runtime do desktop.
 
 A sessão ativa foi preservada: **o novo material entra no próximo login**. Referências geradas, render nativo e diferenças estão em docs/futurista.md; a comparação não mostrou identidade pixel a pixel. Não foi feita avaliação física do novo material em runtime nem benchmark de desempenho.
+
+## Limpeza no desligamento
+
+`jlinux-shutdown-cleanup.service` executa paccache conservando duas versões de cada pacote e limpa somente temporários vencidos pelas regras systemd-tmpfiles. Requer pacman-contrib. Ativar com `sudo systemctl enable --now jlinux-shutdown-cleanup.service`. Dependências órfãs são registradas para revisão; pacotes instalados, arquivos pessoais e caches dos aplicativos são preservados. Se pacman estiver ocupado, a limpeza é adiada. Logs: `journalctl -u jlinux-shutdown-cleanup.service`. Desativar com `sudo systemctl disable jlinux-shutdown-cleanup.service` (sem --now, que executaria a limpeza).
