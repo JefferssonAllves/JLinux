@@ -60,6 +60,18 @@ function M.command(file, filetype)
     end
     return commands[filetype]
 end
+function M.execution_command(command, file)
+    local wrapped = { 'sh', '-c', [[
+printf "\033[1;38;2;235;105;255mExecutando '%s'\033[0m\n" "$1"
+shift
+trap 'status=$?; printf "\\n\\033[1;38;2;235;105;255mFim da execução (código %s)\\033[0m\\n" "$status"' 0
+trap 'exit 130' INT
+"$@"
+exit $?
+]], 'nvim-execution', vim.fs.basename(file) }
+    vim.list_extend(wrapped, command)
+    return wrapped
+end
 function M.run()
     if run_job and vim.fn.jobwait({ run_job }, 0)[1] == -1 then
         vim.notify('Há uma execução ativa. Use Ctrl+C no terminal para encerrá-la.', vim.log.levels.WARN)
@@ -84,7 +96,7 @@ function M.run()
     local buffer = vim.api.nvim_create_buf(false, true)
     run_buf = buffer
     bottom(buffer)
-    run_job = vim.fn.jobstart(command, { term = true, cwd = vim.fs.dirname(file), on_exit = function()
+    run_job = vim.fn.jobstart(M.execution_command(command, file), { term = true, cwd = vim.fs.dirname(file), on_exit = function()
         if temporary then vim.fn.delete(temporary) end
     end })
     vim.cmd.startinsert()
