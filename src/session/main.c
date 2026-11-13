@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
     if (!jlinux_session_locale("/etc/locale.conf")) { perror("LANG"); return 1; }
     if (drm && headless) { fprintf(stderr, "Escolha --drm ou --headless.\n"); return 1; }
     const char *parent_display = getenv("WAYLAND_DISPLAY"), *parent_runtime = getenv("XDG_RUNTIME_DIR");
+    if (parent_runtime && !getenv("PIPEWIRE_RUNTIME_DIR")) { setenv("PIPEWIRE_RUNTIME_DIR", parent_runtime, 1); }
     char parent_socket[PATH_MAX];
     if (drm && (parent_display || getenv("DISPLAY"))) { fprintf(stderr, "Execute --drm a partir do TTY.\n"); return 1; }
     if (!drm && !headless) {
