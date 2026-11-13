@@ -10,7 +10,7 @@ makedepends=('git' 'meson' 'ninja' 'pkgconf' 'wayland-protocols' 'python')
 checkdepends=('wtype')
 optdepends=('brave-bin: navegador Brave do dock' 'neovim: editor do dock' 'qbittorrent: cliente de torrents do dock' 'qt6-wayland: execução Wayland do qBittorrent' 'btop: monitor do dock' 'greetd: login na inicialização' 'cage: compositor isolado da tela de login' 'jlinux-browser-git: app WhatsApp do dock')
 provides=('jlinux-desktop')
-source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=feature/dock-spotube-entry')
+source=('JLinux::git+https://github.com/JefferssonAllves/JLinux.git#branch=fix/no-terminal-on-login')
 sha256sums=('SKIP')
 
 pkgver() {

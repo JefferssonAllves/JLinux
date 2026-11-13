@@ -63,7 +63,7 @@ for scenario in ('success', 'denied', 'oversize', 'invalid-json', 'unknown-promp
                         send(connection, {'type': 'success'})
                         request = receive(connection)
                         assert request['type'] == 'start_session'
-                        assert request['cmd'] == ['/usr/bin/dbus-run-session', '/usr/bin/jlinux-session', '--drm']
+                        assert request['cmd'] == ['/usr/bin/dbus-run-session', '/usr/bin/jlinux-session', '--drm', '--no-terminal']
                         assert 'XDG_SESSION_TYPE=wayland' in request['env']
                         send(connection, {'type': 'success'})
                     code = client.wait(timeout=4)

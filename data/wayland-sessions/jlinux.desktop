@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=JLinux
 Comment=Ambiente Wayland nativo do JLinux
-Exec=/usr/bin/dbus-run-session /usr/bin/env XDG_CURRENT_DESKTOP=JLinux XDG_SESSION_DESKTOP=jlinux XDG_SESSION_TYPE=wayland /usr/bin/jlinux-session --drm
+Exec=/usr/bin/dbus-run-session /usr/bin/env XDG_CURRENT_DESKTOP=JLinux XDG_SESSION_DESKTOP=jlinux XDG_SESSION_TYPE=wayland /usr/bin/jlinux-session --drm --no-terminal
 TryExec=/usr/bin/jlinux-session
 Type=Application

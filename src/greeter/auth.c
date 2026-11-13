@@ -99,10 +99,12 @@ static bool receive_message(struct login_auth *auth, struct json_object *object)
         if (start) { json_object_put(start); } if (cmd) { json_object_put(cmd); } if (env) { json_object_put(env); }
         return failure(auth, "Memória insuficiente.");
     }
-    const char *args[] = {"/usr/bin/dbus-run-session", "/usr/bin/jlinux-session", "--drm"};
+    const char *args[] = {"/usr/bin/dbus-run-session", "/usr/bin/jlinux-session", "--drm", "--no-terminal"};
     const char *vars[] = {"XDG_CURRENT_DESKTOP=JLinux", "XDG_SESSION_DESKTOP=jlinux", "XDG_SESSION_TYPE=wayland"};
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < sizeof(args)/sizeof(args[0]); i++) {
         json_object_array_add(cmd, json_object_new_string(args[i]));
+    }
+    for (size_t i = 0; i < sizeof(vars)/sizeof(vars[0]); i++) {
         json_object_array_add(env, json_object_new_string(vars[i]));
     }
     json_object_object_add(start, "cmd", cmd); json_object_object_add(start, "env", env);

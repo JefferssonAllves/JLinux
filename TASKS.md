@@ -500,3 +500,9 @@ Spotube acrescentado como 11º item com logo do Spotify; atalhos anteriores, Blu
 
 
 DOCK-SPOTUBE-ENTRY — instalado r127/8cc19f9, preservando barra/Bluetooth de r122. Pacote 39/39; dois direcionados ASan/UBSan; 11 ícones e cliques com binários instalados validados. PR #109 enviado sem merge. Nova sessão para ativar, reprodução pendente. Backup/source em docs/futurista.md.
+
+## LOGIN-NO-TERMINAL — fix/no-terminal-on-login
+
+Login pelo greeter/greetd e pela entrada de sessão Wayland agora passam `--no-terminal` ao iniciador existente. Os argumentos do comando e as variáveis de ambiente são serializados em loops separados com seus próprios limites. Não altera PAM, atalho Super+Enter ou o comportamento de sessões de desenvolvimento. Três testes direcionados passaram (login-auth, login-flow-headless e session-headless) após build completo; nenhuma sessão real encerrada para teste.
+
+LOGIN-NO-TERMINAL — instalado r129/7df42e2; pacote 39/39 e integridade confirmada. Fluxo do login com binários instalados validou `--no-terminal` em ambiente isolado. Sessão atual preservada; efeito no próximo login. Backup/source em docs/arch-installation.md. PR #110 enviado, sem merge.
