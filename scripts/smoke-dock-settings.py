@@ -1,6 +1,6 @@
-import math
 #!/usr/bin/env python3
 """Click real dock/settings surfaces; application launches use private desktop fixtures."""
+import math
 import json
 import os
 from pathlib import Path
