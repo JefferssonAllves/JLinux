@@ -481,3 +481,8 @@ referência, prévia e limites em [docs/topbar-media.md](docs/topbar-media.md).
 Validação concluída: 37 testes locais/do pacote, teste MPRIS também ASan/UBSan.
 Instalado `jlinux-desktop-git 0.5.0.r116.gd98dcd2-1`; PR #106.
 Ativação na sessão pessoal requer novo login; nenhum aplicativo foi encerrado.
+
+Revisão TOPBAR-MEDIA: por pedido do usuário, estilo neon substituído por vidro
+discreto; barra de 40 px, reflexos leves e contorno translúcido. Prévia em
+`docs/design/topbar-subtle-glass-native.png`. Checks e instalação registrados
+em docs/topbar-media.md.

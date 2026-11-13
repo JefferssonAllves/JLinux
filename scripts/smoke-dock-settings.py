@@ -35,7 +35,7 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
         (apps/entry).write_text(f'[Desktop Entry]\nType=Application\nName={name}\nExec=dock-test {name} %f\n')
     def log():return logfile.read_text(errors='replace')
     def recorded():return [json.loads(x) for x in calls.read_text().splitlines()] if calls.exists() else []
-    scale=min(1280/1672,(720-56)/889);dx=(1280-1672*scale)/2;dy=56+(720-52-889*scale)/2-52*scale
+    scale=min(1280/1672,(720-40)/889);dx=(1280-1672*scale)/2;dy=40+(720-52-889*scale)/2-52*scale
     def click(x,y):subprocess.run([pointer,str(round(dx+x*scale)),str(round(dy+y*scale))],env=env,check=True,timeout=4)
     def dock():
         count=log().count('Dock circular aberto.')

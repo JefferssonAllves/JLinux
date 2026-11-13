@@ -66,9 +66,9 @@ sys.exit(1 if pathlib.Path(os.environ['POWER_FAIL']).exists() else 0)
                     maps += 1
                     wait_for(lambda: log().count('Interface mapeada: jlinux-power-menu') >= maps,
                              [server, client], 'menu de energia')
-                    if panel_only: click(1000, 68 + 65 + action * 42)
+                    if panel_only: click(1000, 52 + 65 + action * 42)
                     assert len(recorded()) == before, 'Ação antes da confirmação'
-                    click(1000, 68 + 240)  # Cancel confirmation.
+                    click(1000, 52 + 240)  # Cancel confirmation.
                     assert len(recorded()) == before, 'Cancelar executou ação'
                     click(1240, 24)
                     if not panel_only:
@@ -77,10 +77,10 @@ sys.exit(1 if pathlib.Path(os.environ['POWER_FAIL']).exists() else 0)
                     maps += 1
                     wait_for(lambda: log().count('Interface mapeada: jlinux-power-menu') >= maps,
                              [server, client], 'reabertura')
-                    if panel_only: click(1000, 68 + 65 + action * 42)
+                    if panel_only: click(1000, 52 + 65 + action * 42)
                     if action == 2:
                         failure.touch()
-                    click(1000, 68 + 180)
+                    click(1000, 52 + 180)
                     wait_for(lambda: len(recorded()) > before, [server, client], label)
                     expected = (['loginctl', '--no-ask-password', 'terminate-session', 'test_session']
                                 if action == 0 else ['systemctl', '--no-ask-password',
@@ -92,7 +92,7 @@ sys.exit(1 if pathlib.Path(os.environ['POWER_FAIL']).exists() else 0)
                         wait_for(lambda: 'Ação de sessão recusada' in client_log.read_text(),
                                  [server, client], 'recusa visível e logada')
                         failure.unlink()
-                        click(1000, 68 + 240)
+                        click(1000, 52 + 240)
                 stop(client)
                 assert client.returncode == 0
             stop(server)
