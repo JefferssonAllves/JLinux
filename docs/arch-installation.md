@@ -53,6 +53,10 @@ Testes headless cobrem desenho, ciclo de vida e recusa de iniciar sem greetd. Um
 
 Protocolo: documentação primária de [greetd_ipc](https://docs.rs/greetd_ipc/0.10.3/greetd_ipc/). Configuração: manual `greetd(5)` instalado pelo Arch. Não foram alteradas as regras PAM existentes.
 
+## Áudio PipeWire
+
+`jlinux-session` cria um `XDG_RUNTIME_DIR` privado para o socket Wayland e preserva o runtime original do usuário em `PIPEWIRE_RUNTIME_DIR` para aplicativos de áudio. O host ainda precisa configurar o dispositivo ALSA `default` para PipeWire quando um aplicativo usa ALSA diretamente; essa escolha fica no perfil de áudio do usuário/sistema.
+
 ## Estado aplicado nesta máquina
 
 Instalado pelo pacman: `jlinux-desktop-git 0.5.0.r37.g77ecbc1-1`, compilado da branch de trabalho, sem release/tag. Binários pertencem ao pacote e são root:root 0755. `greetd.service` é o display manager e `graphical.target` é o alvo padrão. TTY2 habilitado/ativo; backup inicial em `/var/lib/jlinux-login-backup.qsemGPVh`.
