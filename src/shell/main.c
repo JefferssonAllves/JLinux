@@ -32,7 +32,7 @@
 #include <wayland-cursor.h>
 #include "layer-shell-client.h"
 extern char **environ;
-enum { PANEL_BODY_HEIGHT = 36, PANEL_FADE_HEIGHT = 0,
+enum { PANEL_BODY_HEIGHT = 56, PANEL_FADE_HEIGHT = 0,
     PANEL_HEIGHT = PANEL_BODY_HEIGHT + PANEL_FADE_HEIGHT, PANEL_MARGIN = 6, PANEL_ZONE = PANEL_HEIGHT };
 struct app;
 struct surface {
@@ -67,6 +67,7 @@ struct app {
     struct wl_callback *dock_frame;
     int control;
     struct volume volume;
+    struct media media;
     struct surface *pointer_surface;
     struct wl_list buffers;
     double pointer_x, pointer_y;
@@ -555,7 +556,9 @@ static void pointer_button(void *data, struct wl_pointer *pointer, uint32_t seri
         }
     } else if (app->pointer_surface == &app->panel) {
         if (!app->volume_panel && !app->power_panel) {
-            if(app->pointer_x>=app->panel.width-60){toggle_launcher(app,true);}
+            int media_hit=futurista_media_hit(app->pointer_x,app->pointer_y,app->panel.width);
+            if(media_hit>=0){media_action(&app->media,media_hit);}
+            else if(app->pointer_x>=app->panel.width-60){toggle_launcher(app,true);}
 
         }
         else if (app->volume_panel || (app->pointer_x >= app->panel.width - 326 && app->pointer_x < app->panel.width - 272)) { toggle_volume(app); }
@@ -700,7 +703,10 @@ int main(int argc, char **argv) {
     }
     struct itimerspec timer = {.it_value = {.tv_sec = 30}, .it_interval = {.tv_sec = 30}};
     if (timerfd_settime(app.timer, 0, &timer, NULL)) { goto cleanup; }
+    media_init(&app.media);app.futurista.media=&app.media;
     while (app.running) {
+        while(g_main_context_iteration(NULL,false)){}
+        if(app.media.dirty){app.panel.dirty=true;app.media.dirty=false;}
         if (wl_display_dispatch_pending(app.display) < 0) { goto cleanup; }
         if (!draw(&app.wallpaper) || !draw(&app.panel) || !draw(&app.power) || !draw(&app.audio) || !draw(&app.launcher)) { goto cleanup; }
         while (wl_display_prepare_read(app.display) != 0) {
@@ -708,9 +714,27 @@ int main(int argc, char **argv) {
         }
         int flushed = wl_display_flush(app.display);
         if (flushed < 0 && errno != EAGAIN) { wl_display_cancel_read(app.display); goto cleanup; }
-        struct pollfd fds[] = {{wl_display_get_fd(app.display), POLLIN | (flushed < 0 ? POLLOUT : 0), 0},
+        struct pollfd base_fds[] = {{wl_display_get_fd(app.display), POLLIN | (flushed < 0 ? POLLOUT : 0), 0},
             {app.timer, POLLIN, 0}, {app.signals, POLLIN, 0}, {app.control, POLLIN, 0}};
-        int ready = poll(fds, 4, app.volume.pid ? 100 : -1);
+        GMainContext *context=g_main_context_default();
+        if(!g_main_context_acquire(context)){wl_display_cancel_read(app.display);goto cleanup;}
+        int priority, timeout;
+        bool immediate=g_main_context_prepare(context,&priority);
+        int count=g_main_context_query(context,priority,&timeout,NULL,0),capacity;
+        g_autofree GPollFD *gio_fds=NULL;
+        do {
+            capacity=count;g_free(gio_fds);gio_fds=g_new0(GPollFD,capacity);
+            count=g_main_context_query(context,priority,&timeout,gio_fds,capacity);
+        } while(count>capacity);
+        g_autofree struct pollfd *fds=g_new0(struct pollfd,4+count);
+        memcpy(fds,base_fds,sizeof(base_fds));
+        for(int i=0;i<count;i++){fds[i+4]=(struct pollfd){gio_fds[i].fd,gio_fds[i].events,0};}
+        if(immediate){timeout=0;}
+        if(app.volume.pid&&(timeout<0||timeout>100)){timeout=100;}
+        int ready = poll(fds, 4+count, timeout);
+        for(int i=0;i<count;i++){gio_fds[i].revents=fds[i+4].revents;}
+        if(ready>=0&&g_main_context_check(context,priority,gio_fds,count)){g_main_context_dispatch(context);}
+        g_main_context_release(context);
         if (ready < 0) { wl_display_cancel_read(app.display); if (errno == EINTR) { continue; } goto cleanup; }
         if (fds[0].revents & POLLIN) { if (wl_display_read_events(app.display) < 0) { goto cleanup; } }
         else { wl_display_cancel_read(app.display); }
@@ -762,6 +786,7 @@ int main(int argc, char **argv) {
 cleanup:
     if(app.dock_frame){wl_callback_destroy(app.dock_frame);app.dock_frame=NULL;}
     if (result) { fprintf(stderr, "Shell falhou: Wayland=%d, errno=%d\n", app.display ? wl_display_get_error(app.display) : 0, errno); }
+    if(app.media.cancel){media_finish(&app.media);}
     shell_control_close(app.control);
     futurista_finish(&app.futurista);
     volume_finish(&app.volume);
