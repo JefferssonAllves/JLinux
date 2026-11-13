@@ -62,3 +62,10 @@ agora usa o runtime canônico também para Flatpak, preservando o socket
 Wayland com caminho absoluto. Isso alinha `.flatpak/ID/bwrapinfo.json` com o
 diretório consultado pelo portal. Não reinicia o portal nem fecha instâncias
 já abertas; reabrir o aplicativo para receber o ajuste.
+
+Verificação da correção: sandbox criado com runtime canônico gerou
+`/run/user/1001/.flatpak/3684870578/bwrapinfo.json`. Dentro do sandbox,
+Flatpak normaliza WAYLAND_DISPLAY para `wayland-0`: ambos os sockets foram
+verificados em `$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY` e
+`/run/flatpak/pulse/native`. A primeira asserção de teste usava o nome relativo
+como caminho direto; a verificação corrigida passou.
