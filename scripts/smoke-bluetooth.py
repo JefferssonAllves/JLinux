@@ -27,6 +27,8 @@ else:(root/'state').write_text(sys.argv[-1])
     apps=root/'data/applications';apps.mkdir(parents=True)
     (apps/'blueman-manager.desktop').write_text(f'[Desktop Entry]\nType=Application\nName=Bluetooth test\nExec={manager}\n')
     env=dict(os.environ,PATH=directory,BT_TEST=directory,XDG_DATA_HOME=str(root/'data'),XDG_CONFIG_HOME=str(root/'config'),XDG_RUNTIME_DIR=directory,WLR_BACKENDS='headless',WLR_RENDERER='pixman',WLR_HEADLESS_OUTPUTS='1',JLINUX_TEST_INPUT='1')
+    bus=subprocess.Popen(['/usr/bin/dbus-daemon','--session','--nofork','--print-address=1'],stdout=subprocess.PIPE,text=True)
+    processes.append(bus);env['DBUS_SESSION_BUS_ADDRESS']=bus.stdout.readline().strip()
     logfile=root/'server.log'
     def log():return logfile.read_text(errors='replace')
     def calls():return (root/'calls').read_text() if (root/'calls').exists() else ''

@@ -1,6 +1,6 @@
 # Bluetooth no painel de controle
 
-O cartão Bluetooth mostra o estado do primeiro adaptador detectado. Clique na parte superior para ligar/desligar; **Dispositivos ›** abre o Blueman para procurar, emparelhar, conectar e remover dispositivos, incluindo diálogos de PIN/confirmação. Essa gestão detalhada é feita no aplicativo Blueman, não em uma lista própria dentro do painel.
+O cartão Bluetooth mostra o estado do primeiro adaptador detectado. Clique na parte superior para ligar/desligar; **Dispositivos ›** abre o Blueman para procurar, emparelhar, conectar e remover dispositivos, incluindo diálogos de PIN/confirmação. Essa gestão detalhada é feita no aplicativo Blueman, não em uma lista própria dentro do painel. Antes de abri-lo, a sessão D-Bus recebe os dois valores Wayland atuais para ativar o agente de emparelhamento no socket correto; a chamada local tem limite de 1 s.
 
 O shell continua em C. Consulta/altera `org.bluez.Adapter1.Powered` por chamadas `busctl` assíncronas, sem shell de comando e sem sudo. Consulta ao abrir o painel e no tick existente de 30 s enquanto ele está aberto. Há só uma operação em andamento; o painel permanece responsivo e o processo é finalizado se ultrapassar 5 s (a chamada D-Bus já possui timeout de 3 s). Bloqueio físico, ausência de adaptador, daemon desligado e falhas de permissão não são mostrados como sucesso. O hardware testado tem um adaptador; escolha entre múltiplos não está implementada.
 

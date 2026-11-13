@@ -425,6 +425,19 @@ static void apply_preferences(struct app *app) {
     app->futurista.glass.shadow=p.shadow;
     app->panel.dirty=true;app->launcher.dirty=true;
 }
+static bool bluetooth_manager_open(GError **error) {
+    /* The session creates its private Wayland socket after the D-Bus daemon starts. */
+    GDBusConnection *bus=g_bus_get_sync(G_BUS_TYPE_SESSION,NULL,error);
+    if(!bus){return false;}
+    GVariantBuilder values;g_variant_builder_init(&values,G_VARIANT_TYPE("a{ss}"));
+    const char *names[]={"WAYLAND_DISPLAY","XDG_RUNTIME_DIR"};
+    for(unsigned i=0;i<2;i++){const char *value=getenv(names[i]);if(value){g_variant_builder_add(&values,"{ss}",names[i],value);}}
+    GVariant *reply=g_dbus_connection_call_sync(bus,"org.freedesktop.DBus","/org/freedesktop/DBus","org.freedesktop.DBus","UpdateActivationEnvironment",g_variant_new("(a{ss})",&values),G_VARIANT_TYPE("()"),G_DBUS_CALL_FLAGS_NONE,1000,NULL,error);
+    g_object_unref(bus);if(!reply){return false;}g_variant_unref(reply);
+    GDesktopAppInfo *info=g_desktop_app_info_new("blueman-manager.desktop");
+    if(!info){g_set_error_literal(error,G_IO_ERROR,G_IO_ERROR_NOT_FOUND,"Instale o gerenciador Blueman.");return false;}
+    bool opened=g_app_info_launch(G_APP_INFO(info),NULL,NULL,error);g_object_unref(info);return opened;
+}
 static void launcher_action(struct app *app, int hit) {
     if(app->futurista.settings_open && hit>=100 && hit<=102){app->futurista.settings_category=hit-100;app->launcher.dirty=true;return;}
     if(app->futurista.settings_open && ((hit>=110 && hit<=112)||(hit>=120 && hit<=122))){
@@ -447,9 +460,8 @@ static void launcher_action(struct app *app, int hit) {
         app->launcher.dirty=true;return;
     }
     if(hit==36){
-        GError *error=NULL;GDesktopAppInfo *info=g_desktop_app_info_new("blueman-manager.desktop");
-        bool opened=info && g_app_info_launch(G_APP_INFO(info),NULL,NULL,&error);
-        if(info){g_object_unref(info);}
+        GError *error=NULL;
+        bool opened=bluetooth_manager_open(&error);
         if(opened){close_launcher(app);}
         else{snprintf(app->futurista.message,sizeof(app->futurista.message),"%s",error?error->message:"Instale o gerenciador Blueman.");app->launcher.dirty=true;}
         g_clear_error(&error);return;
