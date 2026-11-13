@@ -109,65 +109,14 @@ static void centered_text(cairo_t *cr,const char *label,double y,int size,bool b
 }
 static void material(cairo_t *cr, double x, double y, double w, double h, double r, bool active,
                      struct jlinux_glass effects) {
-    if (effects.shadow) {
-        roundrect(cr, x + 1, y + 3, w, h, r);
-        cairo_set_source_rgba(cr, .006, .004, .025, .28);
-        cairo_fill(cr);
-    }
-    bool panel = w > 450 && h > 500;
+    struct ui_rect rect = {x, y, w, h};
+    if (effects.shadow) { jlinux_glass_window_shading(cr, rect, r); }
     roundrect(cr, x, y, w, h, r);
-    cairo_pattern_t *p = cairo_pattern_create_linear(x, y, x + w, y + h);
-    if (active && effects.tint) {
-        cairo_pattern_add_color_stop_rgba(p, 0, .53, .25, 1, .98);
-        cairo_pattern_add_color_stop_rgba(p, .5, w > 200 ? .51 : .35, w > 200 ? .27 : .20,
-                                          w > 200 ? .97 : .83, .97);
-        cairo_pattern_add_color_stop_rgba(p, 1, .50, .29, .96, .98);
-    } else {
-        cairo_pattern_add_color_stop_rgba(p, 0, effects.tint ? (panel ? .08 : .17) : .18,
-                                          effects.tint ? (panel ? .10 : .19) : .18,
-                                          effects.tint ? (panel ? .24 : .35) : .18, .97);
-        cairo_pattern_add_color_stop_rgba(p, .42, effects.tint ? (panel ? .055 : .11) : .12,
-                                          effects.tint ? (panel ? .07 : .14) : .12,
-                                          effects.tint ? (panel ? .18 : .28) : .12, .97);
-        cairo_pattern_add_color_stop_rgba(p, 1, effects.tint ? (panel ? .15 : .20) : .18,
-                                          effects.tint ? (panel ? .10 : .18) : .18,
-                                          effects.tint ? (panel ? .30 : .37) : .18, .97);
-    }
-    cairo_set_source(cr, p);
-    cairo_fill_preserve(cr);
-    cairo_pattern_destroy(p);
-    if (effects.reflection) {
-        cairo_save(cr);
-        cairo_clip_preserve(cr);
-        cairo_pattern_t *light = cairo_pattern_create_linear(x, y, x, y + h);
-        cairo_pattern_add_color_stop_rgba(light, 0, .85, .86, 1, active ? .30 : panel ? .10 : .12);
-        cairo_pattern_add_color_stop_rgba(light, .15, .60, .62, 1, .035);
-        cairo_pattern_add_color_stop_rgba(light, .7, .5, .4, .9, 0);
-        cairo_pattern_add_color_stop_rgba(light, 1, .7, .3, 1, active ? .22 : .08);
-        cairo_set_source(cr, light);
-        cairo_paint(cr);
-        cairo_pattern_destroy(light);
-        cairo_restore(cr);
-        p = cairo_pattern_create_linear(x, y, x, y + h);
-        cairo_pattern_add_color_stop_rgba(p, 0, .70, .73, 1, active ? .95 : .42);
-        cairo_pattern_add_color_stop_rgba(p, .4, .49, .43, .80, .16);
-        cairo_pattern_add_color_stop_rgba(p, 1, .78, .35, 1, active || panel ? 1 : .50);
-        if (panel || active) {
-            cairo_set_source_rgba(cr, .69, .30, 1, .12);
-            cairo_set_line_width(cr, panel ? 10 : 7);
-            cairo_stroke_preserve(cr);
-            cairo_set_source_rgba(cr, .77, .41, 1, .22);
-            cairo_set_line_width(cr, 3);
-            cairo_stroke_preserve(cr);
-        }
-        cairo_set_source(cr, p);
-        cairo_set_line_width(cr, 1.2);
-        cairo_stroke(cr);
-        cairo_pattern_destroy(p);
-    } else {
-        cairo_new_path(cr);
-    }
+    jlinux_dock_material(cr, x, y, x + w, y + h, active ? .45 : 0, effects);
+    cairo_new_path(cr);
+    if (effects.reflection) { jlinux_glass_window_reflections(cr, rect, r, 70); }
 }
+
 static void circle(cairo_t *cr, double x, double y, double r) { cairo_arc(cr, x, y, r, 0, 2 * pi); }
 static void line_icon(cairo_t *cr, int kind, double x, double y, double size, unsigned color) {
     if (kind == 0 || kind == 1 || kind == 10) {
