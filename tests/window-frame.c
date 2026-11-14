@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
     uint32_t corner=*(uint32_t *)pixels;
     uint32_t center=*(uint32_t *)((unsigned char *)pixels+350*4);
     CHECK(corner==center&&(corner>>24)>100);
+    CHECK(center==*(uint32_t *)((unsigned char *)pixels+(JLINUX_FRAME_HEADER-1)*stride+350*4));
     wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
     CHECK(jlinux_window_frame_update(&frame,711,411,"Restored",effects,false));
     CHECK(frame.parts[0]->buffer->width==717&&frame.parts[0]->node.x==-3);

@@ -70,7 +70,7 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
             cairo_save(cr); cairo_rectangle(cr, 16, 3, full_width - 148, header - 6); cairo_clip(cr);
             ui_text(cr, title ? title : "JLinux", 16, 8, 14, true, 0xedf0ff); cairo_restore(cr);
             cairo_set_source_rgba(cr, .77, .82, 1, .16); cairo_set_line_width(cr, 1);
-            cairo_move_to(cr, 8, header - .5); cairo_line_to(cr, full_width - 8, header - .5); cairo_stroke(cr);
+            if(!maximized){cairo_move_to(cr, 8, header - .5); cairo_line_to(cr, full_width - 8, header - .5); cairo_stroke(cr);}
             double minimize_x=full_width-100;
             cairo_set_source_rgba(cr,.82,.91,1,.96);cairo_set_line_width(cr,1.5);
             cairo_move_to(cr,minimize_x-4,21);cairo_line_to(cr,minimize_x+4,21);cairo_stroke(cr);
