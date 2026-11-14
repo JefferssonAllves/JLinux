@@ -91,3 +91,10 @@ sem reservar os 3 px da borda. O cabeçalho mantém os botões. Restaurar recria
 as faixas e volta ao visual normal; tela cheia continua ocultando todo o
 cabeçalho. Testes conferem geometria, ausência dos buffers e retorno das
 bordas; ciclo de vida da moldura passou também com ASan/UBSan.
+
+Maximizada sem bordas instalada como `jlinux-desktop-git 0.5.0.r139.gd07b30b-1`
+(código `d07b30b`). Os 45 testes do pacote passaram; o ciclo de vida da moldura
+passou com ASan/UBSan e vazamentos habilitados. O binário instalado foi
+comparado ao pacote. PR #115, sobre #113. Pacote anterior preservado em
+`~/.cache/jlinux-dock-single-package/jlinux-desktop-git-0.5.0.r136.g9a4596a-1-x86_64.pkg.tar.zst`.
+A sessão atual não foi reiniciada; ativação e conferência visual no próximo login.
