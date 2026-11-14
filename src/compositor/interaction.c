@@ -30,6 +30,7 @@
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_xdg_decoration_v1.h>
+#include <wlr/types/wlr_server_decoration.h>
 #include <wlr/util/edges.h>
 #include <wlr/util/box.h>
 #include <wlr/util/log.h>
@@ -1228,11 +1229,14 @@ struct interaction *interaction_create(struct wl_display *display,
     state->cursor = wlr_cursor_create();
     state->theme = wlr_xcursor_manager_create(NULL, 24);
     struct wlr_xdg_decoration_manager_v1 *decorations = wlr_xdg_decoration_manager_v1_create(display);
+    struct wlr_server_decoration_manager *legacy = wlr_server_decoration_manager_create(display);
     struct wlr_xdg_shell *shell = wlr_xdg_shell_create(display, 3);
-    if (!state->seat || !state->cursor || !state->theme || !shell || !decorations ||
+    if (!state->seat || !state->cursor || !state->theme || !shell || !decorations || !legacy ||
         !wlr_xcursor_manager_load(state->theme, 1) || !wlr_data_device_manager_create(display)) {
         interaction_destroy(state); return NULL;
     }
+    /* GTK uses this legacy advertisement to avoid its fallback titlebar. */
+    wlr_server_decoration_manager_set_default_mode(legacy, WLR_SERVER_DECORATION_MANAGER_MODE_SERVER);
     wlr_cursor_attach_output_layout(state->cursor, layout);
     wlr_cursor_set_xcursor(state->cursor, state->theme, "default");
     listen(&state->new_input, &backend->events.new_input, input_added);
