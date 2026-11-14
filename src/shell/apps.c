@@ -58,7 +58,7 @@ cairo_surface_t *dock_app_icon(int index) {
     if (index == 9) { return find_icon("org.jlinux.Spotube"); }
     /* Folder shortcuts use their folder icons rather than the file manager's logo. */
     GDesktopAppInfo *info = dock_app_desktop(index) ? g_desktop_app_info_new(dock_app_desktop(index)) : NULL;
-    GIcon *icon = info && index != 6 && index != 7 ? g_app_info_get_icon(G_APP_INFO(info)) : NULL;
+    GIcon *icon = info && index != 6 ? g_app_info_get_icon(G_APP_INFO(info)) : NULL;
     cairo_surface_t *image = NULL;
     if (icon && G_IS_FILE_ICON(icon)) { image = load_icon(g_file_peek_path(g_file_icon_get_file(G_FILE_ICON(icon)))); }
     if (icon && G_IS_THEMED_ICON(icon)) {
