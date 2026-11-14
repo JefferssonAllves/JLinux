@@ -10,7 +10,7 @@ local function bottom(buffer)
                 end
             end
         end
-        vim.cmd('belowright 12split')
+        vim.cmd('belowright 9split')
         terminal_win = vim.api.nvim_get_current_win()
     end
     vim.api.nvim_set_current_win(terminal_win)
