@@ -147,6 +147,7 @@ static void apply_visual(struct view *view, double now) {
     double lift = transition_value(&view->lift, now);
     wlr_scene_node_for_each_buffer(&view->content->node, buffer_opacity, &visible);
     for (unsigned i = 0; i < 4; i++) {
+        wlr_scene_node_set_enabled(&view->frame.parts[i]->node,!view->is_fullscreen&&(!view->maximized||i==0));
         wlr_scene_buffer_set_opacity(view->frame.parts[i], visible * (view->owner->focused == view ? 1 : .72));
     }
     int offset_y = view->owner->reduced_motion ? 0 : (int)((1-visible)*12-lift*3);
@@ -157,8 +158,8 @@ static void apply_visual(struct view *view, double now) {
     wlr_scene_node_set_position(&view->visual->node, 0, offset_y);
     window_aura_opacity(&view->aura, view->owner->focused == view, fmax(lift,transition_value(&view->shine,now)), visible);
     for (unsigned i = 0; i < 4; i++) {
-        wlr_scene_node_set_enabled(&view->aura.shadow[i]->node, !view->is_fullscreen);
-        wlr_scene_node_set_enabled(&view->aura.glow[i]->node, !view->is_fullscreen);
+        wlr_scene_node_set_enabled(&view->aura.shadow[i]->node, !view->is_fullscreen&&!view->maximized);
+        wlr_scene_node_set_enabled(&view->aura.glow[i]->node, !view->is_fullscreen&&!view->maximized);
     }
 }
 bool interaction_animate(struct interaction *state) {
@@ -383,6 +384,7 @@ static void set_maximized(struct view *view, bool maximized) {
     if (maximized && !maximize_area(view, &area)) {
         wlr_xdg_surface_schedule_configure(view->xdg->base); return;
     }
+    if(maximized){area.x-=JLINUX_FRAME_BORDER;area.width+=2*JLINUX_FRAME_BORDER;area.height+=JLINUX_FRAME_BORDER;}
     if (maximized && !view->maximized) {
         view->restore = (struct wlr_box){view->tree->node.x, view->tree->node.y,
             view->frame_width > 0 ? view->frame_width : view->xdg->scheduled.width,
@@ -672,7 +674,7 @@ static void fullscreen_requested(struct wl_listener *listener, void *data) {
     schedule_animation(view->owner);
     wlr_xdg_toplevel_set_fullscreen(view->xdg, enabled);
     wlr_scene_node_reparent(&view->tree->node, enabled ? view->owner->fullscreens : view->owner->windows);
-    for (unsigned i = 0; i < 4; i++) { wlr_scene_node_set_enabled(&view->frame.parts[i]->node, !enabled); }
+    for (unsigned i = 0; i < 4; i++) { wlr_scene_node_set_enabled(&view->frame.parts[i]->node, !enabled&&(!view->maximized||i==0)); }
     if (enabled) {
         wlr_xdg_toplevel_set_tiled(view->xdg, 0);
         struct wlr_box box;
