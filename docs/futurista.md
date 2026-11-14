@@ -112,3 +112,14 @@ scripts/compare-dock-gradient.py docs/design/dock-gradient-reference-v2.png docs
 
 
 O cartão [Bluetooth](bluetooth.md) agora consulta/controla o adaptador real. A parte superior liga/desliga; Dispositivos abre o gerenciador Blueman com busca, emparelhamento e conexão. Os demais controles sem backend continuam indisponíveis; isso não implementa modo avião ou Wi-Fi.
+
+### Spotube no dock
+
+O dock passa a ter onze itens, mantendo os dez anteriores e acrescentando Spotube antes do WhatsApp. Setores, ícones, hover e hit testing usam a mesma divisão em onze partes. O item abre `com.github.KRTirtho.Spotube.desktop`, reutilizando o iniciador local já instalado para o Flatpak e seu ajuste de runtime/portal.
+
+Por pedido do usuário, o Spotube usa o ícone do Spotify, reutilizado do asset local existente. O SVG é instalado como `org.jlinux.Spotube.svg`, evitando conflito com arquivos do aplicativo Spotify. O nome exibido continua Spotube. Prévia nativa inspecionada; reprodução/conta musical não foram alteradas nem testadas nesta mudança.
+
+
+Spotube instalado no dock em 12/11/2026: `jlinux-desktop-git 0.5.0.r127.g8cc19f9-1`, source 8cc19f9, PR #109. Preserva a instalação efetiva anterior r122/792b37d (barra compacta e Bluetooth). Pacote passou 39/39 testes; dois direcionados ASan/UBSan passaram. Onze ícones instalados validados, incluindo o SVG Spotify do Spotube; fluxo de cliques do dock/configurações também passou usando os binários instalados em runtime headless isolado. Reprodução musical não testada.
+
+`pacman -Qkk`: 28 arquivos, zero alterações. Backup dos arquivos anteriores e banco local em `/var/backups/jlinux-before-spotube-dock-8cc19f9/`; pacote em `/var/cache/pacman/pkg/jlinux-desktop-git-0.5.0.r127.g8cc19f9-1-x86_64.pkg.tar.zst`. Processos existentes 114412/114414/114440 preservaram os inodes; são evidência desta atualização, não PIDs para reutilizar. Nova composição do dock ativa no próximo login; nenhuma sessão/app foi encerrado para atualizar.

@@ -45,7 +45,7 @@ bool futurista_init(struct futurista *s, struct jlinux_glass glass) {
     s->hover[s->selected] = 1;
     s->wallpaper = asset("/org/jlinux/futurista/wallpaper.png");
     s->prefs = shell_preferences_default();
-    for (int i=0;i<10;i++) { s->icons[i] = dock_app_icon(i); }
+    for (int i=0;i<11;i++) { s->icons[i] = dock_app_icon(i); }
     if (s->wallpaper && glass.blur) {
         s->blurred = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 418, 236);
         cairo_t *cr = cairo_create(s->blurred);
@@ -64,7 +64,7 @@ void futurista_finish(struct futurista *s) {
     if (s->wallpaper) {
         cairo_surface_destroy(s->wallpaper);
     }
-    for (int i=0;i<10;i++) { if (s->icons[i]) { cairo_surface_destroy(s->icons[i]); } }
+    for (int i=0;i<11;i++) { if (s->icons[i]) { cairo_surface_destroy(s->icons[i]); } }
 
 }
 static void roundrect(cairo_t *cr, double x, double y, double w, double h, double r) {
@@ -120,18 +120,18 @@ static void material(cairo_t *cr, double x, double y, double w, double h, double
     if (active && effects.tint) {
         cairo_pattern_add_color_stop_rgba(p, 0, .53, .25, 1, .98);
         cairo_pattern_add_color_stop_rgba(p, .5, w > 200 ? .51 : .35, w > 200 ? .27 : .20,
-                                          w > 200 ? .97 : .83, .97);
+                                          w > 200 ? .97 : .83, .72);
         cairo_pattern_add_color_stop_rgba(p, 1, .50, .29, .96, .98);
     } else {
         cairo_pattern_add_color_stop_rgba(p, 0, effects.tint ? (panel ? .08 : .17) : .18,
                                           effects.tint ? (panel ? .10 : .19) : .18,
-                                          effects.tint ? (panel ? .24 : .35) : .18, .97);
+                                          effects.tint ? (panel ? .24 : .35) : .18, .72);
         cairo_pattern_add_color_stop_rgba(p, .42, effects.tint ? (panel ? .055 : .11) : .12,
                                           effects.tint ? (panel ? .07 : .14) : .12,
-                                          effects.tint ? (panel ? .18 : .28) : .12, .97);
+                                          effects.tint ? (panel ? .18 : .28) : .12, .72);
         cairo_pattern_add_color_stop_rgba(p, 1, effects.tint ? (panel ? .15 : .20) : .18,
                                           effects.tint ? (panel ? .10 : .18) : .18,
-                                          effects.tint ? (panel ? .30 : .37) : .18, .97);
+                                          effects.tint ? (panel ? .30 : .37) : .18, .72);
     }
     cairo_set_source(cr, p);
     cairo_fill_preserve(cr);
@@ -149,12 +149,12 @@ static void material(cairo_t *cr, double x, double y, double w, double h, double
         cairo_pattern_destroy(light);
         cairo_restore(cr);
         p = cairo_pattern_create_linear(x, y, x, y + h);
-        cairo_pattern_add_color_stop_rgba(p, 0, .70, .73, 1, active ? .95 : .42);
-        cairo_pattern_add_color_stop_rgba(p, .4, .49, .43, .80, .16);
+        cairo_pattern_add_color_stop_rgba(p, 0, .70, .73, 1, active ? 1 : .82);
+        cairo_pattern_add_color_stop_rgba(p, .4, .38, .62, 1, .70);
         cairo_pattern_add_color_stop_rgba(p, 1, .78, .35, 1, active || panel ? 1 : .50);
         if (panel || active) {
             cairo_set_source_rgba(cr, .69, .30, 1, .12);
-            cairo_set_line_width(cr, panel ? 10 : 7);
+            cairo_set_line_width(cr, panel ? 8 : 6);
             cairo_stroke_preserve(cr);
             cairo_set_source_rgba(cr, .77, .41, 1, .22);
             cairo_set_line_width(cr, 3);
@@ -303,7 +303,7 @@ void futurista_wallpaper(struct futurista *s, cairo_t *cr, int width, int height
     cairo_restore(cr);
 }
 static void blurred_backdrop(struct futurista *s, cairo_t *cr, int width, int height) {
-    if (!s->blurred) {
+    if (!s->blurred || !getenv("JLINUX_STATIC_PREVIEW")) {
         return;
     }
     cairo_save(cr);
@@ -316,19 +316,27 @@ static void blurred_backdrop(struct futurista *s, cairo_t *cr, int width, int he
 }
 static int media_width(int width) { return MIN(476, MAX(180,(width-360)/2-24)); }
 int futurista_media_hit(double x,double y,int width) {
+    double scale=FUTURISTA_PANEL_HEIGHT/56.;x/=scale;y/=scale;width=(int)(width/scale);
     if(width<800&&width>0){double scale=800./width;x*=scale;y*=scale;width=800;}
     int right=18+media_width(width);
     if(y<6||y>48||x<right-138||x>=right-6){return -1;}
     return (int)(x-(right-138))/44;
 }
 static void panel_card(cairo_t *cr,double x,double y,double w,double h,struct jlinux_glass glass) {
-    roundrect(cr,x,y,w,h,15);
+    roundrect(cr,x,y,w,h,10);
     cairo_pattern_t *p=cairo_pattern_create_linear(x,y,x,y+h);
-    cairo_pattern_add_color_stop_rgb(p,0,glass.tint?.12:.08,.055,glass.tint?.22:.08);
-    cairo_pattern_add_color_stop_rgb(p,.5,.045,.025,.10);
-    cairo_pattern_add_color_stop_rgb(p,1,.075,.035,glass.shadow?.15:.20);
+    cairo_pattern_add_color_stop_rgba(p,0,glass.tint?.22:.16,.22,glass.tint?.34:.16,.16);
+    cairo_pattern_add_color_stop_rgba(p,.5,.035,.045,.09,.18);
+    cairo_pattern_add_color_stop_rgba(p,1,.08,.10,.18,glass.shadow?.26:.12);
     cairo_set_source(cr,p);cairo_fill_preserve(cr);cairo_pattern_destroy(p);
-    cairo_set_source_rgba(cr,.72,.23,1,glass.reflection?.95:.25);cairo_set_line_width(cr,1.2);cairo_stroke(cr);
+    cairo_set_source_rgba(cr,.48,.64,1,glass.reflection?.95:.08);cairo_set_line_width(cr,1.6);cairo_stroke(cr);
+    if(glass.reflection){
+        cairo_save(cr);roundrect(cr,x+1,y+1,w-2,h-2,9);cairo_clip(cr);
+        cairo_pattern_t *sheen=cairo_pattern_create_linear(x,y,x,y+h*.55);
+        cairo_pattern_add_color_stop_rgba(sheen,0,.80,.87,1,.12);
+        cairo_pattern_add_color_stop_rgba(sheen,1,.80,.87,1,0);
+        cairo_set_source(cr,sheen);cairo_paint(cr);cairo_pattern_destroy(sheen);cairo_restore(cr);
+    }
 }
 static void media_symbol(cairo_t *cr,int action,bool playing,double x,double y,bool enabled) {
     cairo_save(cr);cairo_translate(cr,x,y);cairo_set_source_rgba(cr,.97,.94,1,enabled?1:.35);
@@ -340,15 +348,16 @@ static void media_symbol(cairo_t *cr,int action,bool playing,double x,double y,b
 }
 void futurista_panel(struct futurista *s,cairo_t *cr,int width) {
     cairo_save(cr);
+    double scale=FUTURISTA_PANEL_HEIGHT/56.;cairo_scale(cr,scale,scale);width=(int)(width/scale);
     if(width<800&&width>0){cairo_scale(cr,width/800.,width/800.);width=800;}
     cairo_pattern_t *p=cairo_pattern_create_linear(0,0,width,56);
     cairo_pattern_add_color_stop_rgb(p,0,.035,.035,.09);cairo_pattern_add_color_stop_rgb(p,1,.075,.045,.15);
-    cairo_rectangle(cr,0,0,width,56);blurred_backdrop(s,cr,width,941);
-    cairo_rectangle(cr,0,0,width,56);cairo_set_source(cr,p);cairo_clip(cr);cairo_paint_with_alpha(cr,.97);cairo_reset_clip(cr);cairo_pattern_destroy(p);
-    cairo_set_source_rgba(cr,.72,.23,1,.85);cairo_set_line_width(cr,1);cairo_move_to(cr,0,55.5);cairo_line_to(cr,width,55.5);cairo_stroke(cr);
+    cairo_rectangle(cr,0,0,width,56);blurred_backdrop(s,cr,width,941/scale);
+    cairo_rectangle(cr,0,0,width,56);cairo_set_source(cr,p);cairo_clip(cr);cairo_paint_with_alpha(cr,.52);cairo_reset_clip(cr);cairo_pattern_destroy(p);
+    cairo_set_source_rgba(cr,.70,.75,.92,.10);cairo_set_line_width(cr,1);cairo_move_to(cr,0,55.5);cairo_line_to(cr,width,55.5);cairo_stroke(cr);
     int mw=media_width(width),right=18+mw;
     panel_card(cr,18,6,mw,42,s->glass);
-    text(cr,"♫",32,6,30,true,0xbd48ff);
+    text(cr,"♫",32,6,30,true,0xb8b5df);
     struct media *m=s->media;
     cairo_save(cr);cairo_rectangle(cr,82,8,MAX(0,mw-222),38);cairo_clip(cr);
     text(cr,m&&m->player?(m->title[0]?m->title:"Mídia em reprodução"):"Nenhuma mídia",82,8,15,true,0xf4edff);
@@ -356,7 +365,7 @@ void futurista_panel(struct futurista *s,cairo_t *cr,int width) {
     for(int i=0;i<3;i++){bool enabled=m&&m->can_control&&m->player&&(i==0?m->can_previous:i==2?m->can_next:m->playing?m->can_pause:m->can_play);media_symbol(cr,i,m&&m->playing,right-116+i*44,27,enabled);}
     double cx=(width-350)/2.;panel_card(cr,cx,6,350,42,s->glass);
     /* Calendar outline and binding rings share the reference's purple accent. */
-    cairo_set_source_rgb(cr,.73,.25,1);roundrect(cr,cx+20,17,23,22,3);cairo_set_line_width(cr,2);cairo_stroke(cr);
+    cairo_set_source_rgb(cr,.69,.71,.83);roundrect(cr,cx+20,17,23,22,3);cairo_set_line_width(cr,2);cairo_stroke(cr);
     cairo_move_to(cr,cx+20,24);cairo_line_to(cr,cx+43,24);cairo_move_to(cr,cx+26,13);cairo_line_to(cr,cx+26,20);cairo_move_to(cr,cx+37,13);cairo_line_to(cr,cx+37,20);cairo_stroke(cr);
     for(int row=0;row<2;row++)for(int col=0;col<3;col++){cairo_rectangle(cr,cx+25+col*6,28+row*5,2,2);cairo_fill(cr);}
     time_t now=time(NULL);struct tm t;localtime_r(&now,&t);
@@ -364,7 +373,7 @@ void futurista_panel(struct futurista *s,cairo_t *cr,int width) {
     static const char *months[]={"Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"};
     char date[64],clock[16];snprintf(date,sizeof(date),"%s, %02d %s",days[t.tm_wday],t.tm_mday,months[t.tm_mon]);snprintf(clock,sizeof(clock),"%02d:%02d",t.tm_hour,t.tm_min);
     text(cr,date,cx+64,14,20,true,0xf4edff);
-    cairo_set_source_rgba(cr,.72,.23,1,.9);cairo_move_to(cr,cx+224,13);cairo_line_to(cr,cx+224,41);cairo_stroke(cr);
+    cairo_set_source_rgba(cr,.75,.79,.92,.20);cairo_move_to(cr,cx+224,13);cairo_line_to(cr,cx+224,41);cairo_stroke(cr);
     text(cr,clock,cx+246,11,26,true,0xfaf5ff);
     cairo_set_source_rgb(cr,.94,.94,1);roundrect(cr,width-181,18,29,16,3);cairo_set_line_width(cr,1.5);cairo_stroke(cr);cairo_rectangle(cr,width-150,23,3,6);cairo_fill(cr);
     if(s->battery>=0){cairo_rectangle(cr,width-178,21,23*s->battery/100.,10);cairo_fill(cr);}
@@ -373,7 +382,7 @@ void futurista_panel(struct futurista *s,cairo_t *cr,int width) {
     cairo_restore(cr);
 }
 static void sector(cairo_t *cr, int index, double focus, struct jlinux_glass effects) {
-    double a = (-108 + index * 36 + .6) * pi / 180, b = (-72 + index * 36 - .6) * pi / 180;
+    double a = (-90 - 180.0 / 11 + index * 360.0 / 11 + .6) * pi / 180, b = (-90 + 180.0 / 11 + index * 360.0 / 11 - .6) * pi / 180;
     double outer = 326 + 4 * focus, inner = 176 - 11 * focus;
     const double corner = 5;
     cairo_new_path(cr);
@@ -504,7 +513,7 @@ static void controls(struct futurista *s, cairo_t *cr, int width, int height) {
     if (s->message[0]) {
         cairo_save(cr);
         roundrect(cr, 1210, 704, 444, 74, 15);
-        cairo_set_source_rgba(cr, .06, .04, .16, .97);
+        cairo_set_source_rgba(cr, .06, .04, .16, .72);
         cairo_fill(cr);
         cairo_rectangle(cr, 1220, 712, 425, 56);
         cairo_clip(cr);
@@ -545,9 +554,13 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     cairo_set_source_rgba(cr, .015, .045, .14, .50);
     circle(cr, 836, 469, 325);
     cairo_fill(cr);
-    static const double positions[10][2] = {{836, 216}, {994, 270}, {1077, 407}, {1076, 552}, {983, 674},
-                                            {837, 714}, {690, 674}, {597, 552},  {593, 405},  {674, 277}};
-    for (int i = 0; i < 10; i++) {
+    double positions[11][2];
+    for (int i = 0; i < 11; i++) {
+        double angle = (-90 + i * 360.0 / 11) * pi / 180;
+        positions[i][0] = 836 + 250 * cos(angle);
+        positions[i][1] = 469 + 250 * sin(angle);
+    }
+    for (int i = 0; i < 11; i++) {
         sector(cr, i, s->prefs.neon ? s->hover[i] : 0, s->glass);
         double size = (i == 0 ? 86 : i == 6 ? 68 : 74) * (1 + (s->prefs.zoom ? .12 : 0) * s->hover[i]);
         double y = positions[i][1] - (s->prefs.zoom ? 5 : 0) * s->hover[i];
@@ -602,14 +615,14 @@ int futurista_hit(double x, double y, int width, int height, bool control_panel)
     if (!control_panel) {
         double dx = x - 836, dy = y - 469, r = hypot(dx, dy);
         if (r < 132) {
-            return 10;
+            return 11;
         }
         if (r >= 132) {
-            double a = atan2(dy, dx) * 180 / pi + 108;
+            double a = atan2(dy, dx) * 180 / pi + 90 + 180.0 / 11;
             while (a < 0) {
                 a += 360;
             }
-            return ((int)(a / 36)) % 10;
+            return ((int)(a / (360.0 / 11))) % 11;
         }
         return -1;
     }

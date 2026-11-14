@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
         &pixels, &format, &stride));
     uint32_t plain = *(uint32_t *)((unsigned char *)pixels + stride + 195 * 4);
     uint32_t header_center = *(uint32_t *)((unsigned char *)pixels + 18 * stride + 360 * 4);
-    CHECK((header_center >> 24) >= 220 && (header_center >> 24) < 255);
+    CHECK((header_center >> 24) >= 160 && (header_center >> 24) <= 220);
     CHECK(((header_center >> 16) & 255) <= 8 && ((header_center >> 8) & 255) <= 8 && (header_center & 255) <= 8);
     wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
     CHECK((lit >> 24) > (plain >> 24));

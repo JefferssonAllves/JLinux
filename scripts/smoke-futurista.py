@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Real Super hold/release, native launcher hit testing and shell restart in private Wayland."""
 import socket
+import shutil
 import time
 import os
 from pathlib import Path
@@ -11,13 +12,14 @@ import tempfile
 h=runpy.run_path(str(Path(__file__).with_name('smoke-shell.py')))
 stop, wait=h['stop'],h['wait_for']
 compositor,shell,wtype,pointer=map(lambda a:str(Path(a).resolve()),sys.argv[1:5])
+foot=shutil.which("foot")
 processes=[]
 with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
     root=Path(directory)
     env=dict(os.environ,XDG_RUNTIME_DIR=directory,XDG_CONFIG_HOME=directory+'/config',XDG_DATA_HOME=directory+'/data',WLR_BACKENDS='headless',WLR_RENDERER='pixman',WLR_HEADLESS_OUTPUTS='1',JLINUX_TEST_INPUT='1')
     commands=root/'commands';commands.mkdir()
     whatsapp=commands/'jlinux-whatsapp'
-    whatsapp.write_text(f"#!{sys.executable}\nfrom pathlib import Path\nimport os\nPath(os.environ['XDG_RUNTIME_DIR'],'whatsapp-opened').write_text('opened')\n")
+    whatsapp.write_text(f"#!{sys.executable}\nfrom pathlib import Path\nimport os\nPath(os.environ['XDG_RUNTIME_DIR'],'whatsapp-opened').write_text('opened')\nos.execv({foot!r},[{foot!r},'--config=/dev/null','--app-id=org.jlinux.WhatsApp','--title=WhatsApp fixture','sh'])\n")
     whatsapp.chmod(0o755)
     applications=root/'data'/'applications';applications.mkdir(parents=True)
     (applications/'org.jlinux.WhatsApp.desktop').write_text('[Desktop Entry]\nType=Application\nName=WhatsApp\nExec=jlinux-whatsapp\nIcon=org.jlinux.WhatsApp\n')
@@ -71,6 +73,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
                 keys('-M','logo','-k','q','-m','logo')
                 mouse(1240,24)
                 wait(lambda:log().count('Painel de controle aberto.')>control,processes,'right button opens controls')
+                time.sleep(.25)  # Wait for the control panel's entrance animation.
                 control_closed=log().count('Painel de controle fechado.')
                 mouse(1240,24)
                 wait(lambda:log().count('Painel de controle fechado.')>control_closed,processes,'right button closes controls')
@@ -93,9 +96,15 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
                     ctl.sendto(b'show',str(sock))
                     wait(lambda:log().count('Dock circular aberto.')>opened,processes,'WhatsApp dock item')
                     time.sleep(.25)
-                    marker=root/'whatsapp-opened';marker.unlink(missing_ok=True)
+                    marker=root/'whatsapp-opened'
+                    focused=log().count('Aplicativo existente focado: WhatsApp')
                     mouse(round(674*1280/1672),round(277*720/941))
-                    wait(marker.exists,processes,'WhatsApp command launched from former Steam slot')
+                    if iteration==0:
+                        wait(marker.exists,processes,'WhatsApp command launched from former Steam slot')
+                        wait(lambda:'Janela mapeada: WhatsApp fixture' in log(),processes,'WhatsApp fixture window')
+                    else:
+                        wait(lambda:log().count('Aplicativo existente focado: WhatsApp')>focused,processes,'WhatsApp reused after shell restart')
+                        assert log().count('Janela mapeada: WhatsApp fixture')==1,'WhatsApp duplicated'
                     closed=log().count('Dock circular fechado.')
                     ctl.sendto(b'hide',str(sock))
                     wait(lambda:log().count('Dock circular fechado.')>closed,processes,'WhatsApp dock closes')

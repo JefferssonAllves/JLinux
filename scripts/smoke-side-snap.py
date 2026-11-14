@@ -59,13 +59,13 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
                                     env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
             processes.append(drag)
             assert drag.stdout.readline().strip() == 'drag held'
-            h.wait_for(lambda: 'Prévia de encaixe: 640x664 em 0,56' in log(), processes, 'snap preview before drop')
+            h.wait_for(lambda: 'Prévia de encaixe: 640x680 em 0,40' in log(), processes, 'snap preview before drop')
             time.sleep(.22)
             assert 'Janela encaixada:' not in log(), 'preview changed geometry before release'
             drag.communicate('\n', timeout=4)
             assert drag.returncode == 0
             processes.remove(drag)
-            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x625 em 3,92)' in log(), processes, 'left half respecting panel without lateral reserve')
+            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x641 em 3,76)' in log(), processes, 'left half respecting panel without lateral reserve')
 
             if env.get('JLINUX_REDUCED_MOTION') == '1':
                 assert 'Transição de encaixe iniciada' not in log()
@@ -74,10 +74,10 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
                 assert 'Transição de encaixe iniciada' in log()
             half = size()
             assert half[1] < original[1]
-            mouse(220, 74, 1279, 240)
-            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x625 em 643,92)' in log(), processes, 'right half')
+            mouse(220, 58, 1279, 240)
+            h.wait_for(lambda: 'Janela encaixada: Snap-1 (634x641 em 643,76)' in log(), processes, 'right half')
             assert size() == half
-            mouse(830, 74, 700, 240)
+            mouse(830, 58, 700, 240)
             assert size() == original, 'dragging away did not restore original dimensions'
             # Moving the titlebar above the panel clamps the frame while held.
             # Maximization is only committed on release; its preview preserves the panel.
@@ -86,14 +86,14 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
                                     env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
             processes.append(drag)
             assert drag.stdout.readline().strip() == 'drag held'
-            h.wait_for(lambda: 'Prévia de encaixe: 1280x664 em 0,56' in log(), processes, 'top preview')
+            h.wait_for(lambda: 'Prévia de encaixe: 1280x680 em 0,40' in log(), processes, 'top preview')
             time.sleep(.2)
             assert log().count('Janela maximizada:') == maximized, 'maximized before release'
             drag.communicate('\n', timeout=4)
             assert drag.returncode == 0
             processes.remove(drag)
             h.wait_for(lambda: log().count('Janela maximizada:') > maximized, processes, 'top drop maximizes')
-            assert 'Janela maximizada: Snap-1 (1274x625 em 3,92)' in log()
+            assert 'Janela maximizada: Snap-1 (1274x641 em 3,76)' in log()
             full = size()
             assert full[1] > original[1], 'top drop did not fill workarea'
             # Restore dimensions and close using the clamped titlebar location.
@@ -109,11 +109,11 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             # The pointer can remain below the panel while the grabbed header would cross it.
             four, (w4, _, x4, y4) = open_window(4)
             maximized = log().count('Janela maximizada:')
-            mouse(x4 + 160, y4 - 1, x4 + 160, 60)
+            mouse(x4 + 160, y4 - 1, x4 + 160, 44)
             time.sleep(.2)
             assert log().count('Janela maximizada:') == maximized, 'maximized outside panel'
-            # The close button must remain in the header at y=56..92, not behind the panel.
-            mouse(x4 + w4 - 18, 74)
+            # The close button must remain in the header at y=40..76, not behind the panel.
+            mouse(x4 + w4 - 18, 58)
             four.wait(timeout=4)
             assert four.returncode in (0, 1), 'clamped window could not be closed'
             processes.remove(four)

@@ -33,6 +33,9 @@
 #include <wlr/util/edges.h>
 #include <wlr/util/box.h>
 #include <wlr/util/log.h>
+#include "../renderer/backdrop.h"
+#include "../shell/apps.h"
+#include <unistd.h>
 #include <xkbcommon/xkbcommon.h>
 extern char **environ;
 
@@ -41,11 +44,11 @@ struct view {
     struct wlr_xdg_toplevel *xdg;
     struct wlr_scene_tree *tree, *visual, *content;
     struct window_aura aura;
-    struct transition visibility, lift, snap_progress;
+    struct transition visibility, lift, snap_progress, shine;
     struct window_snapshot *snap_visual;
     struct wlr_box snap_from, snap_to;
     uint32_t snap_serial;
-    bool mapped, maximized, is_fullscreen;
+    bool mapped, maximized, is_fullscreen, minimized;
     unsigned workspace;
     bool snapped;
     struct wlr_box snap_restore;
@@ -54,7 +57,7 @@ struct view {
     struct jlinux_window_frame frame;
     int frame_width, frame_height;
     struct wl_list link;
-    struct wl_listener map, unmap, commit, destroy, maximize, fullscreen, title, parent;
+    struct wl_listener map, unmap, commit, destroy, maximize, fullscreen, minimize, title, parent;
 };
 struct decoration {
     struct wlr_xdg_toplevel_decoration_v1 *xdg;
@@ -114,7 +117,9 @@ struct interaction {
     int window_x, window_y, width, height;
     struct wl_listener new_input, new_view, new_popup, virtual_keyboard, virtual_pointer, new_decoration;
     struct wl_listener motion, absolute, button, axis, frame, set_cursor, selection;
-    struct wl_event_source *child_exit;
+    struct wl_event_source *child_exit,*dock_requests;
+    int dock_fd;
+    double dock_pending[11];
 };
 
 static double animation_time(void) {
@@ -150,7 +155,7 @@ static void apply_visual(struct view *view, double now) {
         if (offset_y < minimum) { offset_y = minimum; }
     }
     wlr_scene_node_set_position(&view->visual->node, 0, offset_y);
-    window_aura_opacity(&view->aura, view->owner->focused == view, lift, visible);
+    window_aura_opacity(&view->aura, view->owner->focused == view, fmax(lift,transition_value(&view->shine,now)), visible);
     for (unsigned i = 0; i < 4; i++) {
         wlr_scene_node_set_enabled(&view->aura.shadow[i]->node, !view->is_fullscreen);
         wlr_scene_node_set_enabled(&view->aura.glow[i]->node, !view->is_fullscreen);
@@ -173,7 +178,8 @@ bool interaction_animate(struct interaction *state) {
             }
         }
         apply_visual(view, now);
-        active |= transition_active(&view->visibility, now) || transition_active(&view->lift, now);
+        if(view->minimized&&!transition_active(&view->visibility,now)){wlr_scene_node_set_enabled(&view->tree->node,false);}
+        active |= transition_active(&view->visibility, now) || transition_active(&view->lift, now) || transition_active(&view->shine,now);
     }
     struct closing_window *closing, *next;
     wl_list_for_each_safe(closing, next, &state->closing, link) {
@@ -216,9 +222,14 @@ static void focus(struct interaction *state, struct view *view) {
         wlr_xdg_toplevel_set_activated(state->focused->xdg, false);
         jlinux_window_frame_focus(&state->focused->frame, false);
     }
+    if(view&&view->minimized){
+        view->minimized=false;
+        wlr_scene_node_set_enabled(&view->tree->node,true);animate(state,&view->visibility,1,.18);
+        wlr_log(WLR_INFO,"Janela restaurada: %s",view->xdg->title?view->xdg->title:"");
+    }
     state->focused = view;
     schedule_animation(state);
-    if (view) { jlinux_window_frame_focus(&view->frame, true); }
+    if (view) { jlinux_window_frame_focus(&view->frame, true);view->shine=(struct transition){.from=1,.to=1};animate(state,&view->shine,0,.45); }
     if (!view) {
         wlr_seat_keyboard_clear_focus(state->seat);
         return;
@@ -260,7 +271,11 @@ static bool overview_page(struct interaction *state,size_t selected){
         if(!overview_eligible(view)){continue;}
         if(index>=page*OVERVIEW_PAGE&&index<(page+1)*OVERVIEW_PAGE){
             size_t slot=index%OVERVIEW_PAGE;state->overview_views[slot]=view;
-            if(!window_overview_add(&state->overview,slot,view->xdg->title,view->visual,view->frame_width,view->frame_height)){overview_close(state,false);return false;}
+            struct transition visibility=view->visibility;
+            if(view->minimized){view->visibility=(struct transition){.from=1,.to=1};apply_visual(view,animation_time());}
+            bool added=window_overview_add(&state->overview,slot,view->xdg->title,view->visual,view->frame_width,view->frame_height);
+            if(view->minimized){view->visibility=visibility;apply_visual(view,animation_time());}
+            if(!added){overview_close(state,false);return false;}
         }index++;
     }
     state->overview_selected=selected;window_overview_select(&state->overview,selected%OVERVIEW_PAGE);
@@ -307,9 +322,25 @@ static void overview_open(struct interaction *state){
 static void focus_available(struct interaction *state) {
     struct view *view;
     wl_list_for_each(view, &state->views, link) {
-        if (view->mapped && view->workspace == state->workspace) { focus(state, view); return; }
+        if (view->mapped && !view->minimized && view->workspace == state->workspace) { focus(state, view); return; }
     }
     focus(state, NULL);
+}
+
+static void minimize_view(struct view *view){
+    if(!view||!view->mapped||view->minimized){return;}
+    struct interaction *state=view->owner;
+    overview_close(state,false);cancel_snap(view);
+    if(state->grabbed==view){end_grab(state);}
+    view->minimized=true;
+    animate(state,&view->visibility,0,.18);
+    wlr_seat_pointer_clear_focus(state->seat);
+    if(state->focused==view){focus_available(state);}
+    if(state->reduced_motion){wlr_scene_node_set_enabled(&view->tree->node,false);}
+    wlr_log(WLR_INFO,"Janela minimizada: %s",view->xdg->title?view->xdg->title:"");
+}
+static void minimize_requested(struct wl_listener *listener,void *data){
+    (void)data;struct view *view=wl_container_of(listener,view,minimize);minimize_view(view);
 }
 
 static void clip_content(struct wlr_scene_buffer *buffer, int x, int y, void *data) {
@@ -390,7 +421,7 @@ static void place(struct view *view, struct wlr_box box) {
 static void arrange(struct interaction *state) {
     struct view *view;
     wl_list_for_each(view, &state->views, link) {
-        wlr_scene_node_set_enabled(&view->tree->node, view->mapped && view->workspace == state->workspace);
+        wlr_scene_node_set_enabled(&view->tree->node, view->mapped && view->workspace == state->workspace && (!view->minimized||transition_active(&view->visibility,animation_time())));
     }
 }
 static bool snap_target(struct interaction *state, struct wlr_box *target, bool *top) {
@@ -529,7 +560,8 @@ static void view_mapped(struct wl_listener *listener, void *data) {
     struct view *view = wl_container_of(listener, view, map);
     overview_close(view->owner,false);
     update_frame(view);
-    view->mapped = true;
+    view->mapped = true;view->minimized=false;
+    for(int index=0;index<11;index++){if(dock_app_matches(index,view->xdg->app_id,view->xdg->title)){view->owner->dock_pending[dock_app_key(index)]=0;}}
     parent_changed(&view->parent, NULL);
     wlr_scene_node_set_enabled(&view->tree->node, true);
     arrange(view->owner);
@@ -573,9 +605,14 @@ static void view_unmapped(struct wl_listener *listener, void *data) {
     arrange(view->owner);
 }
 
+static void attach_client_backdrop(struct wlr_scene_buffer *buffer,int x,int y,void *data){
+    (void)x;(void)y;(void)data;if(wlr_scene_surface_try_from_buffer(buffer)){jlinux_backdrop_attach(buffer);}
+}
 static void view_committed(struct wl_listener *listener, void *data) {
     (void)data;
     struct view *view = wl_container_of(listener, view, commit);
+    if(view->xdg->app_id&&!strcmp(view->xdg->app_id,"org.jlinux.Files")){wlr_scene_node_for_each_buffer(&view->content->node,attach_client_backdrop,NULL);}
+
     wlr_scene_node_for_each_buffer(&view->content->node, clip_content, view);
     if (view->snap_visual) { schedule_animation(view->owner); }
     if (view->xdg->base->geometry.width != view->frame_width ||
@@ -670,6 +707,7 @@ static void view_destroyed(struct wl_listener *listener, void *data) {
     wl_list_remove(&view->destroy.link);
     wl_list_remove(&view->maximize.link);
     wl_list_remove(&view->fullscreen.link);
+    wl_list_remove(&view->minimize.link);
     wl_list_remove(&view->title.link);
     wl_list_remove(&view->parent.link);
     wlr_scene_node_destroy(&view->tree->node);
@@ -694,6 +732,7 @@ static void add_view(struct wl_listener *listener, void *data) {
         wl_display_terminate(state->display);
         return;
     }
+    jlinux_backdrop_attach(view->frame.parts[0]);
     view->tree->node.data = view;
     view->xdg->base->data = content;
     wlr_scene_node_set_enabled(&view->tree->node, false);
@@ -709,6 +748,7 @@ static void add_view(struct wl_listener *listener, void *data) {
     listen(&view->commit, &view->xdg->base->surface->events.commit, view_committed);
     listen(&view->destroy, &view->xdg->events.destroy, view_destroyed);
     listen(&view->maximize, &view->xdg->events.request_maximize, maximize_requested);
+    listen(&view->minimize, &view->xdg->events.request_minimize, minimize_requested);
     listen(&view->fullscreen, &view->xdg->events.request_fullscreen, fullscreen_requested);
 }
 
@@ -820,6 +860,7 @@ static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t mo
         if (state->focused) { wlr_xdg_toplevel_send_close(state->focused->xdg); }
         return true;
     }
+    if((modifiers&WLR_MODIFIER_LOGO)&&(symbol==XKB_KEY_m||symbol==XKB_KEY_M)){minimize_view(state->focused);return true;}
     if ((modifiers & WLR_MODIFIER_LOGO) && (symbol == XKB_KEY_Up || symbol == XKB_KEY_Down)) {
         if (state->focused) { set_maximized(state->focused, symbol == XKB_KEY_Up); arrange(state); }
         return true;
@@ -1071,6 +1112,7 @@ static void button_event(struct wl_listener *listener, void *data) {
             if (local_y < 0 && local_x >= view->frame_width - 40 && local_x < view->frame_width) {
                 wlr_xdg_toplevel_send_close(view->xdg); return;
             }
+            if(local_y<0&&local_x>=view->frame_width-116&&local_x<view->frame_width-76){minimize_view(view);return;}
             if (local_y < 0 && local_x >= view->frame_width - 76 && local_x < view->frame_width - 40) {
                 set_maximized(view, !view->maximized); arrange(state); return;
             }
@@ -1133,6 +1175,28 @@ static int children_exited(int number, void *data) {
     return 0;
 }
 
+static int dock_requested(int fd,uint32_t mask,void *data){
+    (void)mask;struct interaction *state=data;unsigned char command[2];ssize_t count;
+    while((count=read(fd,command,sizeof(command)))>0){
+        if(count!=1||command[0]>=11||command[0]==5){continue;}
+        int index=command[0],key=dock_app_key(index);struct view *view;bool found=false;
+        wl_list_for_each(view,&state->views,link){
+            if(view->mapped&&dock_app_matches(index,view->xdg->app_id,view->xdg->title)){
+                overview_close(state,false);change_workspace(state,view->workspace,false);focus(state,view);
+                state->dock_pending[key]=0;found=true;wlr_log(WLR_INFO,"Aplicativo existente focado: %s",dock_app_name(index));break;
+            }
+        }
+        if(found){continue;}
+        double now=animation_time();
+        /* A launcher without a mapped window may be retried after ten seconds. */
+        if(now<state->dock_pending[key]){wlr_log(WLR_INFO,"Aplicativo em abertura: %s",dock_app_name(index));continue;}
+        GError *error=NULL;
+        if(dock_app_launch(index,&error)){state->dock_pending[key]=now+10;wlr_log(WLR_INFO,"Aplicativo iniciado: %s",dock_app_name(index));}
+        else{const char *message=error?error->message:"Falha ao abrir aplicativo";wlr_log(WLR_ERROR,"Falha ao abrir %s: %s",dock_app_name(index),message);shell_control_error(message);g_clear_error(&error);}
+    }
+    return 0;
+}
+
 static size_t listeners(struct interaction *state, struct wl_listener **items) {
     struct wl_listener *all[] = {&state->new_input, &state->new_view, &state->new_popup,
         &state->virtual_keyboard, &state->virtual_pointer, &state->new_decoration, &state->motion, &state->absolute,
@@ -1146,6 +1210,7 @@ struct interaction *interaction_create(struct wl_display *display,
     struct wlr_scene *scene, struct wlr_scene_tree *windows, struct wlr_scene_tree *fullscreens, struct wlr_scene_tree *overlays, struct wlr_session *session) {
     struct interaction *state = calloc(1, sizeof(*state));
     if (!state) { return NULL; }
+    state->dock_fd=-1;
     if (!jlinux_glass_settings(&state->glass)) { free(state); return NULL; }
     const char *reduced = getenv("JLINUX_REDUCED_MOTION");
     if (reduced && strcmp(reduced, "0") && strcmp(reduced, "1")) { free(state); return NULL; }
@@ -1181,6 +1246,9 @@ struct interaction *interaction_create(struct wl_display *display,
     listen(&state->selection, &state->seat->events.request_set_selection, selection_requested);
     state->child_exit = wl_event_loop_add_signal(wl_display_get_event_loop(display), SIGCHLD, children_exited, state);
     if (!state->child_exit) { interaction_destroy(state); return NULL; }
+    state->dock_fd=window_control_open();
+    if(state->dock_fd>=0){state->dock_requests=wl_event_loop_add_fd(wl_display_get_event_loop(display),state->dock_fd,WL_EVENT_READABLE,dock_requested,state);}
+    if(state->dock_fd<0||!state->dock_requests){interaction_destroy(state);return NULL;}
     /* Virtual input is opt-in only, for isolated automated tests. */
     const char *test_input = getenv("JLINUX_TEST_INPUT");
     if (test_input && strcmp(test_input, "1") == 0) {
@@ -1218,6 +1286,8 @@ void interaction_destroy(struct interaction *state) {
     size_t count = listeners(state, items);
     for (size_t i = 0; i < count; i++) { wl_list_remove(&items[i]->link); }
     if (state->child_exit) { wl_event_source_remove(state->child_exit); }
+    if(state->dock_requests){wl_event_source_remove(state->dock_requests);}
+    window_control_close(state->dock_fd);
     struct keyboard *keyboard, *next_keyboard;
     wl_list_for_each_safe(keyboard, next_keyboard, &state->keyboards, link) {
         keyboard_removed(&keyboard->destroy, NULL);

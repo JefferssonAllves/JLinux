@@ -483,7 +483,57 @@ Cartão ligado ao estado real BlueZ, liga/desliga assíncrono e acesso Dispositi
 Implementado na branch feature/topbar-media: controles MPRIS nativos e card de
 data/hora baseado em referência imagegen. A barra reserva 56 px. Detalhes,
 referência, prévia e limites em [docs/topbar-media.md](docs/topbar-media.md).
-Validação/instalação em andamento; ativação requer novo login seguro.
+Validação concluída: 37 testes locais/do pacote, teste MPRIS também ASan/UBSan.
+Instalado `jlinux-desktop-git 0.5.0.r116.gd98dcd2-1`; PR #106.
+Ativação na sessão pessoal requer novo login; nenhum aplicativo foi encerrado.
 
+Revisão TOPBAR-MEDIA: por pedido do usuário, estilo neon substituído por vidro
+discreto; barra de 40 px, reflexos leves e contorno translúcido. Prévia em
+`docs/design/topbar-subtle-glass-native.png`. Checks e instalação registrados
+em docs/topbar-media.md.
 
 CONTROL-BLUETOOTH — instalado r119/0901601, preservando barra de mídia d98dcd2/r116. Pacote/checks 39/39, integridade pacman confirmada, três direcionados ASan/UBSan e fluxo do painel com binários instalados passaram. Serviço ativo/habilitado e rádio ligado. Ativação do painel no próximo login; pareamento físico pendente. Backup e limites em docs/bluetooth.md; PR #107 enviado, sem merge.
+
+## DOCK-SPOTUBE-ENTRY
+
+Spotube acrescentado como 11º item com logo do Spotify; atalhos anteriores, Bluetooth e barra de vidro compacta preservados. Setores/hover/seleção angular ajustados. Teste de clique cobre Spotube e WhatsApp, além dos demais apps; ícones e limites das onze entradas validados. Prévia nativa inspecionada. Instalação/source e checks finais registrados ao concluir pacote; sem teste de reprodução musical.
+
+
+DOCK-SPOTUBE-ENTRY — instalado r127/8cc19f9, preservando barra/Bluetooth de r122. Pacote 39/39; dois direcionados ASan/UBSan; 11 ícones e cliques com binários instalados validados. PR #109 enviado sem merge. Nova sessão para ativar, reprodução pendente. Backup/source em docs/futurista.md.
+
+## LOGIN-NO-TERMINAL — fix/no-terminal-on-login
+
+Login pelo greeter/greetd e pela entrada de sessão Wayland agora passam `--no-terminal` ao iniciador existente. Os argumentos do comando e as variáveis de ambiente são serializados em loops separados com seus próprios limites. Não altera PAM, atalho Super+Enter ou o comportamento de sessões de desenvolvimento. Três testes direcionados passaram (login-auth, login-flow-headless e session-headless) após build completo; nenhuma sessão real encerrada para teste.
+
+## NEON-GLASS-WINDOWS
+
+Minimização implementada por botão, Super+M e pedido xdg; restauração por
+Alt+Tab/visão de janelas. Tema escuro translúcido com bordas neon, brilho de foco,
+transições e blur real do conteúdo atrás das superfícies nativas. Detalhes,
+limites e evidências em [docs/neon-glass-windows.md](docs/neon-glass-windows.md).
+42 testes release e do pacote passaram; cinco cenários ASan/UBSan passaram.
+Instalado `jlinux-desktop-git 0.5.0.r130.g267b274-1`; PR #111.
+Ativação visual no próximo login; sessão pessoal preservada.
+
+## BRAVE-SESSION-AUDIO
+
+Corrigida conexão de áudio no runtime privado: ponte para o socket na sessão
+aberta e ambiente de PulseAudio/PipeWire preservado no iniciador C. Teste
+anônimo isolado com fluxo ativo/sem mute e dois testes de ambiente passaram.
+Ver docs/brave-session-audio.md; instalação persistente em conclusão.
+
+BRAVE-SESSION-AUDIO concluído: pacote `0.5.0.r132.g2d49501-1` instalado,
+43 testes do pacote passaram e ponte atual validada por pactl. PR #112.
+A guia pessoal ainda precisa ser recarregada/testada pelo usuário.
+
+## DOCK-SINGLE-WINDOW
+
+Implementado foco/restauração de janela existente pelo dock, incluindo outras
+áreas de trabalho e proteção contra cliques repetidos durante startup.
+Arquivos/Imagens/Vídeos compartilham identidade. Detalhes e evidências em
+[docs/dock-single-window.md](docs/dock-single-window.md).
+Checks de pacote e instalação em conclusão; ativação no próximo login.
+
+## Reflexo de fundo levemente reduzido
+
+Alphas luminosos do reflexo de janela reduzidos em 10%, sem alterar o contorno nem a tonalização. Base da instalação 9a4596a preservada. Compilação e window-frame-lifecycle passaram. Binários consumidores instalados com backup em /var/lib/jlinux-backups/before-subtle-glow; ativação no próximo login, sem encerrar a sessão atual. Comparação visual na sessão ativa pendente.

@@ -47,7 +47,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-login-flow-') as directory:
                 send({'type': 'success'})
                 request = receive()
                 assert request['type'] == 'start_session'
-                assert request['cmd'] == ['/usr/bin/dbus-run-session', '/usr/bin/jlinux-session', '--drm']
+                assert request['cmd'] == ['/usr/bin/dbus-run-session', '/usr/bin/jlinux-session', '--drm', '--no-terminal']
                 send({'type': 'success'})
         except BaseException as error:
             errors.append(error)

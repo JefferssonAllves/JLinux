@@ -66,7 +66,7 @@ fail:
 void window_aura_opacity(struct window_aura *aura,bool focused,double lift,double visible){
     for(int i=0;i<4;i++){
         wlr_scene_buffer_set_opacity(aura->shadow[i],visible*(focused?.8:.5));
-        wlr_scene_buffer_set_opacity(aura->glow[i],visible*(focused?.45:.15)*(1-lift)+visible*lift);
+        wlr_scene_buffer_set_opacity(aura->glow[i],visible*(focused?.80:.30)*(1-lift)+visible*lift);
     }
 }
 struct snapshot_part {struct wl_list link;struct wlr_scene_buffer *node;float opacity;int x,y,width,height;};

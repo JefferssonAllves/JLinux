@@ -93,3 +93,12 @@ renderer/overview.c realiza captura reduzida/desfoque em cache e cartões usando
 O contorno cromático dos setores do dock reutiliza `effects/glass.c:jlinux_glass_rim`, também chamado pelas reflexões das janelas. O helper desenha o path fornecido, sem relógio/loop próprio. O halo e as duas camadas de borda acompanham o progresso das transições já existentes; nenhuma animação contínua nova foi adicionada.
 
 O degradê do dock é executado por `jlinux_dock_material` (eixo externo→interno dos setores) e `jlinux_dock_center_material` (centro radial), em effects/dock.c. A reflexão acetinada e o halo de contorno são passes de efeitos, sem controlar tempo. A geometria e os ícones permanecem no shell, e as curvas de hover continuam em animation/. Não se usa o mockup como superfície interativa.
+
+## Passe de backdrop nativo
+
+A branch feature/neon-glass-windows implementa a primeira captura real das
+superfícies anteriores na cena para cabeçalhos, shell e Arquivos. O renderer
+faz composição reduzida via wlroots; o filtro separável CPU e a máscara alfa
+produzem o backdrop. Não usa o frame anterior com realimentação. Cache e buffers
+seguem a vida dos nós. Veja docs/neon-glass-windows.md para capacidades e limites;
+este passe não equivale ao pipeline futuro de shaders GPU de blur/refração.

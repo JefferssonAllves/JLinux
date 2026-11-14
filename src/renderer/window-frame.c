@@ -33,7 +33,6 @@ bool jlinux_window_frame_create(struct jlinux_window_frame *frame, struct wlr_sc
 }
 bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, int height,
         const char *title, struct jlinux_glass effects, bool maximized) {
-    /* shortcut: live transparency only; backdrop blur awaits the compositor GPU passes. */
     if (width < 1 || height < 1 || width > 8192 || height > 8192) { return false; }
     const int border = JLINUX_FRAME_BORDER, header = JLINUX_FRAME_HEADER;
     int full_width = width + 2 * border, full_height = height + header + border;
@@ -66,10 +65,13 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
                 (struct ui_rect){.5, .5, full_width - 1, full_height - 1}, JLINUX_FRAME_RADIUS, header);
         }
         if (i == 0) {
-            cairo_save(cr); cairo_rectangle(cr, 16, 3, full_width - 108, header - 6); cairo_clip(cr);
+            cairo_save(cr); cairo_rectangle(cr, 16, 3, full_width - 148, header - 6); cairo_clip(cr);
             ui_text(cr, title ? title : "JLinux", 16, 8, 14, true, 0xedf0ff); cairo_restore(cr);
             cairo_set_source_rgba(cr, .77, .82, 1, .16); cairo_set_line_width(cr, 1);
             cairo_move_to(cr, 8, header - .5); cairo_line_to(cr, full_width - 8, header - .5); cairo_stroke(cr);
+            double minimize_x=full_width-100;
+            cairo_set_source_rgba(cr,.82,.91,1,.96);cairo_set_line_width(cr,1.5);
+            cairo_move_to(cr,minimize_x-4,21);cairo_line_to(cr,minimize_x+4,21);cairo_stroke(cr);
             double maximize_x = full_width - 60;
             cairo_set_source_rgba(cr, .94, .95, 1, .92); cairo_set_line_width(cr, 1.2);
             if (maximized) {

@@ -122,6 +122,7 @@ int main(void) {
                 char title[32]; snprintf(title, sizeof(title), "Layout-%d", id);
                 xdg_toplevel_set_title(window->top, title);
             }
+            if (!strcmp(command, "minimize")) { xdg_toplevel_set_minimized(window->top); }
             if (!strcmp(command, "fullscreen")) { xdg_toplevel_set_fullscreen(window->top, NULL); }
             if (!strcmp(command, "restore")) { xdg_toplevel_unset_fullscreen(window->top); }
             xdg_toplevel_set_min_size(window->top, minw, minh);

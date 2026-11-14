@@ -27,11 +27,11 @@ static void satin_reflection(cairo_t *cr,double focus,struct jlinux_glass effect
 void jlinux_dock_material(cairo_t *cr,double outer_x,double outer_y,double inner_x,double inner_y,double focus,struct jlinux_glass effects) {
     /* Graphite, blue-black and violet stops follow the generated reference. */
     cairo_pattern_t *base=cairo_pattern_create_linear(outer_x,outer_y,inner_x,inner_y);
-    material_stop(base,0,.17+.025*focus,.21+.025*focus,.31+.04*focus,.99,effects.tint);
-    material_stop(base,.26,.095,.12,.19,.99,effects.tint);
-    material_stop(base,.50,.045,.055,.09,.99,effects.tint);
-    material_stop(base,.74,.11,.06,.17,.99,effects.tint);
-    material_stop(base,1,.19,.105,.28,.99,effects.tint);
+    material_stop(base,0,.17+.025*focus,.21+.025*focus,.31+.04*focus,.70,effects.tint);
+    material_stop(base,.26,.095,.12,.19,.70,effects.tint);
+    material_stop(base,.50,.045,.055,.09,.70,effects.tint);
+    material_stop(base,.74,.11,.06,.17,.70,effects.tint);
+    material_stop(base,1,.19,.105,.28,.70,effects.tint);
     cairo_set_source(cr,base);cairo_fill_preserve(cr);cairo_pattern_destroy(base);
     satin_reflection(cr,focus,effects);
 }
@@ -39,9 +39,9 @@ void jlinux_dock_center_material(cairo_t *cr,struct jlinux_glass effects) {
     double x1,y1,x2,y2;cairo_path_extents(cr,&x1,&y1,&x2,&y2);
     if(x2<=x1 || y2<=y1){return;}
     cairo_pattern_t *base=cairo_pattern_create_radial(x1+(x2-x1)*.25,y1+(y2-y1)*.22,0,(x1+x2)/2,(y1+y2)/2,(x2-x1)*.60);
-    material_stop(base,0,.23,.25,.38,.99,effects.tint);
-    material_stop(base,.45,.10,.12,.19,.99,effects.tint);
-    material_stop(base,1,.035,.04,.075,.99,effects.tint);
+    material_stop(base,0,.23,.25,.38,.70,effects.tint);
+    material_stop(base,.45,.10,.12,.19,.70,effects.tint);
+    material_stop(base,1,.035,.04,.075,.70,effects.tint);
     cairo_set_source(cr,base);cairo_fill_preserve(cr);cairo_pattern_destroy(base);
     satin_reflection(cr,0,effects);
 }
@@ -51,7 +51,7 @@ void jlinux_dock_edge_glow(cairo_t *cr,double strength) {
     double x1,y1,x2,y2;cairo_path_extents(cr,&x1,&y1,&x2,&y2);
     for(int i=6;i>=1;i--){
         cairo_pattern_t *light=cairo_pattern_create_linear(x1,y1,x2,y2);
-        double alpha=.32*strength/(i*i);
+        double alpha=.55*strength/(i*i);
         cairo_pattern_add_color_stop_rgba(light,0,.08,.86,1,alpha);
         cairo_pattern_add_color_stop_rgba(light,.5,.40,.48,1,alpha);
         cairo_pattern_add_color_stop_rgba(light,1,.85,.20,1,alpha);
