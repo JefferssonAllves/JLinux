@@ -533,3 +533,7 @@ Implementado foco/restauração de janela existente pelo dock, incluindo outras
 Arquivos/Imagens/Vídeos compartilham identidade. Detalhes e evidências em
 [docs/dock-single-window.md](docs/dock-single-window.md).
 Checks de pacote e instalação em conclusão; ativação no próximo login.
+
+## Reflexo de fundo levemente reduzido
+
+Alphas luminosos do reflexo de janela reduzidos em 10%, sem alterar o contorno nem a tonalização. Base da instalação 9a4596a preservada. Compilação e window-frame-lifecycle passaram. Binários consumidores instalados com backup em /var/lib/jlinux-backups/before-subtle-glow; ativação no próximo login, sem encerrar a sessão atual. Comparação visual na sessão ativa pendente.
