@@ -154,3 +154,5 @@ else
     test('shell-headless', shell_smoke, args: [compositor, shell], timeout: 15)
   endif
 endif
+
+test('decoration-advertisement', find_program('scripts/smoke-decorations.py'), args: [compositor], timeout: 15)
