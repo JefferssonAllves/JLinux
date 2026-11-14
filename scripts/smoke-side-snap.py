@@ -93,7 +93,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-snap-') as directory:
             assert drag.returncode == 0
             processes.remove(drag)
             h.wait_for(lambda: log().count('Janela maximizada:') > maximized, processes, 'top drop maximizes')
-            assert 'Janela maximizada: Snap-1 (1274x641 em 3,76)' in log()
+            assert 'Janela maximizada: Snap-1 (1280x644 em 0,76)' in log()
             full = size()
             assert full[1] > original[1], 'top drop did not fill workarea'
             # Restore dimensions and close using the clamped titlebar location.

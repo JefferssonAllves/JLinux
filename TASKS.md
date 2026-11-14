@@ -537,3 +537,14 @@ Checks de pacote e instalação em conclusão; ativação no próximo login.
 DOCK-SINGLE-WINDOW concluído: 45 testes release e do pacote passaram; quatro
 cenários ASan/UBSan passaram. Instalado `0.5.0.r136.g9a4596a-1`, PR #113.
 Ativação no próximo login, sem encerrar as janelas abertas do usuário.
+
+## MAXIMIZED-NO-BORDERS
+
+Implementado: janelas maximizadas sem bordas externas, halo ou sombra e sem
+folga de borda na área útil. Cabeçalho e botões preservados; restaurar repõe
+moldura normal. Testes de geometria atualizados e moldura validada com
+ASan/UBSan. Instalação em conclusão; ativação no próximo login.
+
+MAXIMIZED-NO-BORDERS concluído: instalado `0.5.0.r139.gd07b30b-1`, PR #115.
+45 testes do pacote e teste de moldura ASan/UBSan passaram. Sessão preservada;
+ativação visual no próximo login.

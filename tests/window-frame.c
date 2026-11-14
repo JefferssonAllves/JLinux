@@ -14,7 +14,10 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 12; i++) {
         CHECK(jlinux_window_frame_update(&frame, 700 + i, 400 + i, "JLinux Terminal", effects, i % 2 == 0));
         size_t pixels = 0;
-        for (int j = 0; j < 4; j++) { pixels += (size_t)frame.parts[j]->buffer->width * frame.parts[j]->buffer->height; }
+        for (int j = 0; j < 4; j++) {
+            if(!frame.parts[j]->buffer){CHECK(i%2==0&&j>0);continue;}
+            pixels += (size_t)frame.parts[j]->buffer->width * frame.parts[j]->buffer->height;
+        }
         CHECK(pixels < 40000);
         jlinux_window_frame_focus(&frame, false); CHECK(frame.parts[0]->opacity < 1);
         jlinux_window_frame_focus(&frame, true); CHECK(frame.parts[0]->opacity == 1);
@@ -94,5 +97,17 @@ int main(int argc, char **argv) {
         CHECK(cairo_surface_write_to_png(image, argv[2]) == CAIRO_STATUS_SUCCESS);
         cairo_destroy(cr); cairo_surface_destroy(image);
     }
+    CHECK(jlinux_window_frame_update(&frame,711,411,"Maximized",effects,true));
+    CHECK(frame.parts[0]->buffer->width==711&&frame.parts[0]->node.x==0);
+    for(int i=1;i<4;i++){CHECK(!frame.parts[i]->node.enabled&&!frame.parts[i]->buffer);}
+    CHECK(wlr_buffer_begin_data_ptr_access(frame.parts[0]->buffer,WLR_BUFFER_DATA_PTR_ACCESS_READ,&pixels,&format,&stride));
+    uint32_t corner=*(uint32_t *)pixels;
+    uint32_t center=*(uint32_t *)((unsigned char *)pixels+350*4);
+    CHECK(corner==center&&(corner>>24)>100);
+    CHECK(center==*(uint32_t *)((unsigned char *)pixels+(JLINUX_FRAME_HEADER-1)*stride+350*4));
+    wlr_buffer_end_data_ptr_access(frame.parts[0]->buffer);
+    CHECK(jlinux_window_frame_update(&frame,711,411,"Restored",effects,false));
+    CHECK(frame.parts[0]->buffer->width==717&&frame.parts[0]->node.x==-3);
+    for(int i=1;i<4;i++){CHECK(frame.parts[i]->node.enabled&&frame.parts[i]->buffer);}
     wlr_scene_node_destroy(&scene->tree.node); ui_finish(); return 0;
 }

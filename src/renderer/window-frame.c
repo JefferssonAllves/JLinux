@@ -34,13 +34,15 @@ bool jlinux_window_frame_create(struct jlinux_window_frame *frame, struct wlr_sc
 bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, int height,
         const char *title, struct jlinux_glass effects, bool maximized) {
     if (width < 1 || height < 1 || width > 8192 || height > 8192) { return false; }
-    const int border = JLINUX_FRAME_BORDER, header = JLINUX_FRAME_HEADER;
+    const int border = maximized ? 0 : JLINUX_FRAME_BORDER, header = JLINUX_FRAME_HEADER;
+    const int radius = maximized ? 0 : JLINUX_FRAME_RADIUS;
     int full_width = width + 2 * border, full_height = height + header + border;
     /* Four narrow strips avoid allocating a full-window transparent image. */
     const int boxes[4][4] = {{0, 0, full_width, header}, {0, header, border, height},
         {full_width - border, header, border, height}, {0, header + height, full_width, border}};
     struct frame_buffer *buffers[4] = {0};
     for (int i = 0; i < 4; i++) {
+        if(maximized&&i>0){continue;}
         buffers[i] = calloc(1, sizeof(*buffers[i]));
         if (!buffers[i]) { goto fail; }
         buffers[i]->image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, boxes[i][2], boxes[i][3]);
@@ -50,17 +52,17 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
         int material_height = i == 0 ? header + JLINUX_FRAME_RADIUS : full_height;
         struct jlinux_glass material = effects;
         material.reflection = false; /* Window rims have their own continuous finish. */
-        struct ui_rect material_rect = {.5, .5, full_width - 1, material_height - 1};
+        struct ui_rect material_rect = maximized ? (struct ui_rect){0,0,full_width,material_height} : (struct ui_rect){.5, .5, full_width - 1, material_height - 1};
         if (i == 0 && effects.tint) {
-            jlinux_glass_window_tint(cr, material_rect, JLINUX_FRAME_RADIUS);
+            jlinux_glass_window_tint(cr, material_rect, radius);
         } else {
-            jlinux_glass_paint(cr, material_rect, JLINUX_FRAME_RADIUS, NULL, 0, 0, material);
+            jlinux_glass_paint(cr, material_rect, radius, NULL, 0, 0, material);
         }
-        if (effects.shadow) {
+        if (effects.shadow && !maximized) {
             jlinux_glass_window_shading(cr,
                 (struct ui_rect){.5, .5, full_width - 1, full_height - 1}, JLINUX_FRAME_RADIUS);
         }
-        if (effects.reflection) {
+        if (effects.reflection && !maximized) {
             jlinux_glass_window_reflections(cr,
                 (struct ui_rect){.5, .5, full_width - 1, full_height - 1}, JLINUX_FRAME_RADIUS, header);
         }
@@ -68,7 +70,7 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
             cairo_save(cr); cairo_rectangle(cr, 16, 3, full_width - 148, header - 6); cairo_clip(cr);
             ui_text(cr, title ? title : "JLinux", 16, 8, 14, true, 0xedf0ff); cairo_restore(cr);
             cairo_set_source_rgba(cr, .77, .82, 1, .16); cairo_set_line_width(cr, 1);
-            cairo_move_to(cr, 8, header - .5); cairo_line_to(cr, full_width - 8, header - .5); cairo_stroke(cr);
+            if(!maximized){cairo_move_to(cr, 8, header - .5); cairo_line_to(cr, full_width - 8, header - .5); cairo_stroke(cr);}
             double minimize_x=full_width-100;
             cairo_set_source_rgba(cr,.82,.91,1,.96);cairo_set_line_width(cr,1.5);
             cairo_move_to(cr,minimize_x-4,21);cairo_line_to(cr,minimize_x+4,21);cairo_stroke(cr);
@@ -94,6 +96,8 @@ bool jlinux_window_frame_update(struct jlinux_window_frame *frame, int width, in
         cairo_surface_flush(buffers[i]->image);
     }
     for (int i = 0; i < 4; i++) {
+        if(maximized&&i>0){wlr_scene_buffer_set_buffer(frame->parts[i],NULL);wlr_scene_node_set_enabled(&frame->parts[i]->node,false);continue;}
+        if(i>0){wlr_scene_node_set_enabled(&frame->parts[i]->node,true);}
         wlr_buffer_init(&buffers[i]->base, &impl, boxes[i][2], boxes[i][3]);
         wlr_scene_buffer_set_buffer(frame->parts[i], &buffers[i]->base);
         wlr_scene_node_set_position(&frame->parts[i]->node, boxes[i][0] - border, boxes[i][1] - header);
