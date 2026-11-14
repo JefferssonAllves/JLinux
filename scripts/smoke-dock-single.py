@@ -14,6 +14,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-dock-single-') as directory:
  file_mock=commands/'files-test';file_calls=root/'file-calls'
  file_mock.write_text(f'#!{sys.executable}\nimport sys\nfrom pathlib import Path\nwith Path({str(file_calls)!r}).open("a") as f:f.write(sys.argv[-1]+"\\n")\n');file_mock.chmod(0o755)
  (apps_dir/'org.jlinux.Files.desktop').write_text(f'[Desktop Entry]\nType=Application\nName=Files test\nExec={file_mock} %f\n')
+ (apps_dir/'org.vinegarhq.Sober.desktop').write_text(f'[Desktop Entry]\nType=Application\nName=Roblox test\nExec={mock}\n')
  (apps_dir/'com.stremio.Stremio.desktop').write_text(f'[Desktop Entry]\nType=Application\nName=Stremio test\nExec={mock}\n')
  env=dict(os.environ,PATH=str(commands)+os.pathsep+os.environ['PATH'],XDG_CONFIG_HOME=str(config),XDG_DATA_HOME=str(root/'data'),XDG_RUNTIME_DIR=directory,WLR_BACKENDS='headless',WLR_RENDERER='pixman',WLR_HEADLESS_OUTPUTS='1',JLINUX_TEST_INPUT='1')
  def log():return logfile.read_text(errors='replace')
@@ -26,16 +27,13 @@ with tempfile.TemporaryDirectory(prefix='jlinux-dock-single-') as directory:
    wait(lambda:'JLinux compositor pronto:' in log(),processes,'ready')
    env['WAYLAND_DISPLAY']=next(p.name for p in root.glob('wayland-*') if p.is_socket())
    assert (root/'jlinux-window-control').stat().st_mode&0o777==0o600
-   apps=((0,'brave-browser'),(1,'org.jlinux.Terminal'),(2,'org.jlinux.Neovim'),(3,'org.qbittorrent.qBittorrent'),(4,'org.jlinux.Files'),(7,'com.stremio.Stremio'),(8,'org.jlinux.Monitor'),(9,'org-spotube-spotube-MainKt'),(10,'brave-web.whatsapp.com__-Default'))
+   apps=((0,'brave-browser'),(1,'org.jlinux.Terminal'),(2,'org.jlinux.Neovim'),(3,'org.qbittorrent.qBittorrent'),(4,'org.jlinux.Files'),(6,'org.vinegarhq.Sober'),(7,'com.stremio.Stremio'),(8,'org.jlinux.Monitor'),(9,'org-spotube-spotube-MainKt'),(10,'brave-web.whatsapp.com__-Default'))
    for index,appid in apps:
     title=f'Dock-{index}'
     client=subprocess.Popen([foot,'--config=/dev/null','--app-id='+appid,'--title='+title,'sh'],env=env,stdout=out,stderr=out);processes.append(client)
     wait(lambda:f'Janela mapeada: {title}' in log(),processes,'map')
     before=log().count('Aplicativo existente focado:');request(index);request(index)
     wait(lambda:log().count('Aplicativo existente focado:')>=before+2,processes,'reuse existing window')
-    if index==4:
-     before=log().count('Aplicativo existente focado:');request(6);request(6)
-     wait(lambda:log().count('Aplicativo existente focado:')>=before+2,processes,'folder shortcuts share Files')
     if index==2:
      keys('-M','logo','-k','m','-m','logo');wait(lambda:f'Janela minimizada: {title}' in log(),processes,'minimize')
      time.sleep(.2);request(index);wait(lambda:f'Janela restaurada: {title}' in log(),processes,'dock restores minimized')
@@ -51,9 +49,11 @@ with tempfile.TemporaryDirectory(prefix='jlinux-dock-single-') as directory:
    request(7);request(7)
    wait(lambda:len(calls.read_text().splitlines())==3,processes,'Stremio launch')
    time.sleep(.2);assert len(calls.read_text().splitlines())==3,'duplicate Stremio launch'
-   request(6);request(6);request(4)
-   wait(lambda:file_calls.exists(),processes,'folder launch when Files is closed')
-   time.sleep(.2);assert file_calls.read_text().splitlines()==[str(root/'Pictures')],'Files launch parameters or folder coalescing failed'
+   request(6);request(6)
+   wait(lambda:len(calls.read_text().splitlines())==4,processes,'Roblox launch')
+   time.sleep(.2);assert len(calls.read_text().splitlines())==4,'duplicate Roblox launch'
+   request(4)
+   wait(lambda:file_calls.exists(),processes,'Files launch')
    with socket.socket(socket.AF_UNIX,socket.SOCK_DGRAM) as s:
     for command in (b'',b'\xff',b'\x05',b'\x01\x01'):s.sendto(command,str(root/'jlinux-window-control'))
    time.sleep(.1);assert server.poll() is None

@@ -10,7 +10,7 @@ static const struct {const char *name, *desktop, *icon;} apps[] = {
     {"qBittorrent", "org.qbittorrent.qBittorrent.desktop", "qbittorrent"},
     {"Arquivos", "org.jlinux.Files.desktop", "system-file-manager"},
     {"Configurações", NULL, "preferences-system"},
-    {"Imagens", "org.jlinux.Files.desktop", "folder-pictures"},
+    {"Roblox", "org.vinegarhq.Sober.desktop", "org.vinegarhq.Sober"},
     {"Stremio", "com.stremio.Stremio.desktop", "com.stremio.Stremio"},
     {"Monitor", "btop.desktop", "btop"},
     {"Spotube", "com.github.KRTirtho.Spotube.desktop", "org.jlinux.Spotube"},
@@ -20,7 +20,7 @@ const char *dock_app_name(int index) { return index >= 0 && index < 11 ? apps[in
 
 const char *dock_app_desktop(int index){return index>=0&&index<11?apps[index].desktop:NULL;}
 const char *dock_app_icon_name(int index){return index>=0&&index<11?apps[index].icon:NULL;}
-int dock_app_key(int index){return index==6?4:index;}
+int dock_app_key(int index){return index;}
 bool dock_app_matches(int index,const char *id,const char *title){
     if(!id){return false;}index=dock_app_key(index);
     if(index==0){return !g_ascii_strcasecmp(id,"brave-browser")||!g_ascii_strcasecmp(id,"brave");}
@@ -28,6 +28,7 @@ bool dock_app_matches(int index,const char *id,const char *title){
     if(index==2){return !strcmp(id,"org.jlinux.Neovim")||!strcmp(id,"nvim")||!strcmp(id,"Neovim-Code");}
     if(index==3){return !g_ascii_strcasecmp(id,"org.qbittorrent.qBittorrent")||!g_ascii_strcasecmp(id,"qbittorrent");}
     if(index==4){return !strcmp(id,"org.jlinux.Files");}
+    if(index==6){return !strcmp(id,"org.vinegarhq.Sober")||!g_ascii_strcasecmp(id,"sober");}
     if(index==7){return !strcmp(id,"com.stremio.Stremio");}
     if(index==8){return !strcmp(id,"org.jlinux.Monitor");}
     if(index==9){char *lower=g_ascii_strdown(id,-1);bool match=strstr(lower,"spotube")!=NULL;g_free(lower);return match;}
@@ -44,14 +45,7 @@ bool dock_app_launch(int index, GError **error) {
     }
     GDesktopAppInfo *info = g_desktop_app_info_new(apps[index].desktop);
     if (!info) { g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "Aplicativo não instalado: %s", apps[index].name); return false; }
-    GList *files = NULL;
-    if (index == 6) {
-        const char *directory = g_get_user_special_dir(G_USER_DIRECTORY_PICTURES);
-        files = g_list_append(files, g_file_new_for_path(directory ? directory : g_get_home_dir()));
-    }
-    GList *uris = files ? g_list_append(NULL, g_file_get_uri(files->data)) : NULL;
-    bool ok = g_desktop_app_info_launch_uris_as_manager(info, uris, NULL,
+    bool ok = g_desktop_app_info_launch_uris_as_manager(info, NULL, NULL,
         G_SPAWN_SEARCH_PATH, reset_signals, NULL, NULL, NULL, error);
-    g_list_free_full(uris, g_free);
-    g_list_free_full(files, g_object_unref); g_object_unref(info); return ok;
+    g_object_unref(info); return ok;
 }
