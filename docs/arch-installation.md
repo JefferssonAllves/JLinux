@@ -160,3 +160,5 @@ A sessão ativa foi preservada: **o novo material entra no próximo login**. Ref
 ### Login sem terminal automático
 
 A abertura automática foi retirada dos pontos de entrada do login: greeter/greetd e `data/wayland-sessions/jlinux.desktop` usam `jlinux-session --drm --no-terminal`. Reutiliza a opção existente, sem editar PAM ou a configuração do greetd. Super+Enter e o item Terminal do dock continuam abrindo terminais manualmente. As sessões headless/aninhadas mantêm seus padrões anteriores. Aplicação no próximo login; não encerrar a sessão do usuário durante a atualização.
+
+Gerenciador com menu de contexto/miniaturas instalado em 15/11/2026 no pacote `jlinux-desktop-git 0.5.0.r149.g3d6bbf0-1`. Build e 50 testes locais aprovados. Novas janelas de Arquivos usam a versão atual; nenhuma reinicialização do compositor foi necessária. Operações e limites: [gerenciador de arquivos](file-manager.md).

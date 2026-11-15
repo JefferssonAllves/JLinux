@@ -81,6 +81,14 @@ with tempfile.TemporaryDirectory(prefix='jlinux-files-') as directory:
             key('-k', 'Return')
             opened(places[3] / 'probe.txt')
             assert client.poll() is None
+            # Native dialog and keyboard-accessible context menu use disposable files.
+            key('-M', 'ctrl', '-M', 'shift', '-k', 'n', '-m', 'shift', '-m', 'ctrl')
+            key('New folder á', '-k', 'Return')
+            helpers.wait_for(lambda: (places[3] / 'New folder á').is_dir(), [server, client], 'criar pasta')
+            key('-k', 'Menu', '-k', 'Escape')
+            key('-M', 'ctrl', '-k', 'n', '-m', 'ctrl')
+            key('New file.txt', '-k', 'Return')
+            helpers.wait_for(lambda: (places[3] / 'New file.txt').exists(), [server, client], 'criar arquivo')
             helpers.stop(client)
             assert client.returncode == 0
             preview = runtime / 'files.png'
