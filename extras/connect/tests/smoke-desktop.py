@@ -85,6 +85,7 @@ async def main():
                         {**agent(ids[1]),'id':'00000000-0000-7000-8000-000000000003','title':'Outro projeto','cwd':'/outro/'+root.name},
                         {**agent(ids[1]),'id':'00000000-0000-7000-8000-000000000004','title':'Sem projeto','cwd':''}], 'cursor':None}
                 async def codex_detail(ident,cursor=None):
+                    companion.codex.subscribed.add(ident)
                     chat=[{'id':'user','role':'user','text':'Trabalhe no projeto','time':1},
                           {'id':'agent','role':'agent','text':'Resposta final organizada.','time':2}]
                     if prompts:chat.extend([{'id':'last-user','role':'user','text':prompts[-1],'time':3},
@@ -93,7 +94,17 @@ async def main():
                         {'id':'style','title':'Qual estilo você prefere?','secret':False,'options':['Rosa','Azul']}]}]
                     return {'agent':agent(ident),'messages':chat,'requests':requests,'cursor':None}
                 async def codex_prompt(ident,text):
-                    prompts.append(text);(root/'codex-prompt').write_text(text);return {'ok':True}
+                    prompts.append(text);(root/'codex-prompt').write_text(text)
+                    async def stream_answer():
+                        await asyncio.sleep(.2)
+                        emit=companion.codex.message_event
+                        emit('item/started',{'threadId':ident,'item':{'id':'live-answer','type':'agentMessage','phase':'final_answer','text':''}})
+                        emit('item/agentMessage/delta',{'threadId':ident,'itemId':'live-answer','delta':'Texto parcial ao vivo'})
+                        emit('item/completed',{'threadId':ident,'item':{'id':'private-tool','type':'commandExecution','aggregatedOutput':'PRIVATE_STREAM_OUTPUT'}})
+                        await asyncio.sleep(1)
+                        emit('item/completed',{'threadId':ident,'item':{'id':'live-answer','type':'agentMessage','phase':'final_answer','text':'Texto parcial ao vivo: resposta completa.'}})
+                    asyncio.create_task(stream_answer())
+                    return {'ok':True}
                 async def codex_reply(ident,token,data):
                     answers.append(data);return {'ok':True}
                 companion.codex.listing=codex_list;companion.codex.detail=codex_detail

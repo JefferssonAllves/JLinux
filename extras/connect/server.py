@@ -347,6 +347,43 @@ class Companion:
             return web.Response(status=304, headers={'ETag': etag})
         return web.Response(body=body, content_type='application/json', headers={'ETag': etag})
 
+    async def codex_stream(self, request):
+        ident = request.match_info['thread']
+        await self.codex.detail(ident)
+        token = request['session']
+        if not self.session_alive(token):
+            raise web.HTTPUnauthorized(text='Conecte seu iPhone novamente')
+        changed = asyncio.Event()
+        listeners = self.codex.listeners.setdefault(ident, set())
+        ws = web.WebSocketResponse(heartbeat=30, max_msg_size=4096, compress=False)
+        await ws.prepare(request)
+        listeners.add(changed)
+        self.sockets.setdefault(token, set()).add(ws)
+        async def writer():
+            changed.set()
+            while True:
+                await changed.wait()
+                await asyncio.sleep(.05)
+                changed.clear()
+                items = [dict(item) for item in self.codex.live.get(ident, {}).values() if item['text'].strip()]
+                await ws.send_json({'messages': items})
+        worker = asyncio.create_task(writer())
+        try:
+            async with asyncio.timeout(self.session_timeout(token)):
+                async for _ in ws:
+                    break
+        except TimeoutError:
+            pass
+        finally:
+            worker.cancel()
+            listeners.discard(changed)
+            if not listeners:
+                self.codex.listeners.pop(ident, None)
+            self.sockets.get(token, set()).discard(ws)
+            await asyncio.gather(worker, return_exceptions=True)
+            await ws.close()
+        return ws
+
     async def codex_prompt(self, request):
         data = await self.json(request.clone(client_max_size=65536))
         if set(data) != {'text'}:
@@ -521,6 +558,7 @@ class Companion:
         app.router.add_post('/api/codex/threads/{thread}/reply', self.codex_reply)
         app.router.add_post('/api/volume', self.volume)
         app.router.add_get('/ws/volume', self.volume_stream)
+        app.router.add_get('/ws/codex/{thread}', self.codex_stream)
         app.router.add_post('/api/system/prepare', self.system_prepare)
         app.router.add_post('/api/system/action', self.system_action)
         app.router.add_get('/api/system/status', self.system_status)

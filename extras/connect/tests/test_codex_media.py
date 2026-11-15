@@ -26,6 +26,7 @@ class CodexTests(unittest.IsolatedAsyncioTestCase):
         self.thread={'id':ONE,'name':'Agente de teste','cwd':self.temp.name,'status':{'type':'active','activeFlags':[]},'canAcceptDirectInput':True}
         async def connection(request):
             ws=web.WebSocketResponse();await ws.prepare(request)
+            self.connection = ws
             async for message in ws:
                 data=message.json()
                 if 'method' not in data:
@@ -82,6 +83,45 @@ class CodexTests(unittest.IsolatedAsyncioTestCase):
         self.direct=False
         with self.assertRaises(web.HTTPConflict):await self.bridge.prompt(ONE,'não permitido')
         self.assertEqual(card({'id':ONE,'status':{'type':'active','activeFlags':['waitingOnUserInput']}})['state'],'waiting')
+
+    async def test_socket_delivers_text_notifications(self):
+        await self.bridge.detail(ONE)
+        changed = asyncio.Event()
+        self.bridge.listeners[ONE] = {changed}
+        await self.connection.send_json({'method': 'item/started', 'params': {'threadId': ONE,
+            'item': {'id': 'stream', 'type': 'agentMessage', 'phase': 'final_answer', 'text': ''}}})
+        await asyncio.wait_for(changed.wait(), 2)
+        changed.clear()
+        await self.connection.send_json({'method': 'item/agentMessage/delta', 'params': {
+            'threadId': ONE, 'itemId': 'stream', 'turnId': 'turn-one', 'delta': 'Ao vivo pelo socket'}})
+        await asyncio.wait_for(changed.wait(), 2)
+        self.assertEqual(self.bridge.live[ONE]['stream']['text'], 'Ao vivo pelo socket')
+        optout = next(params for method, params in self.calls if method == 'initialize')['capabilities']['optOutNotificationMethods']
+        self.assertNotIn('item/agentMessage/delta', optout)
+
+    async def test_live_text_deltas_filter_tools_commentary_and_other_threads(self):
+        await self.bridge.detail(ONE)
+        changed = asyncio.Event()
+        self.bridge.listeners[ONE] = {changed}
+        emit = self.bridge.message_event
+        for method, params in [
+            ('item/started', {'threadId': ONE, 'item': {'id': 'comment', 'type': 'agentMessage', 'phase': 'commentary', 'text': ''}}),
+            ('item/agentMessage/delta', {'threadId': ONE, 'itemId': 'comment', 'delta': 'PRIVATE_PROGRESS'}),
+            ('item/completed', {'threadId': ONE, 'item': {'id': 'tool', 'type': 'commandExecution', 'aggregatedOutput': 'PRIVATE_TOOL'}}),
+            ('item/started', {'threadId': TWO, 'item': {'id': 'other', 'type': 'agentMessage', 'text': 'OTHER_THREAD'}}),
+            ('item/agentMessage/delta', {'threadId': ONE, 'itemId': 'unknown', 'delta': 'UNKNOWN_PHASE'})]:
+            emit(method, params)
+        self.assertFalse(changed.is_set())
+        emit('item/started', {'threadId': ONE, 'item': {'id': 'live', 'type': 'agentMessage', 'phase': 'final_answer', 'text': ''}})
+        changed.clear()
+        emit('item/agentMessage/delta', {'threadId': ONE, 'itemId': 'live', 'delta': 'Resposta '})
+        emit('item/agentMessage/delta', {'threadId': ONE, 'itemId': 'live', 'delta': 'ao vivo'})
+        self.assertTrue(changed.is_set())
+        detail = await self.bridge.detail(ONE)
+        self.assertEqual(detail['messages'][-1]['text'], 'Resposta ao vivo')
+        self.assertNotIn('PRIVATE_', json.dumps(detail))
+        emit('item/completed', {'threadId': ONE, 'item': {'id': 'live', 'type': 'agentMessage', 'phase': 'final_answer', 'text': 'Resposta ao vivo completa.'}})
+        self.assertEqual((await self.bridge.detail(ONE))['messages'][-1]['text'], 'Resposta ao vivo completa.')
 
     async def test_questions_and_explicit_single_use_approvals(self):
         self.requests=True

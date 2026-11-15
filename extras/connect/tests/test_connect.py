@@ -57,7 +57,7 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(self.companion.key, await response.text())
 
     async def test_all_privileged_routes_require_login(self):
-        for path in ['/api/status', '/api/files', '/api/media', '/api/codex/threads', '/api/files/download', '/api/system/status', '/ws/volume', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
+        for path in ['/api/status', '/api/files', '/api/media', '/api/codex/threads', '/api/files/download', '/api/system/status', '/ws/volume', '/ws/codex/00000000-0000-7000-8000-000000000001', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
             response = await self.client.get(path, headers=HEADERS)
             self.assertEqual(response.status, 401, path)
         response = await self.client.post('/api/volume', json={'level': .5}, headers=HEADERS)
@@ -169,6 +169,23 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(Exception) as caught:
                 await asyncio.wait_for(pending, 3)
             self.assertEqual(caught.exception.status, 401)
+
+    async def test_codex_text_stream_is_private_and_closes_on_logout(self):
+        await self.login()
+        ident = '00000000-0000-7000-8000-000000000001'
+        self.companion.codex.detail = AsyncMock(return_value={})
+        self.companion.codex.subscribed.add(ident)
+        ws = await self.client.ws_connect('/ws/codex/' + ident, headers=HEADERS)
+        await ws.receive_json(timeout=2)
+        self.companion.codex.message_event('item/started', {'threadId': ident, 'item': {
+            'id': 'answer', 'type': 'agentMessage', 'phase': 'final_answer', 'text': 'Texto ao vivo'}})
+        self.assertEqual((await ws.receive_json(timeout=2))['messages'][0]['text'], 'Texto ao vivo')
+        response = await self.client.post('/api/logout', json={}, headers=HEADERS)
+        self.assertEqual(response.status, 200)
+        self.assertIn((await ws.receive(timeout=2)).type, (WSMsgType.CLOSE, WSMsgType.CLOSED))
+        await ws.close()
+        await asyncio.sleep(.01)
+        self.assertNotIn(ident, self.companion.codex.listeners)
 
     async def test_volume_stream_coalesces_and_rejects_bad_values(self):
         await self.login()

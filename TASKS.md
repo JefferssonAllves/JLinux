@@ -1,5 +1,9 @@
 # Plano central do JLinux
 
+## Codex em tempo real — feature/codex-live-messages
+
+**Concluído na branch:** respostas de texto transmitidas enquanto são geradas, via WebSocket autenticado e sem ferramentas/raciocínio/comentários de progresso; reconexão e recuperação pelo histórico preservadas. 32 testes unitários e integração Playwright/headless passaram, incluindo texto parcial antes da conclusão e filtragem de saída privada. Instalação e limites em docs/validation-codex-live-messages.md.
+
 ## Codex por pasta — feature/codex-project-groups
 
 **Concluído e aplicado ao controle instalado:** chats agrupados por caminho completo, contagem e identificação de pastas homônimas, mantendo filtros e abertura de conversas. Teste Playwright/headless passou com três grupos, incluindo dois caminhos com o mesmo nome final e chats sem pasta; mídia, prompts, reconexão e tela remota continuam passando. Alteração somente dos arquivos públicos, sem reiniciar agentes ou gateway. Validação em iPhone físico pendente.

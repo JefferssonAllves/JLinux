@@ -92,6 +92,8 @@ class CodexBridge:
         self.histories = OrderedDict()
         self.async_answers = set()
         self.question_heads = {}
+        self.live = OrderedDict()
+        self.listeners = {}
 
     async def open_socket(self):
         self.client = ClientSession(connector=UnixConnector(path=str(self.socket)), timeout=ClientTimeout(total=5))
@@ -142,8 +144,7 @@ class CodexBridge:
                 await self.call('initialize', {'clientInfo': {'name': 'jlinux_connect', 'title': 'JLinux Connect', 'version': '1'},
                     'capabilities': {'experimentalApi': True, 'requiredHumanApproval': True,
                         'optOutNotificationMethods': ['item/commandExecution/outputDelta', 'item/fileChange/outputDelta',
-                            'item/reasoning/textDelta', 'item/reasoning/summaryTextDelta',
-                            'item/started', 'item/completed', 'item/agentMessage/delta']}}, connected=True)
+                            'item/reasoning/textDelta', 'item/reasoning/summaryTextDelta']}}, connected=True)
                 await self.ws.send_json({'method': 'initialized'})
             except Exception:
                 await self.close()
@@ -165,6 +166,8 @@ class CodexBridge:
                     if params.get('threadId') and not any(item['id'] == data['id'] for item in self.requests.values()):
                         token = secrets.token_urlsafe(18)
                         self.requests[token] = {'id': data['id'], 'method': data['method'], 'params': params}
+                elif data.get('method') in ('item/started', 'item/completed', 'item/agentMessage/delta'):
+                    self.message_event(data['method'], data.get('params', {}))
                 elif data.get('method') == 'serverRequest/resolved':
                     resolved = data.get('params', {})
                     self.requests = {token: request for token, request in self.requests.items()
@@ -176,6 +179,30 @@ class CodexBridge:
             for future in self.pending.values():
                 if not future.done():
                     future.set_exception(ConnectionError('Codex desconectado'))
+
+    def message_event(self, method, params):
+        ident = params.get('threadId')
+        if ident not in self.subscribed:
+            return
+        items = self.live.setdefault(ident, OrderedDict())
+        if method == 'item/agentMessage/delta':
+            item = items.get(params.get('itemId'))
+            # Deltas carry no phase: only accept a message identified by item/started.
+            if item is None:
+                return
+            item['text'] += params.get('delta', '')
+        else:
+            raw = params.get('item', {})
+            if raw.get('type') != 'agentMessage' or raw.get('phase') == 'commentary':
+                return
+            items[raw['id']] = {'id': raw['id'], 'role': 'agent', 'text': raw.get('text', ''), 'time': None}
+        while len(items) > 80:
+            items.popitem(last=False)
+        self.live.move_to_end(ident)
+        while len(self.live) > 8:
+            self.live.popitem(last=False)
+        for changed in self.listeners.get(ident, ()):
+            changed.set()
 
     async def call(self, method, params, connected=False):
         if not connected:
@@ -275,6 +302,10 @@ class CodexBridge:
                 not head and sum(public_item(row) is not None for row in rows) >= 20):
                 break
         self.sync_questions(ident, rows, active)
+        # Resume may attach mid-message without replaying item/started.
+        for row in reversed(rows):
+            if active and row.get('turnId') == active and row['item'].get('id') not in self.live.get(ident, {}):
+                self.message_event('item/started', {'threadId': ident, 'item': row['item']})
         fresh = [item for row in reversed(rows) if (item := public_item(row)) is not None]
         if cursor:
             return fresh, continuation
@@ -317,11 +348,21 @@ class CodexBridge:
         data = await self.call('thread/read', {'threadId': ident, 'includeTurns': False})
         thread = data['thread']
         if thread.get('status', {}).get('type') == 'active' and ident not in self.subscribed:
-            await self.call('thread/resume', {'threadId': ident, 'excludeTurns': True})
             self.subscribed.add(ident)
+            try:
+                await self.call('thread/resume', {'threadId': ident, 'excludeTurns': True})
+            except BaseException:
+                self.subscribed.discard(ident)
+                raise
         turns = await self.call('thread/turns/list', {'threadId': ident, 'limit': 1, 'itemsView': 'notLoaded'})
         active = next((turn['id'] for turn in turns.get('data', []) if turn.get('status') == 'inProgress'), None) if thread.get('status', {}).get('type') == 'active' else None
         text, continuation = await self.history(ident, cursor, active)
+        if not cursor:
+            merged = OrderedDict((item['id'], item) for item in text)
+            for item in self.live.get(ident, {}).values():
+                if item['text'].strip():
+                    merged[item['id']] = dict(item)
+            text = list(merged.values())[-80:]
         pending = self.waiting(ident)
         info = card(thread)
         if pending:
@@ -415,3 +456,7 @@ class CodexBridge:
         self.histories.clear()
         self.async_answers.clear()
         self.question_heads.clear()
+        self.live.clear()
+        for listeners in self.listeners.values():
+            for changed in listeners:
+                changed.set()
