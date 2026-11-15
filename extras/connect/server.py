@@ -347,6 +347,62 @@ class Companion:
             return web.Response(status=304, headers={'ETag': etag})
         return web.Response(body=body, content_type='application/json', headers={'ETag': etag})
 
+    async def pointer_stream(self, request):
+        if sum(len(items) for items in self.sockets.values()) >= 4:
+            raise web.HTTPTooManyRequests(text='Limite de conexões simultâneas atingido')
+        graphical = self.desktop()
+        if not graphical:
+            raise web.HTTPServiceUnavailable(text='Entre na sessão gráfica primeiro')
+        binary = getattr(self, 'pointer_binary', ROOT / 'jlinux-connect-pointer')
+        try:
+            process = await asyncio.create_subprocess_exec(str(binary), env=dict(os.environ, **graphical),
+                stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
+                start_new_session=True)
+        except OSError:
+            raise web.HTTPServiceUnavailable(text='Controle do cursor indisponível')
+        ws = web.WebSocketResponse(heartbeat=30, max_msg_size=4096, compress=False)
+        token = request['session']
+        try:
+            if await asyncio.wait_for(process.stdout.readline(), 5) != b'ready\n':
+                raise web.HTTPServiceUnavailable(text='Não foi possível conectar o cursor')
+            if not self.session_alive(token):
+                raise web.HTTPUnauthorized(text='Sessão encerrada')
+            await ws.prepare(request)
+            self.sockets.setdefault(token, set()).add(ws)
+            async with asyncio.timeout(self.session_timeout(token)):
+                async for message in ws:
+                    if message.type != WSMsgType.TEXT:
+                        break
+                    try:
+                        data = message.json()
+                        if isinstance(data, dict) and set(data) == {'dx', 'dy'} and all(type(data[k]) in (int, float) and math.isfinite(data[k]) and abs(data[k]) <= 4096 for k in ('dx', 'dy')):
+                            command = f"move {data['dx']} {data['dy']}\n"
+                        elif isinstance(data, dict) and set(data) == {'button'} and type(data['button']) is bool:
+                            command = f"button {int(data['button'])}\n"
+                        else:
+                            raise ValueError()
+                    except (ValueError, UnicodeError):
+                        await ws.send_json({'error': 'Movimento inválido'})
+                        continue
+                    process.stdin.write(command.encode())
+                    await process.stdin.drain()
+                    if await asyncio.wait_for(process.stdout.readline(), 5) != b'ok\n':
+                        break
+                    await ws.send_json({'ok': True})
+        except (TimeoutError, ConnectionError, BrokenPipeError):
+            if not ws.prepared:
+                raise web.HTTPServiceUnavailable(text='Controle do cursor indisponível')
+        finally:
+            self.sockets.get(token, set()).discard(ws)
+            process.stdin.close()
+            try:
+                await asyncio.wait_for(process.wait(), 2)
+            except TimeoutError:
+                await self.stop(process)
+            if ws.prepared:
+                await ws.close()
+        return ws
+
     async def codex_stream(self, request):
         ident = request.match_info['thread']
         await self.codex.detail(ident)
@@ -558,6 +614,7 @@ class Companion:
         app.router.add_post('/api/codex/threads/{thread}/reply', self.codex_reply)
         app.router.add_post('/api/volume', self.volume)
         app.router.add_get('/ws/volume', self.volume_stream)
+        app.router.add_get('/ws/pointer', self.pointer_stream)
         app.router.add_get('/ws/codex/{thread}', self.codex_stream)
         app.router.add_post('/api/system/prepare', self.system_prepare)
         app.router.add_post('/api/system/action', self.system_action)

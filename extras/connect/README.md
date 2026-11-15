@@ -4,6 +4,8 @@ Companion web para iPhone: volume e mudo do PipeWire em tempo real, visualizaç�
 
 ## Instalar e conectar
 
+Para compilar o pequeno cliente de ponteiro: compilador C, `pkg-config`, `wayland-scanner` e headers `wayland-client` (no Arch: `base-devel` e `wayland`). Não modifica nem recompila o compositor.
+
 Dependências: `python-aiohttp`, `ttyd`, `wayvnc`, `tailscale`, `wireplumber`, além do compositor JLinux com o suporte remoto deste PR. Não precisa de Node, build de frontend, servidor externo ou extensão de navegador. Os módulos noVNC 1.7.0 são baixados com SHA-512 fixado em `fetch-vendor.py` (licença MPL-2.0 incluída; demais arquivos mantêm suas próprias licenças).
 
 ```sh
@@ -17,7 +19,7 @@ jlinux-connect parear
 2. Instale o Tailscale no iPhone pela App Store e entre na mesma conta. Mantenha a conexão VPN do Tailscale ligada.
 3. Saia e entre na sessão gráfica do JLinux para ativar os protocolos de captura e entrada. Não é necessário reiniciar o computador.
 4. `parear` exibe um link privado com chave e, quando `qrencode` está disponível, um QR local para a câmera do iPhone. Abra-o no Safari do iPhone. Depois use Compartilhar → Adicionar à Tela de Início. Outra opção é abrir o endereço sem fragmento e colar a chave no formulário.
-5. Volume controla a saída de áudio padrão. Tela conecta sob demanda; toque para clicar e use o campo de texto para digitar. Mover visão alterna entre imagem ajustada e panorâmica. Super mantém a tecla pressionada para usar o dock; toque novamente para soltar. Terminal abre um Bash interativo com teclado do iPhone; ao fechar a sessão, os comandos em execução nela podem receber SIGHUP.
+5. Volume controla a saída de áudio padrão. Tela conecta sob demanda; no celular, arraste como um touchpad para mover o cursor a partir da posição atual, toque para clicar e segure 350 ms antes de arrastar para mover objetos. Use o campo de texto para digitar. Mover visão alterna entre imagem ajustada e panorâmica. Super mantém a tecla pressionada para usar o dock; toque novamente para soltar. Terminal abre um Bash interativo com teclado do iPhone; ao fechar a sessão, os comandos em execução nela podem receber SIGHUP.
 
 O computador precisa estar ligado e conectado à internet. O instalador habilita linger para iniciar o serviço do usuário no boot; a tela exige uma sessão gráfica aberta, e o volume exige áudio ativo. Não acorda um computador desligado. Essa versão não transmite o áudio da área de trabalho ao iPhone; volume ajusta os alto-falantes do computador. A latência depende da rede e do uso de conexão direta ou relay do Tailscale; não é uma solução para streaming de vídeo de alta taxa de quadros.
 
@@ -92,6 +94,10 @@ Somente prompts humanos e mensagens de resposta são mostrados. Commentary, raci
 `jlinux-codex.service` inicia o daemon de forma idempotente no boot e usa um cgroup separado: parar/atualizar o companion não encerra os agentes. A instalação não reinicia um daemon Codex existente. Se ele estiver indisponível, o companion solicita início da unidade e tenta reconectar. Requer Codex autenticado no computador. Integração validada com codex-cli 0.169.0 e seus schemas gerados localmente; a API é experimental e pode exigir adaptação em versões futuras. Nenhum prompt real é disparado automaticamente para teste ou inicialização.
 
 ## Tela imersiva
+
+No celular, o toque funciona como um touchpad relativo via `wlr-virtual-pointer`, com um cliente C leve mantido somente durante a conexão. Não salta para o ponto tocado e acompanha a posição real mesmo após movimentar o mouse no PC. Movimentos são agrupados por quadro e ajustados à escala da imagem; toque clica e segurar antes de arrastar mantém o botão pressionado. Ao sair, o botão é solto e o cliente encerra. O mouse convencional no navegador do PC mantém o comportamento direto do noVNC. “Mover visão” continua disponível para deslocar a imagem ampliada.
+
+“Ocultar · voltar com 2 dedos” esconde todos os controles sobrepostos. Toque com dois dedos na imagem para exibi-los novamente; Escape também os recupera. A imagem mantém proporção, áreas seguras e ajuste ao girar entre retrato e paisagem, com faixas pretas quando necessário.
 
 Abrir a tela ocupa o visor todo, preservando proporção e a imagem completa. Usa Fullscreen API quando disponível, com fallback CSS para Safari/iPhone e respeito às áreas seguras. O teclado/teclas especiais aparecem em um controle sobre a imagem; Sair da tela cheia devolve a interface sem fechar a conexão. Nítido usa qualidade 9/9 e compressão baixa; Conexão lenta reduz os dados. Captura limitada a até 60 FPS, com GPU habilitada, fallback de inicialização por CPU e H.264/WebCodecs quando negociado pelo NeatVNC e pelo navegador. Não força uma codificação incompatível.
 

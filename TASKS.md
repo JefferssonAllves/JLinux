@@ -1,5 +1,9 @@
 # Plano central do JLinux
 
+## Tela móvel e touchpad — feature/mobile-touchpad-fullscreen
+
+**Concluído na branch:** controles sobrepostos ocultáveis e recuperados com dois dedos; cursor relativo via cliente C Wayland, toque para clicar e segurar para arrastar, preservando teclado e modo panorâmico. 34 testes unitários e integração Playwright/headless passaram com cliente nativo real, gestos em pontos diferentes, clique/arraste e tela cheia em retrato/paisagem. Instalação e limites em docs/validation-mobile-touchpad-fullscreen.md.
+
 ## Codex finalizado não lido — feature/codex-unread-completion
 
 **Concluído na branch e instalado:** estado, filtro e contagem de respostas finalizadas não lidas; leitura persistida por execução no celular ao visualizar a conversa. Apenas conclusão bem-sucedida gera o aviso. 33 testes unitários e integração Playwright/headless passaram, incluindo persistência ao recarregar e remoção ao ler. API real consultada sem enviar prompts. Instalação registrada em docs/validation-codex-unread-completion.md.
