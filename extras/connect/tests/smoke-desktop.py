@@ -56,6 +56,19 @@ async def main():
                     'p.stdin.close();sys.exit(p.wait())\n')
                 wrapper.chmod(0o700)
                 companion.pointer_binary=wrapper
+                native_key = companion.remote.key
+                def remote_launch(value):
+                    companion.remote.index(value)
+                    with (root/'remote-actions').open('a') as output: output.write('app '+value+'\n')
+                    return {'ok':True}
+                async def remote_key(action):
+                    from remote_controls import KEYS
+                    assert action in KEYS
+                    with (root/'remote-actions').open('a') as output: output.write('key '+action+'\n')
+                    if action=='left': return await native_key(action)
+                    return {'ok':True}
+                companion.remote.launch=remote_launch
+                companion.remote.key=remote_key
                 level = .42
                 async def command(*args):
                     nonlocal level
@@ -129,7 +142,7 @@ async def main():
                 port = site._server.sockets[0].getsockname()[1]
                 companion.hosts.add(f'127.0.0.1:{port}')
                 fixture = root / 'fixture.json'
-                fixture.write_text(json.dumps({'url': f'http://127.0.0.1:{port}', 'key': companion.key, 'pointerMarker':str(root/'pointer-input'),
+                fixture.write_text(json.dumps({'url': f'http://127.0.0.1:{port}', 'key': companion.key, 'pointerMarker':str(root/'pointer-input'), 'remoteMarker':str(root/'remote-actions'),
                                                'marker': str(root / 'remote-keyboard-marker'), 'volumeMarker': str(root / 'volume-marker'),
                                                'fileRoot': str(home), 'actions': str(root / 'actions'), 'mediaActions':str(root/'media-actions'), 'codexPrompt':str(root/'codex-prompt')}))
                 browser = await asyncio.create_subprocess_exec('node', str(ROOT / 'tests/smoke-mobile.mjs'), str(fixture))

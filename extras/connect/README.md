@@ -6,7 +6,7 @@ Companion web para iPhone: volume e mudo do PipeWire em tempo real, visualizaç�
 
 Para compilar o pequeno cliente de ponteiro: compilador C, `pkg-config`, `wayland-scanner` e headers `wayland-client` (no Arch: `base-devel` e `wayland`). Não modifica nem recompila o compositor.
 
-Dependências: `python-aiohttp`, `ttyd`, `wayvnc`, `tailscale`, `wireplumber`, além do compositor JLinux com o suporte remoto deste PR. Não precisa de Node, build de frontend, servidor externo ou extensão de navegador. Os módulos noVNC 1.7.0 são baixados com SHA-512 fixado em `fetch-vendor.py` (licença MPL-2.0 incluída; demais arquivos mantêm suas próprias licenças).
+Dependências: `python-aiohttp`, `wtype`, `ttyd`, `wayvnc`, `tailscale`, `wireplumber`, além do compositor JLinux com o suporte remoto deste PR. Não precisa de Node, build de frontend, servidor externo ou extensão de navegador. Os módulos noVNC 1.7.0 são baixados com SHA-512 fixado em `fetch-vendor.py` (licença MPL-2.0 incluída; demais arquivos mantêm suas próprias licenças).
 
 ```sh
 sudo pacman -S --needed python-aiohttp ttyd wayvnc tailscale
@@ -80,6 +80,14 @@ O shell público do PWA é salvo pelo service worker para abrir mesmo enquanto o
 ## Controles de mídia
 
 A seção de áudio inclui música, artista, reproduzir/pausar, anterior/próxima e avanço/retrocesso de 10 segundos via MPRIS, o mesmo protocolo da barra nativa. Consulta o barramento gráfico e o barramento de usuário, escolhe inicialmente um player tocando e permite escolher entre vários. Botões respeitam CanControl/CanPlay/CanPause/CanGoNext/CanGoPrevious/CanSeek; não simula teclas multimídia para um aplicativo desconhecido.
+
+## Controle remoto e navegação
+
+Quatro abas: **Controle**, **Tela**, **Codex** e **Mais**. Controle reúne volume/mudo, mídia, direcionais e OK (Enter), Voltar (Esc), Tab e Trocar janela (Alt+Tab). Os direcionais atuam no aplicativo atualmente focado; a resposta depende de ele aceitar navegação por teclado. Arquivos, terminal e sistema ficam em Mais, sem remover suas funções ou confirmações de energia.
+
+A faixa de apps mostra os nove atalhos de aplicativos do dock nativo, com os ícones instalados, incluindo as personalizações do Spotube e WhatsApp. Deslize horizontalmente para ver os demais. Tocar envia ao compositor o mesmo índice usado pelo dock: foca a janela existente ou solicita a abertura. A confirmação HTTP indica envio ao compositor, não comprova que o aplicativo terminou de abrir. Configurações é um painel do shell, não um aplicativo desses índices; as ações de sistema ficam em Mais → Sistema. O catálogo segue a API atual do dock e precisa acompanhar mudanças futuras dela.
+
+As rotas de apps, ícones e ações exigem autenticação. Apenas índices e teclas predefinidos são aceitos; não executam comandos livres enviados pelo navegador. Teclas usam o wtype instalado e o ambiente gráfico atual. A aba Controle não abre captura de tela: vídeo continua sob demanda em Tela.
 
 ## Codex
 

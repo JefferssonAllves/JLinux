@@ -17,6 +17,7 @@ import time
 from aiohttp import ClientSession, UnixConnector, WSMsgType, web
 from system_controls import SystemControls, ACTIONS
 from file_transfer import FileTransfer
+from remote_controls import RemoteControls
 from media_controls import MediaControls
 from codex_bridge import CodexBridge
 
@@ -87,6 +88,7 @@ class Companion:
         self.system = SystemControls(desktop)
         self.files = FileTransfer(home or Path.home())
         self.media = MediaControls(desktop)
+        self.remote = RemoteControls(desktop)
         self.codex = CodexBridge()
         self.cookie_refreshed = {}
         self.failures = deque(maxlen=5)
@@ -347,6 +349,23 @@ class Companion:
             return web.Response(status=304, headers={'ETag': etag})
         return web.Response(body=body, content_type='application/json', headers={'ETag': etag})
 
+    async def remote_apps(self, request):
+        return web.json_response({'apps': self.remote.apps()})
+
+    async def remote_icon(self, request):
+        content, kind = await asyncio.to_thread(self.remote.icon, self.remote.index(request.match_info['app']))
+        return web.Response(body=content, content_type=kind)
+
+    async def remote_action(self, request):
+        data = await self.json(request)
+        if set(data) == {'app'}:
+            result = self.remote.launch(data['app'])
+        elif set(data) == {'key'}:
+            result = await self.remote.key(data['key'])
+        else:
+            raise web.HTTPBadRequest(text='Atalho inválido')
+        return web.json_response(result)
+
     async def pointer_stream(self, request):
         if sum(len(items) for items in self.sockets.values()) >= 4:
             raise web.HTTPTooManyRequests(text='Limite de conexões simultâneas atingido')
@@ -605,6 +624,9 @@ class Companion:
         app.router.add_post('/api/login', self.login)
         app.router.add_post('/api/logout', self.logout)
         app.router.add_get('/api/status', self.status)
+        app.router.add_get('/api/remote/apps', self.remote_apps)
+        app.router.add_get('/api/remote/icon/{app}', self.remote_icon)
+        app.router.add_post('/api/remote/action', self.remote_action)
         app.router.add_get('/api/media', self.media_status)
         app.router.add_post('/api/media/action', self.media_action)
         app.router.add_get('/api/codex/threads', self.codex_list)
