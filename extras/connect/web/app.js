@@ -20,7 +20,7 @@ async function api(path, data) {
   return response.json();
 }
 function leaveImmersive(exitNative=true) {
-  $('screen-shell').classList.remove('immersive','keyboard-open'); document.body.classList.remove('screen-open');
+  $('screen-shell').classList.remove('immersive','keyboard-open','controls-hidden'); document.body.classList.remove('screen-open');
   $('screen-keyboard').setAttribute('aria-pressed','false');
   if(exitNative && document.fullscreenElement===$('screen-shell')) document.exitFullscreen().catch(()=>{});
 }
@@ -29,9 +29,11 @@ function enterImmersive() {
   if(document.fullscreenEnabled && !$('screen-shell').matches(':fullscreen')) $('screen-shell').requestFullscreen({navigationUI:'hide'}).catch(()=>{});
 }
 $('screen-exit').onclick=()=>leaveImmersive();
+$('screen-hide').onclick=()=>{$('screen-shell').classList.add('controls-hidden');$('screen-shell').classList.remove('keyboard-open');$('text').blur();$('screen-keyboard').setAttribute('aria-pressed','false');};
 $('screen-keyboard').onclick=()=>{const visible=$('screen-shell').classList.toggle('keyboard-open');$('screen-keyboard').setAttribute('aria-pressed',String(visible));if(visible)$('text').focus();};
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)leaveImmersive(false);});
 function disconnectScreen() {
+  stopPointer();
   leaveImmersive();
   if (rfb) {
     if ($('super').getAttribute('aria-pressed') === 'true') rfb.sendKey(0xffeb, 'MetaLeft', false);
@@ -41,6 +43,7 @@ function disconnectScreen() {
   $('screen-placeholder').hidden = false;
   $('screen-toggle').textContent = 'Abrir tela';
   $('pan').setAttribute('aria-pressed', 'false');
+  $('screen-touchpad').hidden=false;
 }
 function closeTerminal() {
   $('terminal-container').replaceChildren();
@@ -152,9 +155,9 @@ $('screen-toggle').addEventListener('click', async () => {
     const {default: RFB} = await import('/vendor/novnc/core/rfb.js');
     $('screen-placeholder').hidden = true;
     const connection = new RFB($('screen'), `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/desktop`);
-    rfb = connection; rfb.scaleViewport = true; rfb.resizeSession = false;
-    applyScreenQuality(); rfb.showDotCursor = true;
-    connection.addEventListener('connect', () => { $('screen-toggle').textContent = 'Fechar tela'; message('Tela conectada.'); });
+    rfb = connection; rfb.scaleViewport = true; rfb.resizeSession = false; rfb.background = '#000';
+    applyScreenQuality(); rfb.showDotCursor = false;
+    connection.addEventListener('connect', () => { startPointer(); $('screen-toggle').textContent = 'Fechar tela'; message('Tela conectada.'); });
     connection.addEventListener('disconnect', event => {
       if (rfb === connection) { disconnectScreen(); message(event.detail.clean ? 'Tela desconectada.' : 'Não foi possível abrir a tela. Entre novamente na sessão do JLinux e tente outra vez.'); }
     });
@@ -169,9 +172,70 @@ function applyScreenQuality() {
 }
 $('screen-quality').onchange=applyScreenQuality;
 const expand=document.createElement('button');expand.id='screen-expand';expand.type='button';expand.className='secondary';expand.textContent='Tela cheia';expand.onclick=enterImmersive;$('screen-shell').querySelector('.screen-toolbar').prepend(expand);
+let pointerSocket=null, pointerRetry=null, pointerFrame=null, pointerHold=null;
+let contact=null, dragging=false, suppressTap=false, dx=0, dy=0;
+const contacts=new Set();
+function sendPointer(data) {
+  if(pointerSocket?.readyState===WebSocket.OPEN) pointerSocket.send(JSON.stringify(data));
+}
+function resetPointer() {
+  clearTimeout(pointerHold);cancelAnimationFrame(pointerFrame);pointerFrame=null;dx=dy=0;
+  if(dragging)sendPointer({button:false});
+  dragging=false;contact=null;contacts.clear();
+}
+function stopPointer() {
+  $('screen-touchpad').dataset.ready='false';
+  resetPointer();clearTimeout(pointerRetry);
+  if(pointerSocket){const socket=pointerSocket;pointerSocket=null;socket.close();}
+}
+function startPointer() {
+  stopPointer();
+  if(!rfb || document.hidden || !matchMedia('(pointer:coarse)').matches)return;
+  const socket=new WebSocket(`${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/ws/pointer`);
+  pointerSocket=socket;
+  socket.onopen=()=>{pad.dataset.ready='true';};
+  socket.onmessage=event=>{const data=JSON.parse(event.data);if(data.error)message(data.error);};
+  socket.onclose=()=>{if(pointerSocket!==socket)return;resetPointer();pointerSocket=null;pad.dataset.ready='false';pointerRetry=setTimeout(startPointer,1000);};
+}
+function flushPointer() {
+  pointerFrame=null;
+  if(dx||dy)sendPointer({dx:Math.max(-4096,Math.min(4096,dx)),dy:Math.max(-4096,Math.min(4096,dy))});
+  dx=dy=0;
+}
+const pad=$('screen-touchpad');
+pad.onpointerdown=event=>{
+  event.preventDefault();pad.setPointerCapture(event.pointerId);contacts.add(event.pointerId);
+  if(contacts.size>1){cancelAnimationFrame(pointerFrame);pointerFrame=null;dx=dy=0;clearTimeout(pointerHold);if(dragging)sendPointer({button:false});dragging=false;contact=null;suppressTap=true;$('screen-shell').classList.remove('controls-hidden');return;}
+  suppressTap=false;
+  const canvas=$('screen').querySelector('canvas');
+  contact={id:event.pointerId,x:event.clientX,y:event.clientY,distance:0,scale:canvas?canvas.width/canvas.getBoundingClientRect().width:1};
+  pointerHold=setTimeout(()=>{if(contact && contact.distance<8 && !suppressTap){dragging=true;sendPointer({button:true});}},350);
+};
+pad.onpointermove=event=>{
+  if(!contact || contact.id!==event.pointerId)return;
+  event.preventDefault();
+  const x=event.clientX-contact.x,y=event.clientY-contact.y;
+  contact.distance+=Math.hypot(x,y);contact.x=event.clientX;contact.y=event.clientY;
+  if(contact.distance>8)clearTimeout(pointerHold);
+  dx+=x*contact.scale;dy+=y*contact.scale;
+  if(pointerFrame===null)pointerFrame=requestAnimationFrame(flushPointer);
+};
+function endPointer(event) {
+  event.preventDefault();contacts.delete(event.pointerId);
+  if(contact?.id!==event.pointerId)return;
+  clearTimeout(pointerHold);cancelAnimationFrame(pointerFrame);flushPointer();
+  if(dragging)sendPointer({button:false});
+  else if(event.type==='pointerup' && !suppressTap && contact.distance<8){sendPointer({button:true});sendPointer({button:false});}
+  dragging=false;contact=null;
+}
+pad.onpointerup=endPointer;pad.onpointercancel=endPointer;pad.onlostpointercapture=endPointer;
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopPointer();else if(rfb)startPointer();});
+window.addEventListener('blur',resetPointer);
+document.addEventListener('keydown',event=>{if(event.key==='Escape')$('screen-shell').classList.remove('controls-hidden');});
 $('pan').addEventListener('click', () => {
   if (!rfb) return;
   const enabled = $('pan').getAttribute('aria-pressed') !== 'true';
+  $('screen-touchpad').hidden=enabled;
   rfb.scaleViewport = !enabled; rfb.clipViewport = enabled; rfb.dragViewport = enabled;
   $('pan').setAttribute('aria-pressed', String(enabled));
 });

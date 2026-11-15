@@ -2,7 +2,7 @@
 set -eu
 [ "$(id -u)" != 0 ] || { echo 'Execute sem sudo.' >&2; exit 1; }
 connect_source=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-for connect_command in python3 ttyd wayvnc tailscale wpctl; do
+for connect_command in python3 ttyd wayvnc tailscale wpctl cc wayland-scanner pkg-config; do
     command -v "$connect_command" >/dev/null || { echo "Falta instalar: $connect_command" >&2; exit 1; }
 done
 python3 -c 'import aiohttp'
@@ -10,6 +10,7 @@ python3 "$connect_source/fetch-vendor.py"
 connect_target="$HOME/.local/share/jlinux-connect"
 mkdir -p "$connect_target" "$HOME/.local/bin" "$HOME/.config/systemd/user" "$HOME/.config/jlinux"
 cp "$connect_source/server.py" "$connect_source/cli.py" "$connect_source/system_controls.py" "$connect_source/file_transfer.py" "$connect_source/media_controls.py" "$connect_source/codex_bridge.py" "$connect_source/README.md" "$connect_target/"
+sh "$connect_source/build-pointer.sh" "$connect_target/jlinux-connect-pointer"
 cp -R "$connect_source/web" "$connect_target/"
 cp "$connect_source/jlinux-connect.service" "$connect_source/jlinux-codex.service" "$HOME/.config/systemd/user/"
 cat > "$HOME/.local/bin/jlinux-connect" <<'EOF'

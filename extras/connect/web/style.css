@@ -13,3 +13,6 @@ input[type=search],textarea,select{background:#110f1d;border:1px solid var(--edg
 .agent-group{margin-bottom:26px}.agent-group h3{font-size:14px;font-weight:550;margin:0 0 6px;color:var(--text)}.agent-group-path{font-size:10px;color:var(--dim);overflow-wrap:anywhere;margin:0 0 12px;line-height:1.5}
 
 .agent-status.completed{color:#c7c4ff;border-color:#7970b5;background:#37305280}
+
+#screen-touchpad{position:absolute;inset:0;z-index:2;touch-action:none;user-select:none;-webkit-user-select:none}#screen-hide{display:none}.screen-shell.immersive #screen-hide{display:block}.screen-shell.immersive.controls-hidden .screen-toolbar,.screen-shell.immersive.controls-hidden #screen-input{display:none}.screen-shell .screen-toolbar{flex-wrap:wrap}.screen-shell.immersive .screen-toolbar button{min-height:44px}.screen-shell.immersive{max-width:none;max-height:none}
+@media(pointer:fine){#screen-touchpad{display:none}}

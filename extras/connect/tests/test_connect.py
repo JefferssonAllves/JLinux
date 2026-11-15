@@ -57,7 +57,7 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(self.companion.key, await response.text())
 
     async def test_all_privileged_routes_require_login(self):
-        for path in ['/api/status', '/api/files', '/api/media', '/api/codex/threads', '/api/files/download', '/api/system/status', '/ws/volume', '/ws/codex/00000000-0000-7000-8000-000000000001', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
+        for path in ['/api/status', '/api/files', '/api/media', '/api/codex/threads', '/api/files/download', '/api/system/status', '/ws/volume', '/ws/pointer', '/ws/codex/00000000-0000-7000-8000-000000000001', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
             response = await self.client.get(path, headers=HEADERS)
             self.assertEqual(response.status, 401, path)
         response = await self.client.post('/api/volume', json={'level': .5}, headers=HEADERS)
@@ -169,6 +169,33 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(Exception) as caught:
                 await asyncio.wait_for(pending, 3)
             self.assertEqual(caught.exception.status, 401)
+
+    async def test_relative_pointer_validates_deltas_and_stops_on_disconnect(self):
+        await self.login()
+        helper = self.directory / 'fake-pointer'
+        marker = self.directory / 'pointer-input'
+        helper.write_text('#!/usr/bin/python3\nimport sys\nprint("ready",flush=True)\n' +
+            f'with open({str(marker)!r},"w",buffering=1) as log:\n' +
+            ' for line in sys.stdin:\n  log.write(line);print("ok",flush=True)\n log.write("closed\\n")\n')
+        helper.chmod(0o700)
+        self.companion.pointer_binary = helper
+        self.companion.desktop = lambda: {'WAYLAND_DISPLAY': 'test-only'}
+        ws = await self.client.ws_connect('/ws/pointer', headers=HEADERS)
+        for bad in ({'dx': True, 'dy': 0}, {'dx': float('nan'), 'dy': 1}, {'dx': 4097, 'dy': 0},
+                    {'button': 1}, {'command': 'arbitrary'}, {'dx': 1, 'dy': 2, 'x': 3}):
+            await ws.send_json(bad)
+            self.assertIn('error', await ws.receive_json(timeout=2))
+        for good in ({'dx': 12.5, 'dy': -2}, {'button': True}, {'button': False}):
+            await ws.send_json(good)
+            self.assertTrue((await ws.receive_json(timeout=2))['ok'])
+        response = await self.client.post('/api/logout', json={}, headers=HEADERS)
+        self.assertEqual(response.status, 200)
+        await ws.receive(timeout=2)
+        await ws.close()
+        async with asyncio.timeout(2):
+            while not marker.exists() or 'closed' not in marker.read_text():
+                await asyncio.sleep(.01)
+        self.assertEqual(marker.read_text(), 'move 12.5 -2\nbutton 1\nbutton 0\nclosed\n')
 
     async def test_codex_text_stream_is_private_and_closes_on_logout(self):
         await self.login()

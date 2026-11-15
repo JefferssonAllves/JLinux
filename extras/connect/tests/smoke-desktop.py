@@ -46,6 +46,16 @@ async def main():
                 home.mkdir()
                 (home / 'do-pc.txt').write_text('Arquivo do computador')
                 companion = module.Companion(root / 'state', ROOT / 'web', desktop=lambda: env, home=home)
+                build = await asyncio.create_subprocess_exec('sh', str(ROOT/'build-pointer.sh'), str(root/'pointer'))
+                assert await build.wait() == 0
+                wrapper = root/'pointer-wrapper'
+                wrapper.write_text('#!/usr/bin/python3\nimport subprocess,sys\n' +
+                    f'p=subprocess.Popen([{str(root/"pointer")!r}],stdin=subprocess.PIPE)\n' +
+                    f'with open({str(root/"pointer-input")!r},"a",buffering=1) as log:\n' +
+                    ' for line in sys.stdin:\n  log.write(line);p.stdin.write(line.encode());p.stdin.flush()\n' +
+                    'p.stdin.close();sys.exit(p.wait())\n')
+                wrapper.chmod(0o700)
+                companion.pointer_binary=wrapper
                 level = .42
                 async def command(*args):
                     nonlocal level
@@ -119,7 +129,7 @@ async def main():
                 port = site._server.sockets[0].getsockname()[1]
                 companion.hosts.add(f'127.0.0.1:{port}')
                 fixture = root / 'fixture.json'
-                fixture.write_text(json.dumps({'url': f'http://127.0.0.1:{port}', 'key': companion.key,
+                fixture.write_text(json.dumps({'url': f'http://127.0.0.1:{port}', 'key': companion.key, 'pointerMarker':str(root/'pointer-input'),
                                                'marker': str(root / 'remote-keyboard-marker'), 'volumeMarker': str(root / 'volume-marker'),
                                                'fileRoot': str(home), 'actions': str(root / 'actions'), 'mediaActions':str(root/'media-actions'), 'codexPrompt':str(root/'codex-prompt')}))
                 browser = await asyncio.create_subprocess_exec('node', str(ROOT / 'tests/smoke-mobile.mjs'), str(fixture))
