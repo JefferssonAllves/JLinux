@@ -6,6 +6,9 @@ from pathlib import Path
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
+import contextlib
+import io
 
 from aiohttp import CookieJar, WSMsgType, web
 from aiohttp.test_utils import TestClient, TestServer
@@ -162,6 +165,23 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(Exception) as caught:
                 await asyncio.wait_for(pending, 3)
             self.assertEqual(caught.exception.status, 401)
+
+    async def test_pairing_qr_is_generated_locally(self):
+        import sys
+        sys.path.insert(0, str(SOURCE))
+        try:
+            import cli
+            (self.directory / 'host').write_text('test.tail.ts.net')
+            with patch.object(cli, 'STATE', self.directory), patch.object(cli, 'tailnet', return_value='test.tail.ts.net'), \
+                 patch.object(cli.shutil, 'which', return_value='/usr/bin/qrencode'), \
+                 patch.object(cli.subprocess, 'run') as run, patch.object(sys, 'argv', ['jlinux-connect', 'parear']), \
+                 contextlib.redirect_stdout(io.StringIO()) as output:
+                cli.main()
+                run.assert_called_once_with(['qrencode', '-t', 'UTF8', '-m', '2'],
+                    input='https://test.tail.ts.net/#' + self.companion.key, text=True, check=True)
+                self.assertIn('Escaneie', output.getvalue())
+        finally:
+            sys.path.pop(0)
 
     async def test_terminal_real_pty_and_process_cleanup(self):
         await self.login()

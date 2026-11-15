@@ -16,7 +16,7 @@ jlinux-connect parear
 1. O comando `conectar` solicita o login no Tailscale. Conclua o login no navegador. Se o Tailscale solicitar habilitar HTTPS, siga o link exibido e repita o comando.
 2. Instale o Tailscale no iPhone pela App Store e entre na mesma conta. Mantenha a conexão VPN do Tailscale ligada.
 3. Saia e entre na sessão gráfica do JLinux para ativar os protocolos de captura e entrada. Não é necessário reiniciar o computador.
-4. `parear` exibe um link privado com chave. Abra-o no Safari do iPhone. Depois use Compartilhar → Adicionar à Tela de Início. Outra opção é abrir o endereço sem fragmento e colar a chave no formulário.
+4. `parear` exibe um link privado com chave e, quando `qrencode` está disponível, um QR local para a câmera do iPhone. Abra-o no Safari do iPhone. Depois use Compartilhar → Adicionar à Tela de Início. Outra opção é abrir o endereço sem fragmento e colar a chave no formulário.
 5. Volume controla a saída de áudio padrão. Tela conecta sob demanda; toque para clicar e use o campo de texto para digitar. Mover visão alterna entre imagem ajustada e panorâmica. Super mantém a tecla pressionada para usar o dock; toque novamente para soltar. Terminal abre um Bash interativo com teclado do iPhone; ao fechar a sessão, os comandos em execução nela podem receber SIGHUP.
 
 O computador precisa estar ligado, conectado à internet e com o usuário logado para controlar a tela. Não acorda um computador desligado. Essa versão não transmite o áudio da área de trabalho ao iPhone; volume ajusta os alto-falantes do computador. A latência depende da rede e do uso de conexão direta ou relay do Tailscale; não é uma solução para streaming de vídeo de alta taxa de quadros.

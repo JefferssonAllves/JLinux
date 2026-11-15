@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shutil
 import subprocess
 import sys
 
@@ -57,7 +58,11 @@ def main():
             print('Para conectar o iPhone, primeiro execute: jlinux-connect conectar')
             print('O endereço abaixo funciona apenas neste computador.')
             url = 'http://127.0.0.1:8765/'
-        print('\nLink privado de conexão (não compartilhe):\n' + url + '#' + pairing_key(STATE))
+        link = url + '#' + pairing_key(STATE)
+        print('\nLink privado de conexão (não compartilhe):\n' + link)
+        if shutil.which('qrencode'):
+            print('\nEscaneie com a câmera do iPhone:')
+            subprocess.run(['qrencode', '-t', 'UTF8', '-m', '2'], input=link, text=True, check=True)
         print('\nNo Safari do iPhone: Compartilhar → Adicionar à Tela de Início.')
     elif command == 'revogar':
         pairing_key(STATE)
