@@ -3,6 +3,28 @@ export function initCodex(api, message) {
   const $ = id => document.getElementById(id);
   const labels = {working: 'Trabalhando', waiting: 'Aguardando você', idle: 'Parado', error: 'Erro'};
   let selected = null, agents = [], timer = null, busy = false, cursor = null, historyCursor = null, etag = null, fingerprint = '', generation = 0, displayed = [], historyLoaded = false;
+  let stream = null, reconnect = null, opened = false;
+  function stopStream() {
+    clearTimeout(reconnect); reconnect = null;
+    if (stream) {const previous = stream; stream = null; previous.close();}
+  }
+  function startStream() {
+    stopStream();
+    if (!opened || !selected || document.hidden) return;
+    const ident = selected;
+    const socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws/codex/${ident}`);
+    stream = socket;
+    socket.onmessage = event => {
+      if (stream !== socket || selected !== ident) return;
+      renderMessages(JSON.parse(event.data).messages);
+    };
+    socket.onclose = () => {
+      if (stream !== socket) return;
+      stream = null;
+      reconnect = setTimeout(startStream, 1000);
+    };
+  }
+  document.addEventListener('visibilitychange', () => {if (document.hidden) stopStream(); else startStream();});
   const status = (node, state) => {node.className = 'agent-status ' + state; node.textContent = labels[state] || 'Indisponível';};
   function renderList() {
     $('agent-list').replaceChildren();
@@ -117,12 +139,12 @@ export function initCodex(api, message) {
     renderMessages(data.messages,older);renderRequests(data.requests);
   }
   async function select(ident) {
-    generation++;selected=ident;etag=null;fingerprint='';historyCursor=null;historyLoaded=false;displayed=[];
+    stopStream();generation++;selected=ident;etag=null;fingerprint='';historyCursor=null;historyLoaded=false;displayed=[];
     $('agents-overview').hidden=true;$('agent-conversation').hidden=false;$('agent-chat').replaceChildren();$('agent-requests').replaceChildren();$('agent-requests').dataset.content='';
     $('agent-title').textContent='Carregando agente…';
-    await detail();
+    await detail();startStream();
   }
-  $('agents-back').onclick=()=>{generation++;selected=null;$('agents-overview').hidden=false;$('agent-conversation').hidden=true;listing().catch(error=>message(error.message));};
+  $('agents-back').onclick=()=>{stopStream();generation++;selected=null;$('agents-overview').hidden=false;$('agent-conversation').hidden=true;listing().catch(error=>message(error.message));};
   $('agent-history').onclick=()=>detail(true).catch(error=>message(error.message));
   $('agent-filter').onchange=renderList;
   let searchTimer;
@@ -145,5 +167,5 @@ export function initCodex(api, message) {
     if(busy || document.hidden)return;busy=true;
     try{if(selected)await detail();else await listing();}catch(error){message(error.message);}finally{busy=false;}
   }
-  return {open(){clearInterval(timer);tick();timer=setInterval(tick,2000);},close(){clearInterval(timer);generation++;}};
+  return {open(){opened=true;clearInterval(timer);tick();startStream();timer=setInterval(tick,2000);},close(){opened=false;stopStream();clearInterval(timer);generation++;}};
 }

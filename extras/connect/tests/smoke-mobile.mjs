@@ -54,6 +54,10 @@ try {
   await page.locator('#agent-prompt').fill('Continue pelo celular');
   await page.getByRole('button',{name:/Enviar prompt/}).click();
   await page.waitForFunction(()=>document.getElementById('agent-chat').textContent.includes('Prompt recebido pelo agente.'));
+  await page.waitForFunction(()=>document.getElementById('agent-chat').textContent.includes('Texto parcial ao vivo'));
+  if((await page.locator('#agent-chat').textContent()).includes('resposta completa.'))throw new Error('Text was only shown after completion');
+  await page.waitForFunction(()=>document.getElementById('agent-chat').textContent.includes('Texto parcial ao vivo: resposta completa.'));
+  if((await page.locator('#agent-chat').textContent()).includes('PRIVATE_STREAM_OUTPUT'))throw new Error('Tool output leaked into live chat');
   if(await readFile(fixture.codexPrompt,'utf8')!=='Continue pelo celular')throw new Error('Prompt did not reach backend');
   await page.screenshot({path:'/tmp/jlinux-connect-codex.png',fullPage:true});
   await page.locator('#agents-back').click();
