@@ -4,6 +4,8 @@ import asyncio
 from collections import deque
 import contextlib
 import hmac
+import hashlib
+import json
 import math
 import os
 from pathlib import Path
@@ -13,10 +15,16 @@ import signal
 import time
 
 from aiohttp import ClientSession, UnixConnector, WSMsgType, web
+from system_controls import SystemControls, ACTIONS
+from file_transfer import FileTransfer
 
 ROOT = Path(__file__).resolve().parent
 STATE = Path.home() / '.local/state/jlinux-connect'
 COOKIE = 'jlinux_connect'
+
+def session_id(token):
+    return hashlib.sha256(token.encode('utf-8', errors='replace')).hexdigest()
+
 PUBLIC = {'/', '/app.js', '/style.css', '/icon.svg', '/icon.png', '/manifest.webmanifest', '/api/login'}
 
 
@@ -50,17 +58,30 @@ def desktop_environment():
             values = dict(item.decode().split('=', 1) for item in
                           (process / 'environ').read_bytes().split(b'\0') if b'=' in item)
             return {key: values[key] for key in ('WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR',
-                    'DBUS_SESSION_BUS_ADDRESS', 'LANG') if key in values}
+                    'DBUS_SESSION_BUS_ADDRESS', 'LANG', 'XDG_SESSION_ID') if key in values}
         except (OSError, ValueError, UnicodeError):
             continue
     return {}
 
 
 class Companion:
-    def __init__(self, directory=STATE, assets=ROOT / 'web', desktop=desktop_environment):
+    def __init__(self, directory=STATE, assets=ROOT / 'web', desktop=desktop_environment, home=None):
         self.directory, self.assets, self.desktop = directory, assets, desktop
         self.key = pairing_key(directory)
         self.sessions = {}
+        sessions_file = directory / 'sessions.json'
+        if sessions_file.exists():
+            try:
+                saved = json.loads(sessions_file.read_text())
+                if isinstance(saved, dict) and saved.get('key_id') == session_id(self.key) and isinstance(saved.get('sessions'), dict):
+                    self.sessions = {key: value for key, value in saved['sessions'].items()
+                        if re.fullmatch(r'[a-f0-9]{64}', key) and type(value) in (int, float)
+                        and math.isfinite(value) and time.time() < value <= time.time() + 31 * 86400}
+            except (ValueError, OSError):
+                pass
+        self.confirmations = {}
+        self.system = SystemControls(desktop)
+        self.files = FileTransfer(home or Path.home())
         self.failures = deque(maxlen=5)
         self.sockets = {}
         self.processes = {}
@@ -84,8 +105,8 @@ class Companion:
         if ((request.method not in ('GET', 'HEAD') or websocket) and origin != self.origin(request)) or (origin and origin != self.origin(request)):
             raise web.HTTPForbidden(text='Origem não autorizada')
         if request.path not in PUBLIC:
-            token = request.cookies.get(COOKIE, '')
-            if self.sessions.get(token, 0) <= time.monotonic():
+            token = session_id(request.cookies.get(COOKIE, ''))
+            if self.sessions.get(token, 0) <= time.time():
                 raise web.HTTPUnauthorized(text='Conecte seu iPhone novamente')
             request['session'] = token
         return await handler(request)
@@ -97,12 +118,31 @@ class Companion:
                 (" 'unsafe-inline' 'wasm-unsafe-eval'" if request.path.startswith('/terminal') else '') +
                 "; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'self'"})
 
+    def save_sessions(self):
+        temporary = self.directory / ('sessions-' + secrets.token_hex(8) + '.tmp')
+        try:
+            with open(temporary, 'x', opener=lambda path, flags: os.open(path, flags, 0o600)) as output:
+                json.dump({'key_id': session_id(self.key), 'sessions': self.sessions}, output)
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(temporary, self.directory / 'sessions.json')
+            directory = os.open(self.directory, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+        finally:
+            temporary.unlink(missing_ok=True)
+
     async def login(self, request):
-        now = time.monotonic()
+        now = time.time()
         if len(self.failures) == 5 and now - self.failures[0] < 60:
             raise web.HTTPTooManyRequests(text='Aguarde um minuto antes de tentar novamente')
         data = await self.json(request)
         key = data.get('key')
+        remember = data.get('remember', False)
+        if type(remember) is not bool:
+            raise web.HTTPBadRequest(text='Opção de pareamento inválida')
         if not isinstance(key, str) or not re.fullmatch(r'[A-Za-z0-9_-]{43}', key) or not hmac.compare_digest(key, self.key):
             self.failures.append(now)
             raise web.HTTPUnauthorized(text='Chave de conexão inválida')
@@ -110,15 +150,19 @@ class Companion:
         if len(self.sessions) >= 8:
             raise web.HTTPTooManyRequests(text='Muitos dispositivos conectados')
         token = secrets.token_urlsafe(32)
-        self.sessions[token] = now + 8 * 3600
+        lifetime = 30 * 86400 if remember else 8 * 3600
+        self.sessions[session_id(token)] = now + lifetime
+        self.save_sessions()
         response = web.json_response({'ok': True})
         response.set_cookie(COOKIE, token, httponly=True, secure=request.host.endswith('.ts.net'),
-                            samesite='Strict', max_age=8 * 3600, path='/')
+                            samesite='Strict', max_age=lifetime, path='/')
         return response
 
     async def logout(self, request):
         token = request['session']
         self.sessions.pop(token, None)
+        self.save_sessions()
+        self.confirmations.pop(token, None)
         for ws in list(self.sockets.get(token, ())):
             await ws.close(code=1000, message=b'Logged out')
         response = web.json_response({'ok': True})
@@ -159,23 +203,100 @@ class Companion:
         return web.json_response({'volume': volume, 'desktop': bool(self.desktop()),
                                   'name': 'JLinux', 'version': 1})
 
-    async def volume(self, request):
-        data = await self.json(request)
+    async def set_volume(self, data):
+        if set(data) == {'level'}:
+            value = data['level']
+            if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 1:
+                raise web.HTTPBadRequest(text='Volume deve estar entre 0 e 100%')
+            args = ('set-volume', '--limit', '1.0', '@DEFAULT_AUDIO_SINK@', str(value))
+        elif set(data) == {'mute'} and type(data['mute']) is bool:
+            args = ('set-mute', '@DEFAULT_AUDIO_SINK@', '1' if data['mute'] else '0')
+        else:
+            raise web.HTTPBadRequest(text='Controle de áudio inválido')
         async with self.locks['volume']:
-            if set(data) == {'level'}:
-                value = data['level']
-                if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 1:
-                    raise web.HTTPBadRequest(text='Volume deve estar entre 0 e 100%')
-                args = ('set-volume', '--limit', '1.0', '@DEFAULT_AUDIO_SINK@', str(value))
-            elif set(data) == {'mute'} and type(data['mute']) is bool:
-                args = ('set-mute', '@DEFAULT_AUDIO_SINK@', '1' if data['mute'] else '0')
-            else:
-                raise web.HTTPBadRequest(text='Controle de áudio inválido')
             try:
                 await self.command('wpctl', *args)
             except (OSError, asyncio.TimeoutError):
                 raise web.HTTPServiceUnavailable(text='Áudio indisponível')
+        return data
+
+    async def volume(self, request):
+        await self.set_volume(await self.json(request))
         return web.json_response({'ok': True})
+
+    async def volume_stream(self, request):
+        ws = web.WebSocketResponse(heartbeat=30, max_msg_size=4096, compress=False)
+        token = request['session']
+        await ws.prepare(request)
+        self.sockets.setdefault(token, set()).add(ws)
+        changed = asyncio.Event()
+        pending = None
+        async def writer():
+            nonlocal pending
+            while True:
+                await changed.wait()
+                changed.clear()
+                value, pending = pending, None
+                try:
+                    await self.set_volume(value)
+                    await ws.send_json(value)
+                except web.HTTPException as error:
+                    await ws.send_json({'error': error.text})
+        worker = asyncio.create_task(writer())
+        try:
+            async with asyncio.timeout(max(0, self.sessions[token] - time.time())):
+                async for message in ws:
+                    if message.type != WSMsgType.TEXT:
+                        break
+                    try:
+                        value = message.json()
+                        if not isinstance(value, dict):
+                            raise ValueError()
+                        pending = value
+                        changed.set()
+                    except (ValueError, UnicodeError):
+                        await ws.send_json({'error': 'Controle de áudio inválido'})
+        except TimeoutError:
+            pass
+        finally:
+            worker.cancel()
+            await asyncio.gather(worker, return_exceptions=True)
+            self.sockets[token].discard(ws)
+            if not self.sockets[token]:
+                self.sockets.pop(token)
+            await ws.close()
+        return ws
+
+    async def system_prepare(self, request):
+        data = await self.json(request)
+        action = data.get('action')
+        if set(data) != {'action'} or not isinstance(action, str) or action not in ACTIONS:
+            raise web.HTTPBadRequest(text='Ação inválida')
+        confirmation = secrets.token_urlsafe(24)
+        self.confirmations[request['session']] = (action, confirmation, time.time() + 30)
+        title, explanation = ACTIONS[action]
+        return web.json_response({'confirmation': confirmation, 'title': title, 'explanation': explanation})
+
+    async def system_action(self, request):
+        data = await self.json(request)
+        pending = self.confirmations.pop(request['session'], None)
+        nonce = data.get('confirmation')
+        if (set(data) != {'action', 'confirmation'} or not pending or pending[0] != data['action'] or
+            pending[2] <= time.time() or not isinstance(nonce, str) or
+            not re.fullmatch(r'[A-Za-z0-9_-]{32}', nonce) or not hmac.compare_digest(pending[1], nonce)):
+            raise web.HTTPConflict(text='Confirmação inválida ou expirada. Solicite a ação novamente.')
+        try:
+            result = await self.system.execute(data['action'])
+        except (OSError, asyncio.TimeoutError):
+            raise web.HTTPServiceUnavailable(text='Não foi possível iniciar a ação do sistema')
+        return web.json_response(result, status=202)
+
+    async def system_status(self, request):
+        try:
+            result = await self.system.status(logs=True)
+        except (OSError, asyncio.TimeoutError):
+            raise web.HTTPServiceUnavailable(text='Não foi possível consultar a atualização')
+        return web.json_response(result)
 
     async def backend(self, kind):
         async with self.locks[kind]:
@@ -258,13 +379,13 @@ class Companion:
                         await writer.drain()
                 stack.callback(writer.close)
             token = request['session']
-            if self.sessions.get(token, 0) <= time.monotonic():
+            if self.sessions.get(token, 0) <= time.time():
                 raise web.HTTPUnauthorized(text='Sessão encerrada')
             await ws.prepare(request)
             self.sockets.setdefault(token, set()).add(ws)
             tasks = [asyncio.create_task(upstream()), asyncio.create_task(downstream())]
             try:
-                remaining = max(0, self.sessions[token] - time.monotonic())
+                remaining = max(0, self.sessions[token] - time.time())
                 done, _ = await asyncio.wait(tasks, timeout=remaining, return_when=asyncio.FIRST_COMPLETED)
                 for task in done:
                     task.result()
@@ -317,6 +438,13 @@ class Companion:
         app.router.add_post('/api/logout', self.logout)
         app.router.add_get('/api/status', self.status)
         app.router.add_post('/api/volume', self.volume)
+        app.router.add_get('/ws/volume', self.volume_stream)
+        app.router.add_post('/api/system/prepare', self.system_prepare)
+        app.router.add_post('/api/system/action', self.system_action)
+        app.router.add_get('/api/system/status', self.system_status)
+        app.router.add_get('/api/files', self.files.listing)
+        app.router.add_get('/api/files/download', self.files.download)
+        app.router.add_post('/api/files/upload', self.files.upload)
         app.router.add_get('/ws/desktop', self.screen)
         app.router.add_get('/terminal/{tail:.*}', self.terminal)
         app.router.add_static('/vendor/', self.assets / 'vendor', follow_symlinks=False)

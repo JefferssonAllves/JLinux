@@ -67,6 +67,7 @@ def main():
     elif command == 'revogar':
         pairing_key(STATE)
         (STATE / 'pair.key').write_text(secrets.token_urlsafe(32))
+        (STATE / 'sessions.json').unlink(missing_ok=True)
         service('restart')
         print('Todas as sessões foram encerradas e a chave anterior foi revogada.')
     elif command == 'iniciar':

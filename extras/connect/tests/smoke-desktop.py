@@ -12,6 +12,8 @@ import tempfile
 from aiohttp import web
 
 ROOT = Path(__file__).resolve().parents[1]
+import sys
+sys.path.insert(0, str(ROOT))
 spec = importlib.util.spec_from_file_location('connect_server', ROOT / 'server.py')
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
@@ -40,14 +42,29 @@ async def main():
                 async with asyncio.timeout(5):
                     while 'Janela mapeada: Connect isolated fixture' not in (root / 'session.log').read_text():
                         await asyncio.sleep(.05)
-                companion = module.Companion(root / 'state', ROOT / 'web', desktop=lambda: env)
+                home = root / 'files'
+                home.mkdir()
+                (home / 'do-pc.txt').write_text('Arquivo do computador')
+                companion = module.Companion(root / 'state', ROOT / 'web', desktop=lambda: env, home=home)
                 level = .42
                 async def command(*args):
                     nonlocal level
                     if 'set-volume' in args:
                         level = float(args[-1])
+                        (root / 'volume-marker').write_text(str(level))
                     return f'Volume: {level}\n'
                 companion.command = command
+                updating = False
+                async def system_status(logs=False):
+                    return {'running': updating, 'success': None, 'state': 'running' if updating else 'idle', 'log': 'Atualização simulada' if updating else ''}
+                async def system_action(action):
+                    nonlocal updating
+                    with (root / 'actions').open('a') as marker:
+                        marker.write(action + '\n')
+                    updating = action == 'update'
+                    return {'ok': True, 'action': action}
+                companion.system.status = system_status
+                companion.system.execute = system_action
                 runner = web.AppRunner(companion.application(), access_log=None)
                 await runner.setup()
                 site = web.TCPSite(runner, '127.0.0.1', 0)
@@ -56,7 +73,8 @@ async def main():
                 companion.hosts.add(f'127.0.0.1:{port}')
                 fixture = root / 'fixture.json'
                 fixture.write_text(json.dumps({'url': f'http://127.0.0.1:{port}', 'key': companion.key,
-                                               'marker': str(root / 'remote-keyboard-marker')}))
+                                               'marker': str(root / 'remote-keyboard-marker'), 'volumeMarker': str(root / 'volume-marker'),
+                                               'fileRoot': str(home), 'actions': str(root / 'actions')}))
                 browser = await asyncio.create_subprocess_exec('node', str(ROOT / 'tests/smoke-mobile.mjs'), str(fixture))
                 processes.append(browser)
                 assert await asyncio.wait_for(browser.wait(), 55) == 0, 'Mobile browser integration failed'

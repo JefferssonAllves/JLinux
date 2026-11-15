@@ -14,6 +14,8 @@ from aiohttp import CookieJar, WSMsgType, web
 from aiohttp.test_utils import TestClient, TestServer
 
 SOURCE = Path(__file__).resolve().parents[1]
+import sys
+sys.path.insert(0, str(SOURCE))
 spec = importlib.util.spec_from_file_location('connect_server', SOURCE / 'server.py')
 server = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(server)
@@ -24,7 +26,9 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='jlinux-connect-test-')
         self.directory = Path(self.temp.name)
-        self.companion = server.Companion(self.directory, SOURCE / 'web', desktop=lambda: {})
+        self.home = self.directory / 'home'
+        self.home.mkdir()
+        self.companion = server.Companion(self.directory, SOURCE / 'web', desktop=lambda: {}, home=self.home)
         self.commands = []
         async def command(*args):
             self.commands.append(args)
@@ -53,7 +57,7 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(self.companion.key, await response.text())
 
     async def test_all_privileged_routes_require_login(self):
-        for path in ['/api/status', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
+        for path in ['/api/status', '/api/files', '/api/files/download', '/api/system/status', '/ws/volume', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
             response = await self.client.get(path, headers=HEADERS)
             self.assertEqual(response.status, 401, path)
         response = await self.client.post('/api/volume', json={'level': .5}, headers=HEADERS)
@@ -85,7 +89,7 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(response.cookies[server.COOKIE]['httponly'])
         self.assertEqual(response.cookies[server.COOKIE]['samesite'], 'Strict')
         token = response.cookies[server.COOKIE].value
-        self.companion.sessions[token] = time.monotonic() - 1
+        self.companion.sessions[server.session_id(token)] = time.time() - 1
         response = await self.client.get('/api/status', headers=HEADERS)
         self.assertEqual(response.status, 401)
 
@@ -165,6 +169,152 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(Exception) as caught:
                 await asyncio.wait_for(pending, 3)
             self.assertEqual(caught.exception.status, 401)
+
+    async def test_volume_stream_coalesces_and_rejects_bad_values(self):
+        await self.login()
+        entered, release = asyncio.Event(), asyncio.Event()
+        commands = []
+        async def slow(*args):
+            commands.append(args)
+            if len(commands) == 1:
+                entered.set()
+                await release.wait()
+            return ''
+        self.companion.command = slow
+        ws = await self.client.ws_connect('/ws/volume', headers=HEADERS)
+        await ws.send_json({'level': .1})
+        await asyncio.wait_for(entered.wait(), 2)
+        for number in range(50, 100):
+            await ws.send_json({'level': number / 100})
+        await asyncio.sleep(.03)
+        release.set()
+        self.assertEqual((await ws.receive_json())['level'], .1)
+        self.assertEqual((await ws.receive_json())['level'], .99)
+        self.assertEqual(len(commands), 2)
+        await ws.send_json({'level': -1})
+        self.assertIn('error', await ws.receive_json())
+        self.assertEqual(len(commands), 2)
+        response = await self.client.post('/api/logout', json={}, headers=HEADERS)
+        self.assertEqual(response.status, 200)
+        self.assertIn((await ws.receive()).type, (WSMsgType.CLOSE, WSMsgType.CLOSED))
+
+    async def test_persistent_pairing_and_key_rotation(self):
+        response = await self.client.post('/api/login', json={'key': self.companion.key, 'remember': True}, headers=HEADERS)
+        self.assertEqual(response.status, 200)
+        token = response.cookies[server.COOKIE].value
+        self.assertEqual(response.cookies[server.COOKIE]['max-age'], str(30 * 86400))
+        saved = self.directory / 'sessions.json'
+        self.assertEqual(saved.stat().st_mode & 0o777, 0o600)
+        self.assertNotIn(token, saved.read_text())
+        restarted = server.Companion(self.directory, SOURCE / 'web', desktop=lambda: {}, home=self.home)
+        self.assertGreater(restarted.sessions[server.session_id(token)], time.time())
+        with open(self.directory / 'pair.key', 'w') as out:
+            out.write('a' * 43)
+        rotated = server.Companion(self.directory, SOURCE / 'web', desktop=lambda: {}, home=self.home)
+        self.assertEqual(rotated.sessions, {})
+        await self.client.post('/api/logout', json={}, headers=HEADERS)
+        self.assertEqual(json.loads(saved.read_text())['sessions'], {})
+
+    async def test_file_listing_transfer_and_no_overwrite(self):
+        await self.login()
+        (self.home / 'Documents').mkdir()
+        (self.home / '.private').write_text('hidden')
+        response = await self.client.get('/api/files', headers=HEADERS)
+        data = await response.json()
+        self.assertEqual([item['name'] for item in data['entries']], ['Documents'])
+        response = await self.client.get('/api/files?hidden=1', headers=HEADERS)
+        self.assertIn('.private', [item['name'] for item in (await response.json())['entries']])
+        data = 'Arquivo do iPhone 🦊'.encode() + b'x' * (1024 * 1024)
+        response = await self.client.post('/api/files/upload', params={'path': 'Documents', 'name': 'foto 🦊.txt'},
+                         data=data, headers=HEADERS)
+        self.assertEqual(response.status, 201, await response.text())
+        file = self.home / 'Documents' / 'foto 🦊.txt'
+        self.assertEqual(file.read_bytes(), data)
+        response = await self.client.post('/api/files/upload', params={'path': 'Documents', 'name': file.name},
+                         data=b'OVERWRITE', headers=HEADERS)
+        self.assertEqual(response.status, 409)
+        self.assertEqual(file.read_bytes(), data)
+        response = await self.client.get('/api/files/download', params={'path': 'Documents/' + file.name}, headers=HEADERS)
+        self.assertEqual(response.status, 200)
+        self.assertEqual(await response.read(), data)
+        self.assertIn('attachment;', response.headers['Content-Disposition'])
+        self.assertEqual(list((self.home / 'Documents').glob('.jlinux-upload-*')), [])
+
+    async def test_files_reject_escape_symlinks_special_and_partial_upload(self):
+        await self.login()
+        outside = self.directory / 'outside'
+        outside.write_bytes(b'PRIVATE')
+        (self.home / 'link').symlink_to(outside)
+        (self.home / 'escape').symlink_to(self.directory, target_is_directory=True)
+        os.mkfifo(self.home / 'pipe')
+        for path in ['../outside', str(outside), 'link', 'escape/outside', 'pipe']:
+            response = await self.client.get('/api/files/download', params={'path': path}, headers=HEADERS)
+            self.assertIn(response.status, (400, 403, 404), path)
+        response = await self.client.post('/api/files/upload', params={'path': '', 'name': '../outside'}, data=b'BAD', headers=HEADERS)
+        self.assertEqual(response.status, 403)
+        response = await self.client.post('/api/files/upload', params={'path': 'escape', 'name': 'bad'}, data=b'BAD', headers=HEADERS)
+        self.assertIn(response.status, (403, 404))
+        response = await self.client.post('/api/files/upload', params={'name': 'link'}, data=b'BAD', headers=HEADERS)
+        self.assertEqual(response.status, 409)
+        self.assertEqual(outside.read_bytes(), b'PRIVATE')
+        import file_transfer
+        async def chunks():
+            yield b'12345'
+            await asyncio.sleep(.01)
+            yield b'67890'
+        with patch.object(file_transfer, 'MAX_UPLOAD', 8):
+            response = await self.client.post('/api/files/upload', params={'name': 'large'}, data=chunks(), headers=HEADERS)
+            self.assertEqual(response.status, 413)
+        self.assertFalse((self.home / 'large').exists())
+        self.assertEqual(list(self.home.glob('.jlinux-upload-*')), [])
+
+    async def test_system_confirmation_bound_expiring_and_single_use(self):
+        await self.login()
+        actions = []
+        async def execute(action):
+            actions.append(action)
+            return {'ok': True, 'action': action}
+        self.companion.system.execute = execute
+        response = await self.client.post('/api/system/action', json={'action': 'reboot'}, headers=HEADERS)
+        self.assertEqual(response.status, 409)
+        response = await self.client.post('/api/system/prepare', json={'action': 'sh;reboot'}, headers=HEADERS)
+        self.assertEqual(response.status, 400)
+        for action in ('reboot', 'poweroff', 'logout', 'update'):
+            response = await self.client.post('/api/system/prepare', json={'action': action}, headers=HEADERS)
+            self.assertEqual(response.status, 200)
+            prepared = await response.json()
+            data = {'action': action, 'confirmation': prepared['confirmation']}
+            response = await self.client.post('/api/system/action', json=data, headers=HEADERS)
+            self.assertEqual(response.status, 202)
+            response = await self.client.post('/api/system/action', json=data, headers=HEADERS)
+            self.assertEqual(response.status, 409)
+        self.assertEqual(actions, ['reboot', 'poweroff', 'logout', 'update'])
+        response = await self.client.post('/api/system/prepare', json={'action': 'reboot'}, headers=HEADERS)
+        prepared = await response.json()
+        token = next(iter(self.companion.confirmations))
+        self.companion.confirmations[token] = ('reboot', prepared['confirmation'], time.time() - 1)
+        response = await self.client.post('/api/system/action', json={'action': 'reboot', 'confirmation': prepared['confirmation']}, headers=HEADERS)
+        self.assertEqual(response.status, 409)
+
+    async def test_confirmation_cannot_be_used_by_another_device(self):
+        response = await self.login()
+        first = response.cookies[server.COOKIE].value
+        response = await self.client.post('/api/system/prepare', json={'action': 'reboot'}, headers=HEADERS)
+        data = {'action': 'reboot', 'confirmation': (await response.json())['confirmation']}
+        self.client.session.cookie_jar.clear()
+        await self.login()
+        response = await self.client.post('/api/system/action', json=data, headers=HEADERS)
+        self.assertEqual(response.status, 409)
+        self.client.session.cookie_jar.clear()
+        self.client.session.cookie_jar.update_cookies({server.COOKIE: first}, response_url=self.client.make_url('/'))
+        called = []
+        async def execute(action):
+            called.append(action)
+            return {'ok': True}
+        self.companion.system.execute = execute
+        response = await self.client.post('/api/system/action', json=data, headers=HEADERS)
+        self.assertEqual(response.status, 202)
+        self.assertEqual(called, ['reboot'])
 
     async def test_pairing_qr_is_generated_locally(self):
         import sys

@@ -14,7 +14,12 @@ try {
   await page.getByRole('button', {name: 'Conectar ao JLinux'}).click();
   await page.waitForFunction(() => document.getElementById('connection').classList.contains('connected'));
   await page.waitForFunction(() => document.getElementById('volume-number').textContent === '42%');
-  await page.locator('#volume').evaluate(element => {element.value = 60; element.dispatchEvent(new Event('change'));});
+  await page.locator('#volume').evaluate(element => {element.value = 37; element.dispatchEvent(new Event('input'));});
+  await page.waitForTimeout(150);
+  if (Number(await readFile(fixture.volumeMarker, 'utf8')) !== .37) throw new Error('Volume did not update while dragging');
+  await page.locator('#volume').evaluate(element => {for(let value=38;value<=60;value++){element.value=value;element.dispatchEvent(new Event('input'));}element.dispatchEvent(new Event('change'));});
+  await page.waitForTimeout(150);
+  if (Number(await readFile(fixture.volumeMarker, 'utf8')) !== .60) throw new Error('Final volume was lost');
   await page.waitForFunction(() => document.getElementById('volume-number').textContent === '60%');
   await page.screenshot({path: '/tmp/jlinux-connect-mobile.png', fullPage: true});
   await page.locator('[data-tab=desktop]').click();
@@ -37,9 +42,29 @@ try {
   await page.waitForTimeout(500);
   if (!await terminal.locator('.xterm-screen').count()) throw new Error('Terminal did not mount');
   await page.locator('#terminal-toggle').click();
+  await page.locator('[data-tab=files]').click();
+  await page.getByRole('link', {name: 'Baixar do-pc.txt'}).waitFor();
+  const downloading = page.waitForEvent('download');
+  await page.getByRole('link', {name: 'Baixar do-pc.txt'}).click();
+  const downloaded = await downloading;
+  if (await readFile(await downloaded.path(), 'utf8') !== 'Arquivo do computador') throw new Error('Download mismatch');
+  await page.locator('#file-input').setInputFiles({name:'do-iphone.txt',mimeType:'text/plain',buffer:Buffer.from('Arquivo do iPhone')});
+  await page.waitForFunction(() => document.getElementById('upload-status').textContent === 'Arquivos enviados para o JLinux.');
+  if (await readFile(fixture.fileRoot + '/do-iphone.txt', 'utf8') !== 'Arquivo do iPhone') throw new Error('Upload mismatch');
+  await page.locator('[data-tab=system]').click();
+  await page.locator('[data-action=reboot]').click();
+  await page.locator('#system-confirm').waitFor({state:'visible'});
+  await page.getByRole('button', {name:'Cancelar', exact:true}).click();
+  try {await readFile(fixture.actions);throw new Error('Cancelled action executed');}catch(error){if(error.code!=='ENOENT')throw error;}
+  await page.locator('[data-action=update]').click();
+  await page.locator('#confirm-action').click();
+  await page.waitForFunction(() => document.getElementById('update-state').textContent === 'Atualizando…');
+  if (!(await page.locator('[data-action=reboot]').isDisabled()) || !(await page.locator('[data-action=poweroff]').isDisabled())) throw new Error('Power actions enabled during update');
+  if ((await readFile(fixture.actions,'utf8')).trim() !== 'update') throw new Error('Unexpected action');
+  await page.screenshot({path:'/tmp/jlinux-connect-system.png',fullPage:true});
   await page.locator('[data-tab=volume]').click();
   await page.locator('#logout').click();
   await page.locator('#key').waitFor({state: 'visible'});
   if (errors.length) throw new Error(errors.join('\n'));
-  console.log('Mobile UI: pairing, volume, desktop capture, real remote keyboard, terminal and logout passed');
+  console.log('Mobile UI: live volume, files both ways, confirmed system actions, update power lock, desktop, terminal and logout passed');
 } finally { await browser.close(); }
