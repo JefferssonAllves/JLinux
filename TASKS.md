@@ -1,5 +1,9 @@
 # Plano central do JLinux
 
+## Codex por pasta — feature/codex-project-groups
+
+**Concluído e aplicado ao controle instalado:** chats agrupados por caminho completo, contagem e identificação de pastas homônimas, mantendo filtros e abertura de conversas. Teste Playwright/headless passou com três grupos, incluindo dois caminhos com o mesmo nome final e chats sem pasta; mídia, prompts, reconexão e tela remota continuam passando. Alteração somente dos arquivos públicos, sem reiniciar agentes ou gateway. Validação em iPhone físico pendente.
+
 ## Controle pelo iPhone — feature/iphone-codex-media
 
 **Concluído na branch e instalado:** pareamento persistente/reconexão, controles MPRIS, aba Codex com respostas de texto e perguntas, tela remota imersiva. Evidências e limites em [validação](docs/validation-iphone-codex-media.md). Integração em develop pendente do PR dependente.

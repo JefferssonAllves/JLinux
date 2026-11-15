@@ -9,12 +9,26 @@ export function initCodex(api, message) {
     const filter = $('agent-filter').value;
     const visible = agents.filter(agent => filter === 'all' || agent.state === filter);
     visible.sort((a, b) => ({waiting:0,working:1,error:2,idle:3}[a.state] - {waiting:0,working:1,error:2,idle:3}[b.state]) || b.updated-a.updated);
+    const groups = new Map();
     for (const agent of visible) {
-      const button = document.createElement('button'); button.className = 'agent-card'; button.type = 'button';
-      const content = document.createElement('div'), title = document.createElement('strong'), subtitle = document.createElement('small'), badge = document.createElement('span');
-      title.textContent = agent.title; subtitle.textContent = (agent.parent ? 'Agente auxiliar · ' : '') + (agent.role || agent.cwd || 'Codex');
-      status(badge, agent.state); content.append(title, subtitle); button.append(content, badge);
-      button.onclick = () => select(agent.id).catch(error => message(error.message)); $('agent-list').append(button);
+      const path = agent.cwd || '';
+      if (!groups.has(path)) groups.set(path, []);
+      groups.get(path).push(agent);
+    }
+    for (const [path, members] of [...groups].sort(([a], [b]) => a.localeCompare(b, 'pt-BR'))) {
+      const section = document.createElement('section'); section.className = 'agent-group';
+      const heading = document.createElement('h3'), location = document.createElement('p');
+      heading.textContent = `${path.split('/').filter(Boolean).pop() || (path ? '/' : 'Sem pasta associada')} · ${members.length}`;
+      location.textContent = path; location.className = 'agent-group-path';
+      section.append(heading, location);
+      for (const agent of members) {
+        const button = document.createElement('button'); button.className = 'agent-card'; button.type = 'button';
+        const content = document.createElement('div'), title = document.createElement('strong'), subtitle = document.createElement('small'), badge = document.createElement('span');
+        title.textContent = agent.title; subtitle.textContent = (agent.parent ? 'Agente auxiliar · ' : '') + (agent.role || agent.cwd || 'Codex');
+        status(badge, agent.state); content.append(title, subtitle); button.append(content, badge);
+        button.onclick = () => select(agent.id).catch(error => message(error.message)); section.append(button);
+      }
+      $('agent-list').append(section);
     }
     $('agents-empty').hidden = visible.length > 0;
     $('agents-more').hidden = !cursor;
