@@ -17,3 +17,5 @@ e0a1a54f4b2b7bc296f1c7947b80cb50f80c5ea1e795e5c813c2033362cd7f41  code.png
 Os PNG Firefox/Code acima são históricos da primeira referência e deixaram de ser embutidos no shell. O dock atual lê os ícones dos aplicativos instalados (PNG/SVG) e não usa marcas de outros programas como substitutos.
 
 O ícone `data/icons/netflix.png` foi convertido do ícone oficial https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico. A marca pertence à Netflix, sem afiliação com JLinux.
+
+`data/icons/whatsapp-dock.svg`: símbolo vetorial de https://github.com/simple-icons/simple-icons/blob/develop/icons/whatsapp.svg (Simple Icons, CC0), aplicado sobre fundo verde com cantos arredondados. WhatsApp é marca da Meta, sem afiliação com JLinux.

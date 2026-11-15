@@ -562,7 +562,7 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     }
     for (int i = 0; i < DOCK_APP_COUNT; i++) {
         sector(cr, i, s->prefs.neon ? s->hover[i] : 0, s->glass);
-        double size = (i == 0 ? 86 : i == 6 ? 68 : 74) * (1 + (s->prefs.zoom ? .12 : 0) * s->hover[i]);
+        double size = (i == 0 ? 86 : i == 5 ? 68 : 74) * (1 + (s->prefs.zoom ? .12 : 0) * s->hover[i]);
         double y = positions[i][1] - (s->prefs.zoom ? 5 : 0) * s->hover[i];
         if (s->glass.reflection && s->prefs.neon) { jlinux_dock_halo(cr, positions[i][0], y, size * .9, s->hover[i]); }
         app_icon(s, cr, i, positions[i][0] - size / 2, y - size / 2, size);
@@ -584,7 +584,7 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     }
     app_icon(s, cr, s->selected, 788, 385, 96);
     centered_text(cr,dock_app_name(s->selected),491,25,true,0xffffff);
-    centered_text(cr,s->selected==0?"Navegador Web":s->selected==2?"Editor de código":s->selected==5?"Abrir configurações":"Abrir aplicativo",525,17,false,0xb6b5d1);
+    centered_text(cr,s->selected==0?"Navegador Web":s->selected==2?"Editor de código":s->selected==4?"Abrir configurações":"Abrir aplicativo",525,17,false,0xb6b5d1);
     cairo_restore(cr);
 }
 double futurista_volume_at(double x, int width, int height) {

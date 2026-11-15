@@ -30,7 +30,7 @@ import os,sys,json,pathlib
 with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(json.dumps(sys.argv)+'\\n')
 ''');mock.chmod(0o755)
     (commands/'foot').symlink_to(mock)
-    entries={'brave-browser.desktop':'brave','Neovim-Code.desktop':'nvim','org.qbittorrent.qBittorrent.desktop':'torrent',
+    entries={'brave-browser.desktop':'brave','Neovim-Code.desktop':'nvim',
              'org.jlinux.Files.desktop':'files','org.jlinux.WhatsApp.desktop':'whatsapp',
              'com.github.KRTirtho.Spotube.desktop':'spotube','org.vinegarhq.Sober.desktop':'roblox','org.jlinux.Netflix.desktop':'netflix'}
     for entry,name in entries.items():
@@ -52,16 +52,14 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
             client=subprocess.Popen([shell],env=env,stdout=out,stderr=subprocess.STDOUT);processes.append(client)
             wait(lambda:'Interface mapeada: jlinux-panel' in log(),processes,'shell')
             dock()
-            positions=tuple((836+250*math.cos(math.radians(-90+i*360/12)),469+250*math.sin(math.radians(-90+i*360/12))) for i in range(12))
-            for i in (0,1,2,3,4,6,8,9,10,11):
+            positions=tuple((836+250*math.cos(math.radians(-90+i*360/10)),469+250*math.sin(math.radians(-90+i*360/10))) for i in range(10))
+            for i in (0,1,2,3,5,6,7,8,9):
                 before=len(recorded());click(*positions[i])
                 wait(lambda:len(recorded())>before,processes,f'app {i}')
-            before=len(recorded());click(*positions[7]);time.sleep(.15)
-            assert len(recorded())==before,'Videos duplicated pending Files launch'
             data=recorded()
-            for name in ('brave','nvim','torrent','files','spotube','whatsapp','roblox','netflix'):assert any(name in row for row in data),name
+            for name in ('brave','nvim','files','spotube','whatsapp','roblox','netflix'):assert any(name in row for row in data),name
             assert any('btop' in row for row in data),'monitor command'
-            click(*positions[5]);wait(lambda:'Configurações abertas.' in log(),processes,'settings gear')
+            click(*positions[4]);wait(lambda:'Configurações abertas.' in log(),processes,'settings gear')
             click(1260,350)
             preference=config/'jlinux'/'shell.ini'
             wait(lambda:preference.exists() and 'animations=false' in preference.read_text(),processes,'animation preference')
@@ -77,7 +75,7 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
             stop(client);processes.remove(client)
             client=subprocess.Popen([shell],env=env,stdout=out,stderr=subprocess.STDOUT);processes.append(client)
             wait(lambda:log().count('Interface mapeada: jlinux-panel')==2,processes,'shell restart')
-            dock();click(*positions[5]);click(1260,350)
+            dock();click(*positions[4]);click(1260,350)
             wait(lambda:'animations=true' in preference.read_text(),processes,'loaded saved preference')
             assert 'neon=false' in preference.read_text() and 'tint=false' in preference.read_text()
             assert preference.stat().st_mode&0o777==0o600

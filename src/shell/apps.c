@@ -54,10 +54,11 @@ static cairo_surface_t *settings_icon(void) {
 }
 cairo_surface_t *dock_app_icon(int index) {
     if (index < 0 || index >= DOCK_APP_COUNT) { return NULL; }
-    if (index == 5) { return settings_icon(); }
-    if (index == 9) { return find_icon("org.jlinux.Spotube"); }
+    if (index == 4) { return settings_icon(); }
+    if (index == 7) { return find_icon("org.jlinux.Spotube"); }
+    if (index == 8) { return find_icon("org.jlinux.WhatsAppDock"); }
     GDesktopAppInfo *info = dock_app_desktop(index) ? g_desktop_app_info_new(dock_app_desktop(index)) : NULL;
-    GIcon *icon = info && index != 7 ? g_app_info_get_icon(G_APP_INFO(info)) : NULL;
+    GIcon *icon = info ? g_app_info_get_icon(G_APP_INFO(info)) : NULL;
     cairo_surface_t *image = NULL;
     if (icon && G_IS_FILE_ICON(icon)) { image = load_icon(g_file_peek_path(g_file_icon_get_file(G_FILE_ICON(icon)))); }
     if (icon && G_IS_THEMED_ICON(icon)) {
