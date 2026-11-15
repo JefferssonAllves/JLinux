@@ -19,6 +19,9 @@
 #include <wlr/util/box.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_scene.h>
+#include <wlr/types/wlr_screencopy_v1.h>
+#include <wlr/types/wlr_xdg_output_v1.h>
+#include <wlr/types/wlr_data_control_v1.h>
 #include <wlr/types/wlr_subcompositor.h>
 #include <wlr/util/log.h>
 #include "../renderer/backdrop.h"
@@ -319,7 +322,10 @@ int main(void) {
     desktop.scene_layout = wlr_scene_attach_output_layout(desktop.scene, desktop.layout);
     if (!desktop.scene_layout ||
         !wlr_compositor_create(desktop.display, 5, desktop.render.renderer) ||
-        !wlr_subcompositor_create(desktop.display)) { goto cleanup; }
+        !wlr_subcompositor_create(desktop.display) ||
+        !wlr_screencopy_manager_v1_create(desktop.display) ||
+        !wlr_xdg_output_manager_v1_create(desktop.display, desktop.layout) ||
+        !wlr_data_control_manager_v1_create(desktop.display)) { goto cleanup; }
     desktop.new_output.notify = add_output;
     wl_signal_add(&desktop.backend->events.new_output, &desktop.new_output);
     interrupt = wl_event_loop_add_signal(loop, SIGINT, stop_server, desktop.display);
