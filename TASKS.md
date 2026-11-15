@@ -2,7 +2,7 @@
 
 ## Tela móvel e touchpad — feature/mobile-touchpad-fullscreen
 
-**Concluído na branch:** controles sobrepostos ocultáveis e recuperados com dois dedos; cursor relativo via cliente C Wayland, toque para clicar e segurar para arrastar, preservando teclado e modo panorâmico. 34 testes unitários e integração Playwright/headless passaram com cliente nativo real, gestos em pontos diferentes, clique/arraste e tela cheia em retrato/paisagem. Instalação e limites em docs/validation-mobile-touchpad-fullscreen.md.
+**Concluído na branch e instalado:** controles sobrepostos ocultáveis e recuperados com dois dedos; cursor relativo via cliente C Wayland, toque para clicar e segurar para arrastar, preservando teclado e modo panorâmico. 34 testes unitários e integração Playwright/headless passaram com cliente nativo real, gestos em pontos diferentes, clique/arraste e tela cheia em retrato/paisagem. Instalação e limites em docs/validation-mobile-touchpad-fullscreen.md.
 
 ## Codex finalizado não lido — feature/codex-unread-completion
 
