@@ -548,3 +548,5 @@ ASan/UBSan. Instalação em conclusão; ativação no próximo login.
 ## Arquivos: menu de contexto e miniaturas — feature/files-context-thumbnails
 
 Implementado em C: menu por botão direito/teclado, copiar/recortar/colar, seleção múltipla, renomear, criar pasta/arquivo, lixeira com confirmação, propriedades, ocultos, atualizar e terminal. Miniaturas de imagens com cache limitado e aproveitamento de cache padrão para outros tipos. Proposta gerada e prévia nativa em docs/design/files-complete-{concept,native}.png; contratos, controles e limites em docs/file-manager.md. Integração de clipboard entre aplicativos e geração de prévias de vídeo/PDF permanecem pendentes; não declarar gerenciador final completo.
+
+Instalado pelo pacman como jlinux-desktop-git 0.5.0.r149.g3d6bbf0-1. Os 50 testes do pacote passaram; gerenciador atualizado aberto na sessão atual sem encerrar o desktop. Prévia nativa inspecionada; CI remota e interação visual do usuário ainda pendentes.

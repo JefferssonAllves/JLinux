@@ -9,7 +9,7 @@ static bool finish(struct app *app){
     return WIFEXITED(status)&&WEXITSTATUS(status)==0;
 }
 int main(void){
-    char *root=g_build_filename(g_get_home_dir(),".cache","jlinux-actions-XXXXXX",NULL);CHECK(g_mkdtemp(root));
+    CHECK(!g_mkdir_with_parents(g_get_user_cache_dir(),0700));char *root=g_build_filename(g_get_user_cache_dir(),"jlinux-actions-XXXXXX",NULL);CHECK(g_mkdtemp(root));
     char *data=g_build_filename(root,"data",NULL);g_setenv("XDG_DATA_HOME",data,TRUE);
     struct app app={0};CHECK(navigate(&app,root));
     dialog_open(&app,1);g_strlcpy(app.input,"Folder á",sizeof(app.input));dialog_accept(&app);CHECK(finish(&app));
