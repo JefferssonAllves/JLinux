@@ -1,20 +1,38 @@
+import {initCodex} from '/codex.js';
 const $ = id => document.getElementById(id);
 let authenticated = false, muted = false, rfb = null, polling = null;
 let volumeDragging = false;
 let volumeSocket = null, volumeTimer = null, volumeReconnect = null, pendingVolume = null, sendingVolume = false, lastVolume = null;
 let currentPath = '', activeUpload = null, systemPolling = null, confirmation = null, systemBusy = false, updateRunning = false;
 const message = text => { $('message').textContent = text; };
+const codexUI = initCodex(api, message);
+let reconnectTimer = null, mediaTimer = null, selectedPlayer = null, currentPlayers = [];
+
 async function api(path, data) {
-  const response = await fetch('/api/' + path, data === undefined ? {} : {
+  let response;
+  try { response = await fetch('/api/' + path, data === undefined ? {signal: path==='status'?AbortSignal.timeout(4000):undefined} : {
     method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
-  });
+  }); } catch { waitForComputer(); throw new Error('Aguardando o computador. Reconectando automaticamente…'); }
   if (!response.ok) {
     if (response.status === 401 && path !== 'login') setConnected(false);
-    throw new Error(await response.text());
+    const error = new Error(await response.text()); error.status = response.status; throw error;
   }
   return response.json();
 }
+function leaveImmersive(exitNative=true) {
+  $('screen-shell').classList.remove('immersive','keyboard-open'); document.body.classList.remove('screen-open');
+  $('screen-keyboard').setAttribute('aria-pressed','false');
+  if(exitNative && document.fullscreenElement===$('screen-shell')) document.exitFullscreen().catch(()=>{});
+}
+function enterImmersive() {
+  $('screen-shell').classList.add('immersive');document.body.classList.add('screen-open');
+  if(document.fullscreenEnabled && !$('screen-shell').matches(':fullscreen')) $('screen-shell').requestFullscreen({navigationUI:'hide'}).catch(()=>{});
+}
+$('screen-exit').onclick=()=>leaveImmersive();
+$('screen-keyboard').onclick=()=>{const visible=$('screen-shell').classList.toggle('keyboard-open');$('screen-keyboard').setAttribute('aria-pressed',String(visible));if(visible)$('text').focus();};
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)leaveImmersive(false);});
 function disconnectScreen() {
+  leaveImmersive();
   if (rfb) {
     if ($('super').getAttribute('aria-pressed') === 'true') rfb.sendKey(0xffeb, 'MetaLeft', false);
     rfb.disconnect(); rfb = null;
@@ -30,13 +48,14 @@ function closeTerminal() {
 }
 function setConnected(value) {
   authenticated = value;
+  clearTimeout(reconnectTimer); reconnectTimer=null; $('connecting').hidden=true;
   $('pair').hidden = value; $('controls').hidden = !value;
   $('connection').textContent = value ? 'Conectado ao JLinux' : 'Não conectado';
   $('connection').classList.toggle('connected', value);
   clearInterval(polling);
-  if (value) { startVolumeStream(); polling = setInterval(() => { if (!document.hidden) refresh().catch(e => message(e.message)); }, 15000); }
+  if (value) { startVolumeStream(); startMedia(); polling = setInterval(() => { if (!document.hidden) refresh().catch(e => message(e.message)); }, 15000); }
   else {
-    clearTimeout(volumeReconnect); clearTimeout(volumeTimer); clearInterval(systemPolling);
+    clearTimeout(volumeReconnect); clearTimeout(volumeTimer); clearInterval(systemPolling); clearInterval(mediaTimer); codexUI.close();
     const socket = volumeSocket; volumeSocket = null; if (socket) socket.close();
     if (activeUpload) activeUpload.abort();
     pendingVolume = null; sendingVolume = false; lastVolume = null;
@@ -45,7 +64,9 @@ function setConnected(value) {
 }
 async function refresh() {
   const status = await api('status');
+  clearTimeout(reconnectTimer); reconnectTimer=null; $('connecting').hidden=true;
   if (!authenticated) setConnected(true);
+  $('connection').textContent='Conectado ao JLinux';$('connection').classList.add('connected');startVolumeStream();
   $('volume').disabled = !status.volume; $('mute').disabled = !status.volume;
   if (status.volume) {
     if (!volumeDragging && pendingVolume === null && !sendingVolume && lastVolume === null) {
@@ -111,10 +132,12 @@ $('logout').addEventListener('click', async () => {
 document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => {
   document.querySelectorAll('[data-tab]').forEach(tab => tab.removeAttribute('aria-current'));
   button.setAttribute('aria-current', 'page');
-  for (const name of ['volume', 'desktop', 'terminal', 'files', 'system']) $(name + '-panel').hidden = name !== button.dataset.tab;
+  for (const name of ['volume', 'desktop', 'codex', 'terminal', 'files', 'system']) $(name + '-panel').hidden = name !== button.dataset.tab;
   if (button.dataset.tab !== 'desktop') disconnectScreen();
-  clearInterval(systemPolling);
+  clearInterval(systemPolling); clearInterval(mediaTimer); codexUI.close();
   message('');
+  if (button.dataset.tab==='codex') codexUI.open();
+  if (button.dataset.tab==='volume') startMedia();
   if (button.dataset.tab === 'files') loadFiles().catch(e => message(e.message));
   if (button.dataset.tab === 'system') {
     refreshSystem().catch(e => message(e.message));
@@ -124,12 +147,13 @@ document.querySelectorAll('[data-tab]').forEach(button => button.addEventListene
 $('screen-toggle').addEventListener('click', async () => {
   if (rfb) { disconnectScreen(); return; }
   $('screen-toggle').disabled = true;
+  enterImmersive();
   try {
     const {default: RFB} = await import('/vendor/novnc/core/rfb.js');
     $('screen-placeholder').hidden = true;
     const connection = new RFB($('screen'), `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/desktop`);
     rfb = connection; rfb.scaleViewport = true; rfb.resizeSession = false;
-    rfb.qualityLevel = 5; rfb.compressionLevel = 6; rfb.showDotCursor = true;
+    applyScreenQuality(); rfb.showDotCursor = true;
     connection.addEventListener('connect', () => { $('screen-toggle').textContent = 'Fechar tela'; message('Tela conectada.'); });
     connection.addEventListener('disconnect', event => {
       if (rfb === connection) { disconnectScreen(); message(event.detail.clean ? 'Tela desconectada.' : 'Não foi possível abrir a tela. Entre novamente na sessão do JLinux e tente outra vez.'); }
@@ -138,6 +162,13 @@ $('screen-toggle').addEventListener('click', async () => {
   } catch (e) { disconnectScreen(); message(e.message); }
   finally { $('screen-toggle').disabled = false; }
 });
+function applyScreenQuality() {
+  if(!rfb)return;
+  const sharp=$('screen-quality').value==='sharp';
+  rfb.qualityLevel=sharp?9:5;rfb.compressionLevel=sharp?1:6;
+}
+$('screen-quality').onchange=applyScreenQuality;
+const expand=document.createElement('button');expand.id='screen-expand';expand.type='button';expand.className='secondary';expand.textContent='Tela cheia';expand.onclick=enterImmersive;$('screen-shell').querySelector('.screen-toolbar').prepend(expand);
 $('pan').addEventListener('click', () => {
   if (!rfb) return;
   const enabled = $('pan').getAttribute('aria-pressed') !== 'true';
@@ -271,12 +302,43 @@ $('confirm-action').onclick = async () => {
   finally { systemBusy = false; systemButtons(); }
 };
 
+function waitForComputer() {
+  $('connection').textContent='Reconectando…';$('connection').classList.remove('connected');
+  if(!authenticated){$('pair').hidden=true;$('connecting').hidden=false;}
+  if(!reconnectTimer)reconnectTimer=setTimeout(()=>{reconnectTimer=null;reconnect();},5000);
+}
+async function reconnect(){
+  clearTimeout(reconnectTimer);reconnectTimer=null;
+  try{await refresh();message('');}catch(error){if(error.status===401)setConnected(false);else waitForComputer();}
+}
+$('reconnect').onclick=reconnect;
+window.addEventListener('online',reconnect);
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+async function refreshMedia() {
+  const data=await api('media');currentPlayers=data.players;
+  if(!currentPlayers.some(player=>player.id===selectedPlayer))selectedPlayer=currentPlayers[0]?.id||null;
+  const player=currentPlayers.find(item=>item.id===selectedPlayer);
+  $('media-title').textContent=player?.title||'Nenhum player aberto';$('media-artist').textContent=player?.artist||'Abra uma música no computador.';
+  const select=$('media-player');
+  if(JSON.stringify([...select.options].map(option=>[option.value,option.textContent]))!==JSON.stringify(currentPlayers.map(item=>[item.id,item.name]))){
+    select.replaceChildren();for(const item of currentPlayers){const option=document.createElement('option');option.value=item.id;option.textContent=item.name;select.append(option);}
+  }
+  select.value=selectedPlayer||'';select.hidden=currentPlayers.length<2;
+  $('media-back').disabled=!player?.can_seek;$('media-forward').disabled=!player?.can_seek;
+  $('media-previous').disabled=!player?.can_previous;$('media-next').disabled=!player?.can_next;$('media-play').disabled=!player?.can_play_pause;
+  $('media-play').textContent=player?.playing?'Ⅱ':'▶';$('media-play').setAttribute('aria-label',player?.playing?'Pausar':'Reproduzir');
+}
+function startMedia(){clearInterval(mediaTimer);refreshMedia().catch(error=>message(error.message));mediaTimer=setInterval(()=>{if(!document.hidden)refreshMedia().catch(error=>message(error.message));},2500);}
+$('media-player').onchange=()=>{selectedPlayer=$('media-player').value;refreshMedia().catch(error=>message(error.message));};
+for(const [id,action] of [['media-previous','previous'],['media-play','play_pause'],['media-next','next'],['media-back','seek_back'],['media-forward','seek_forward']]){
+  $(id).onclick=async()=>{const button=$(id);button.disabled=true;try{await api('media/action',{player:selectedPlayer,action});await refreshMedia();}catch(error){message(error.message);button.disabled=false;}};
+}
 // The pairing key stays out of server logs, browser history and persistent web storage.
 const fragment = location.hash.slice(1);
 history.replaceState(null, '', location.pathname);
 if (fragment) {
   try { await api('login', {key: fragment, remember: true}); await refresh(); }
-  catch (e) { message(e.message); }
+  catch (e) { if(e.status===401)setConnected(false);message(e.message); }
 } else {
-  try { await refresh(); } catch { setConnected(false); }
+  await reconnect();
 }

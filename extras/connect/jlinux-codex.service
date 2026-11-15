@@ -1,0 +1,13 @@
+[Unit]
+Description=Codex local para o JLinux Connect
+
+[Service]
+Type=exec
+ExitType=cgroup
+ExecStart=%h/.local/bin/codex app-server daemon start
+WorkingDirectory=%h
+UMask=0077
+TimeoutStartSec=60
+
+[Install]
+WantedBy=default.target

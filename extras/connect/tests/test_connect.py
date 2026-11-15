@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 import contextlib
 import io
 
@@ -57,7 +57,7 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(self.companion.key, await response.text())
 
     async def test_all_privileged_routes_require_login(self):
-        for path in ['/api/status', '/api/files', '/api/files/download', '/api/system/status', '/ws/volume', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
+        for path in ['/api/status', '/api/files', '/api/media', '/api/codex/threads', '/api/files/download', '/api/system/status', '/ws/volume', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
             response = await self.client.get(path, headers=HEADERS)
             self.assertEqual(response.status, 401, path)
         response = await self.client.post('/api/volume', json={'level': .5}, headers=HEADERS)
@@ -202,12 +202,14 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
         response = await self.client.post('/api/login', json={'key': self.companion.key, 'remember': True}, headers=HEADERS)
         self.assertEqual(response.status, 200)
         token = response.cookies[server.COOKIE].value
-        self.assertEqual(response.cookies[server.COOKIE]['max-age'], str(30 * 86400))
+        self.assertEqual(response.cookies[server.COOKIE]['max-age'], str(365 * 86400))
         saved = self.directory / 'sessions.json'
         self.assertEqual(saved.stat().st_mode & 0o777, 0o600)
         self.assertNotIn(token, saved.read_text())
         restarted = server.Companion(self.directory, SOURCE / 'web', desktop=lambda: {}, home=self.home)
-        self.assertGreater(restarted.sessions[server.session_id(token)], time.time())
+        self.assertIsNone(restarted.sessions[server.session_id(token)])
+        with patch.object(server.time, 'time', return_value=time.time()+2*365*86400):
+            self.assertTrue(restarted.session_alive(server.session_id(token)))
         with open(self.directory / 'pair.key', 'w') as out:
             out.write('a' * 43)
         rotated = server.Companion(self.directory, SOURCE / 'web', desktop=lambda: {}, home=self.home)
@@ -315,6 +317,55 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
         response = await self.client.post('/api/system/action', json=data, headers=HEADERS)
         self.assertEqual(response.status, 202)
         self.assertEqual(called, ['reboot'])
+
+    async def test_existing_trusted_device_migrates_and_cookie_renews(self):
+        response = await self.login()
+        raw = response.cookies[server.COOKIE].value
+        ident = server.session_id(raw)
+        self.companion.sessions[ident] = time.time() + 29 * 86400
+        self.companion.save_sessions()
+        restarted = server.Companion(self.directory, SOURCE / 'web', desktop=lambda: {}, home=self.home)
+        self.assertIsNone(restarted.sessions[ident])
+        self.assertIsNone(json.loads((self.directory/'sessions.json').read_text())['sessions'][ident])
+        self.companion.sessions[ident] = None
+        response = await self.client.get('/api/status', headers=HEADERS)
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.cookies[server.COOKIE]['max-age'], str(365*86400))
+        self.assertTrue(response.cookies[server.COOKIE]['httponly'])
+        response = await self.client.post('/api/logout', json={}, headers=HEADERS)
+        self.assertEqual(response.status, 200)
+        self.assertFalse(server.Companion(self.directory, SOURCE/'web', home=self.home).session_alive(ident))
+
+    async def test_codex_routes_allow_long_prompts_without_raw_rpc(self):
+        await self.login()
+        mock=AsyncMock(return_value={'ok':True})
+        self.companion.codex.prompt=mock
+        ident='00000000-0000-7000-8000-000000000001'
+        text='x'*10000
+        response=await self.client.post(f'/api/codex/threads/{ident}/prompt',json={'text':text},headers=HEADERS)
+        self.assertEqual(response.status,200)
+        mock.assert_awaited_once_with(ident,text)
+        response=await self.client.post(f'/api/codex/threads/{ident}/prompt',json={'text':'x','method':'command/exec'},headers=HEADERS)
+        self.assertEqual(response.status,400)
+        response=await self.client.post('/api/media/action',json={'action':'next','player':'x','method':'evil'},headers=HEADERS)
+        self.assertEqual(response.status,400)
+
+    async def test_capture_falls_back_if_gpu_cannot_start(self):
+        self.companion.desktop=lambda:{'WAYLAND_DISPLAY':'fake'}
+        calls=[]
+        async def spawn(*args,**kwargs):
+            calls.append(args)
+            if '-g' in args:
+                return type('FailedProcess',(),{'returncode':1})()
+            (self.directory/'desktop.sock').touch()
+            return type('RunningProcess',(),{'returncode':None})()
+        with patch.object(server.asyncio,'create_subprocess_exec',side_effect=spawn):
+            path=await self.companion.backend('desktop')
+        self.assertTrue(path.exists())
+        self.assertEqual(len(calls),2)
+        self.assertIn('-g',calls[0]);self.assertNotIn('-g',calls[1])
+        self.assertIn('60',calls[1])
+        self.companion.processes.clear()
 
     async def test_pairing_qr_is_generated_locally(self):
         import sys

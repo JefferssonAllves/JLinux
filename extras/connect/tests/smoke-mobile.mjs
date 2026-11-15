@@ -21,10 +21,52 @@ try {
   await page.waitForTimeout(150);
   if (Number(await readFile(fixture.volumeMarker, 'utf8')) !== .60) throw new Error('Final volume was lost');
   await page.waitForFunction(() => document.getElementById('volume-number').textContent === '60%');
+  await page.getByRole('button',{name:'Pausar',exact:true}).click();
+  await page.getByRole('button',{name:'Reproduzir',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Próxima música'}).click();
+  await page.getByRole('button',{name:'Música anterior'}).click();
+  await page.getByRole('button',{name:'Voltar 10 segundos'}).click();
+  await page.getByRole('button',{name:'Avançar 10 segundos'}).click();
+  if((await readFile(fixture.mediaActions,'utf8')).trim()!=='play_pause\nnext\nprevious\nseek_back\nseek_forward')throw new Error('Media actions lost');
   await page.screenshot({path: '/tmp/jlinux-connect-mobile.png', fullPage: true});
+  await page.evaluate(()=>navigator.serviceWorker.ready);
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  const cached=await page.evaluate(async()=>{const keys=await caches.keys();return (await Promise.all(keys.map(async key=>(await (await caches.open(key)).keys()).map(request=>new URL(request.url).pathname)))).flat();});
+  if(cached.some(path=>path.startsWith('/api/')||path.startsWith('/terminal/')))throw new Error('Private data in offline cache');
+  await page.context().setOffline(true);
+  await page.reload();
+  await page.locator('#connecting').waitFor({state:'visible'});
+  if(await page.locator('#pair').isVisible())throw new Error('Offline app asked for pairing again');
+  await page.context().setOffline(false);
+  await page.waitForFunction(()=>document.getElementById('connection').classList.contains('connected'));
+  await page.locator('[data-tab=codex]').click();
+  await page.getByRole('button',{name:/Agente aguardando/}).click();
+  await page.getByRole('button',{name:'Rosa',exact:true}).click();
+  await page.getByRole('button',{name:'Enviar resposta',exact:true}).click();
+  await page.waitForFunction(()=>document.getElementById('agent-state').textContent==='Parado');
+  await page.locator('#agent-prompt').fill('Continue pelo celular');
+  await page.getByRole('button',{name:/Enviar prompt/}).click();
+  await page.waitForFunction(()=>document.getElementById('agent-chat').textContent.includes('Prompt recebido pelo agente.'));
+  if(await readFile(fixture.codexPrompt,'utf8')!=='Continue pelo celular')throw new Error('Prompt did not reach backend');
+  await page.screenshot({path:'/tmp/jlinux-connect-codex.png',fullPage:true});
+  await page.locator('#agents-back').click();
+  await page.getByRole('button',{name:/Agente trabalhando/}).click();
+  await page.waitForFunction(()=>document.getElementById('agent-state').textContent==='Trabalhando');
+
   await page.locator('[data-tab=desktop]').click();
   await page.locator('#screen-toggle').click();
   await page.waitForFunction(() => document.getElementById('message').textContent === 'Tela conectada.', {timeout: 15000});
+  await page.waitForFunction(()=>{
+    const box=document.getElementById('screen-shell').getBoundingClientRect();
+    return Math.abs(box.width-innerWidth)<2 && Math.abs(box.height-innerHeight)<2;
+  });
+  await page.waitForFunction(()=>{
+    const canvas=document.querySelector('#screen canvas');if(!canvas||!canvas.width)return false;
+    const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+    for(let i=0;i<data.length;i+=16)if(data[i]>70||data[i+1]>70||data[i+2]>70)return true;
+    return false;
+  });
+  await page.locator('#screen-keyboard').click();
   await page.locator('#text').fill(`printf '%s%s\\n' JL_REMOTE _OK > ${fixture.marker}`);
   await page.locator('#typing button').click();
   await page.locator('#enter').click();
@@ -32,6 +74,7 @@ try {
   const result = await readFile(fixture.marker, 'utf8');
   if (result.trim() !== 'JL_REMOTE_OK') throw new Error('Remote keyboard did not reach headless terminal');
   await page.screenshot({path: '/tmp/jlinux-connect-desktop.png', fullPage: true});
+  await page.locator('#screen-exit').click();
   await page.locator('[data-tab=terminal]').click();
   await page.locator('#terminal-toggle').click();
   const terminal = page.frameLocator('iframe');
@@ -66,5 +109,5 @@ try {
   await page.locator('#logout').click();
   await page.locator('#key').waitFor({state: 'visible'});
   if (errors.length) throw new Error(errors.join('\n'));
-  console.log('Mobile UI: live volume, files both ways, confirmed system actions, update power lock, desktop, terminal and logout passed');
+  console.log('Mobile UI: automatic offline reconnect, media, Codex navigation/question/prompt, fullscreen image, live volume, files, system, terminal passed');
 } finally { await browser.close(); }

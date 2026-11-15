@@ -17,6 +17,8 @@ import time
 from aiohttp import ClientSession, UnixConnector, WSMsgType, web
 from system_controls import SystemControls, ACTIONS
 from file_transfer import FileTransfer
+from media_controls import MediaControls
+from codex_bridge import CodexBridge
 
 ROOT = Path(__file__).resolve().parent
 STATE = Path.home() / '.local/state/jlinux-connect'
@@ -25,7 +27,7 @@ COOKIE = 'jlinux_connect'
 def session_id(token):
     return hashlib.sha256(token.encode('utf-8', errors='replace')).hexdigest()
 
-PUBLIC = {'/', '/app.js', '/style.css', '/icon.svg', '/icon.png', '/manifest.webmanifest', '/api/login'}
+PUBLIC = {'/', '/app.js', '/codex.js', '/sw.js', '/style.css', '/icon.svg', '/icon.png', '/manifest.webmanifest', '/api/login'}
 
 
 def pairing_key(directory):
@@ -74,14 +76,19 @@ class Companion:
             try:
                 saved = json.loads(sessions_file.read_text())
                 if isinstance(saved, dict) and saved.get('key_id') == session_id(self.key) and isinstance(saved.get('sessions'), dict):
-                    self.sessions = {key: value for key, value in saved['sessions'].items()
-                        if re.fullmatch(r'[a-f0-9]{64}', key) and type(value) in (int, float)
-                        and math.isfinite(value) and time.time() < value <= time.time() + 31 * 86400}
+                    self.sessions = {key: (None if value is not None and value > time.time() + 8 * 3600 else value) for key, value in saved['sessions'].items()
+                        if re.fullmatch(r'[a-f0-9]{64}', key) and (value is None or type(value) in (int, float)
+                        and math.isfinite(value) and time.time() < value <= time.time() + 31 * 86400)}
+                    if self.sessions != saved['sessions']:
+                        self.save_sessions()
             except (ValueError, OSError):
                 pass
         self.confirmations = {}
         self.system = SystemControls(desktop)
         self.files = FileTransfer(home or Path.home())
+        self.media = MediaControls(desktop)
+        self.codex = CodexBridge()
+        self.cookie_refreshed = {}
         self.failures = deque(maxlen=5)
         self.sockets = {}
         self.processes = {}
@@ -106,10 +113,27 @@ class Companion:
             raise web.HTTPForbidden(text='Origem não autorizada')
         if request.path not in PUBLIC:
             token = session_id(request.cookies.get(COOKIE, ''))
-            if self.sessions.get(token, 0) <= time.time():
+            if not self.session_alive(token):
                 raise web.HTTPUnauthorized(text='Conecte seu iPhone novamente')
             request['session'] = token
-        return await handler(request)
+        response = await handler(request)
+        token = request.get('session')
+        if (token and self.session_alive(token) and self.sessions[token] is None and not response.prepared
+            and time.monotonic() - self.cookie_refreshed.get(token, -86401) > 86400):
+            self.set_cookie(response, request, request.cookies[COOKIE], 365 * 86400)
+            self.cookie_refreshed[token] = time.monotonic()
+        return response
+
+    def session_alive(self, token):
+        return token in self.sessions and (self.sessions[token] is None or self.sessions[token] > time.time())
+
+    def session_timeout(self, token):
+        expiry = self.sessions.get(token, 0)
+        return None if expiry is None else max(0, expiry - time.time())
+
+    def set_cookie(self, response, request, token, lifetime):
+        response.set_cookie(COOKIE, token, httponly=True, secure=request.host.endswith('.ts.net'),
+                            samesite='Strict', max_age=lifetime, path='/')
 
     async def headers(self, request, response):
         response.headers.update({'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
@@ -146,16 +170,15 @@ class Companion:
         if not isinstance(key, str) or not re.fullmatch(r'[A-Za-z0-9_-]{43}', key) or not hmac.compare_digest(key, self.key):
             self.failures.append(now)
             raise web.HTTPUnauthorized(text='Chave de conexão inválida')
-        self.sessions = {key: expiry for key, expiry in self.sessions.items() if expiry > now}
+        self.sessions = {key: expiry for key, expiry in self.sessions.items() if expiry is None or expiry > now}
         if len(self.sessions) >= 8:
             raise web.HTTPTooManyRequests(text='Muitos dispositivos conectados')
         token = secrets.token_urlsafe(32)
-        lifetime = 30 * 86400 if remember else 8 * 3600
-        self.sessions[session_id(token)] = now + lifetime
+        lifetime = 365 * 86400 if remember else 8 * 3600
+        self.sessions[session_id(token)] = None if remember else now + lifetime
         self.save_sessions()
         response = web.json_response({'ok': True})
-        response.set_cookie(COOKIE, token, httponly=True, secure=request.host.endswith('.ts.net'),
-                            samesite='Strict', max_age=lifetime, path='/')
+        self.set_cookie(response, request, token, lifetime)
         return response
 
     async def logout(self, request):
@@ -244,7 +267,7 @@ class Companion:
                     await ws.send_json({'error': error.text})
         worker = asyncio.create_task(writer())
         try:
-            async with asyncio.timeout(max(0, self.sessions[token] - time.time())):
+            async with asyncio.timeout(self.session_timeout(token)):
                 async for message in ws:
                     if message.type != WSMsgType.TEXT:
                         break
@@ -298,6 +321,51 @@ class Companion:
             raise web.HTTPServiceUnavailable(text='Não foi possível consultar a atualização')
         return web.json_response(result)
 
+    async def media_status(self, request):
+        return web.json_response(await self.media.status())
+
+    async def media_action(self, request):
+        data = await self.json(request)
+        if set(data) != {'player', 'action'}:
+            raise web.HTTPBadRequest(text='Controle de mídia inválido')
+        return web.json_response(await self.media.action(data['player'], data['action']))
+
+    async def codex_list(self, request):
+        cursor, search = request.query.get('cursor'), request.query.get('search', '')
+        if len(search) > 200 or cursor and len(cursor) > 4096:
+            raise web.HTTPBadRequest(text='Busca inválida')
+        return web.json_response(await self.codex.listing(cursor, search))
+
+    async def codex_detail(self, request):
+        cursor = request.query.get('cursor')
+        if cursor and len(cursor) > 4096:
+            raise web.HTTPBadRequest(text='Página inválida')
+        data = await self.codex.detail(request.match_info['thread'], cursor)
+        body = json.dumps(data, ensure_ascii=True).encode()
+        etag = '"' + hashlib.sha256(body).hexdigest() + '"'
+        if request.headers.get('If-None-Match') == etag:
+            return web.Response(status=304, headers={'ETag': etag})
+        return web.Response(body=body, content_type='application/json', headers={'ETag': etag})
+
+    async def codex_prompt(self, request):
+        data = await self.json(request.clone(client_max_size=65536))
+        if set(data) != {'text'}:
+            raise web.HTTPBadRequest(text='Prompt inválido')
+        return web.json_response(await self.codex.prompt(request.match_info['thread'], data['text']))
+
+    async def codex_create(self, request):
+        data = await self.json(request)
+        if set(data) != {'cwd'}:
+            raise web.HTTPBadRequest(text='Pasta inválida')
+        return web.json_response(await self.codex.create(data['cwd']))
+
+    async def codex_reply(self, request):
+        data = await self.json(request.clone(client_max_size=65536))
+        token = data.pop('request', None)
+        if not isinstance(token, str) or len(token) > 100:
+            raise web.HTTPBadRequest(text='Solicitação inválida')
+        return web.json_response(await self.codex.reply(request.match_info['thread'], token, data))
+
     async def backend(self, kind):
         async with self.locks[kind]:
             existing = self.processes.get(kind)
@@ -317,20 +385,26 @@ class Companion:
                         '-t', 'theme={"background":"#0d0c16","foreground":"#eee9ff"}',
                         '-w', str(Path.home()), 'bash', '-l']
             else:
-                args = ['wayvnc', '-e', '-C', '/dev/null', '-u', '-r', '-R', '-f', '20',
+                args = ['wayvnc', '-g', '-e', '-C', '/dev/null', '-u', '-r', '-R', '-f', '60',
                         '-k', 'br', '-n', 'JLinux', str(path)]
-            # Each backend is private to this Unix user; no unauthenticated TCP ports.
-            process = await asyncio.create_subprocess_exec(*args, env=env, start_new_session=True,
-                          stdout=asyncio.subprocess.DEVNULL)
-            self.processes[kind] = process
-            for _ in range(50):
-                if process.returncode is not None:
-                    raise web.HTTPServiceUnavailable(text='Saia e entre na sessão para ativar o controle de tela' if kind == 'desktop' else 'Terminal indisponível')
-                if path.exists():
-                    return path
-                await asyncio.sleep(.05)
-            await self.stop(process)
-            raise web.HTTPServiceUnavailable(text='O serviço demorou a iniciar')
+            # Retry without GPU if this compositor/driver cannot initialize acceleration.
+            for attempt in range(2 if kind == 'desktop' else 1):
+                path.unlink(missing_ok=True)
+                process = await asyncio.create_subprocess_exec(*args, env=env, start_new_session=True,
+                              stdout=asyncio.subprocess.DEVNULL)
+                self.processes[kind] = process
+                for _ in range(50):
+                    if process.returncode is not None:
+                        break
+                    if path.exists():
+                        return path
+                    await asyncio.sleep(.05)
+                await self.stop(process)
+                if kind == 'desktop' and '-g' in args:
+                    args.remove('-g')
+                else:
+                    break
+            raise web.HTTPServiceUnavailable(text='Saia e entre na sessão para ativar o controle de tela' if kind == 'desktop' else 'Terminal indisponível')
 
     async def stop(self, process):
         if process.returncode is None:
@@ -379,13 +453,13 @@ class Companion:
                         await writer.drain()
                 stack.callback(writer.close)
             token = request['session']
-            if self.sessions.get(token, 0) <= time.time():
+            if not self.session_alive(token):
                 raise web.HTTPUnauthorized(text='Sessão encerrada')
             await ws.prepare(request)
             self.sockets.setdefault(token, set()).add(ws)
             tasks = [asyncio.create_task(upstream()), asyncio.create_task(downstream())]
             try:
-                remaining = max(0, self.sessions[token] - time.time())
+                remaining = self.session_timeout(token)
                 done, _ = await asyncio.wait(tasks, timeout=remaining, return_when=asyncio.FIRST_COMPLETED)
                 for task in done:
                     task.result()
@@ -424,6 +498,7 @@ class Companion:
                 await ws.close(code=1001)
     async def lifecycle(self, app):
         yield
+        await self.codex.close()
         for process in self.processes.values():
             await self.stop(process)
 
@@ -437,6 +512,13 @@ class Companion:
         app.router.add_post('/api/login', self.login)
         app.router.add_post('/api/logout', self.logout)
         app.router.add_get('/api/status', self.status)
+        app.router.add_get('/api/media', self.media_status)
+        app.router.add_post('/api/media/action', self.media_action)
+        app.router.add_get('/api/codex/threads', self.codex_list)
+        app.router.add_post('/api/codex/threads', self.codex_create)
+        app.router.add_get('/api/codex/threads/{thread}', self.codex_detail)
+        app.router.add_post('/api/codex/threads/{thread}/prompt', self.codex_prompt)
+        app.router.add_post('/api/codex/threads/{thread}/reply', self.codex_reply)
         app.router.add_post('/api/volume', self.volume)
         app.router.add_get('/ws/volume', self.volume_stream)
         app.router.add_post('/api/system/prepare', self.system_prepare)

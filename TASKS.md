@@ -1,5 +1,9 @@
 # Plano central do JLinux
 
+## Controle pelo iPhone — feature/iphone-codex-media
+
+**Concluído na branch e instalado:** pareamento persistente/reconexão, controles MPRIS, aba Codex com respostas de texto e perguntas, tela remota imersiva. Evidências e limites em [validação](docs/validation-iphone-codex-media.md). Integração em develop pendente do PR dependente.
+
 ## Navegador visível no dock — fix/visible-browser-dock
 
 O ID `org.jlinux.Browser.desktop` já estava fixado, mas ficava fora das três posições visíveis após iniciar o shell. O dock passa a quatro posições/292 px: Arquivos, Terminal, Codex e o primeiro app fixado aparecem juntos. A roda continua acessando apps além do primeiro; botões vazios não executam comandos. Tests de clique/posição atualizados para o shell e modo `--dock-panel`, verificando que o atalho persistido abre sem rolar. Preferências e instalação separada do navegador preservadas. Instalação/ativação e resultados finais serão registrados após os checks.
