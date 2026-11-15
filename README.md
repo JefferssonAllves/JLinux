@@ -34,6 +34,7 @@ O iniciador localiza os binários na própria pasta, cria runtime privado, aguar
 | Ação | Controle |
 | --- | --- |
 | Abrir terminal | Super+Enter |
+| Copiar captura da tela para a área de transferência | Print Screen |
 | Mostrar dock circular | Manter Super pressionada; soltar para ocultar |
 | Abrir Codex | `codex` no terminal |
 | Abrir Arquivos | `jlinux-files` no terminal |

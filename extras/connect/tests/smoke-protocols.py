@@ -51,10 +51,11 @@ for enabled in (False, True):
                                 globals.add(body[8:8 + length - 1].decode())
                             elif obj == 3 and opcode == 0:
                                 done = True
-                    for protocol in ('zwlr_screencopy_manager_v1', 'zxdg_output_manager_v1',
-                                     'zwp_virtual_keyboard_manager_v1', 'zwlr_virtual_pointer_manager_v1'):
+                    for protocol in ('zwlr_screencopy_manager_v1', 'zxdg_output_manager_v1'):
+                        assert protocol in globals, ('Print capture missing', protocol)
+                    for protocol in ('zwp_virtual_keyboard_manager_v1', 'zwlr_virtual_pointer_manager_v1'):
                         assert (protocol in globals) == enabled, (enabled, protocol, globals)
             finally:
                 process.terminate()
                 process.wait(timeout=5)
-print('Remote protocols absent by default, present after explicit opt-in')
+print('Capture available for Print; remote input absent by default, present after explicit opt-in')

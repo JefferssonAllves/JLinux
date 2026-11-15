@@ -161,3 +161,8 @@ endif
 test('decoration-advertisement', find_program('scripts/smoke-decorations.py'), args: [compositor], timeout: 15)
 
 test('remote-protocols-opt-in', find_program('extras/connect/tests/smoke-protocols.py'), args: [compositor], timeout: 15)
+
+install_data('scripts/jlinux-screenshot', install_dir: get_option('bindir'), install_mode: 'rwxr-xr-x')
+if foot.found() and wtype.found()
+  test('print-screen-clipboard', find_program('scripts/smoke-screenshot.py'), args: [compositor, wtype, foot], timeout: 25)
+endif
