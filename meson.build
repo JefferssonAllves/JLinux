@@ -60,9 +60,16 @@ if get_option('shell')
     input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-client.h',
     command: [scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
   glib = dependency('glib-2.0')
-  files = executable('jlinux-files', 'src/files/main.c', 'src/files/browser.c', 'src/session/locale.c',
+  files = executable('jlinux-files', 'src/files/main.c', 'src/files/thumbnails.c', 'src/files/browser.c', 'src/session/locale.c',
     'src/toolkit/painter.c', 'src/effects/glass.c', client_xdg_header, client_xdg_code,
-    dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, glib], install: true)
+    dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, glib, dependency('gdk-pixbuf-2.0'), dependency('gio-2.0')], install: true)
+  thumbnails_test = executable('jlinux-test-thumbnails', 'tests/thumbnails.c', 'src/files/thumbnails.c',
+    dependencies: [cairo, glib, dependency('gdk-pixbuf-2.0')])
+  test('files-thumbnails', thumbnails_test)
+  files_actions_test = executable('jlinux-test-files-actions', 'tests/files-actions.c', 'src/files/thumbnails.c', 'src/files/browser.c', 'src/session/locale.c',
+    'src/toolkit/painter.c', 'src/effects/glass.c', client_xdg_header, client_xdg_code,
+    dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, glib, dependency('gdk-pixbuf-2.0'), dependency('gio-2.0')])
+  test('files-actions', files_actions_test, timeout: 20)
   browser_test = executable('jlinux-test-browser', 'tests/browser.c', 'src/files/browser.c', dependencies: glib)
   test('files-browser', find_program('scripts/smoke-browser.py'), args: [browser_test], timeout: 15)
   install_data('data/xdg/mimeapps.list', install_dir: get_option('sysconfdir') / 'xdg')

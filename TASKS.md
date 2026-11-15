@@ -544,3 +544,7 @@ Implementado: janelas maximizadas sem bordas externas, halo ou sombra e sem
 folga de borda na área útil. Cabeçalho e botões preservados; restaurar repõe
 moldura normal. Testes de geometria atualizados e moldura validada com
 ASan/UBSan. Instalação em conclusão; ativação no próximo login.
+
+## Arquivos: menu de contexto e miniaturas — feature/files-context-thumbnails
+
+Implementado em C: menu por botão direito/teclado, copiar/recortar/colar, seleção múltipla, renomear, criar pasta/arquivo, lixeira com confirmação, propriedades, ocultos, atualizar e terminal. Miniaturas de imagens com cache limitado e aproveitamento de cache padrão para outros tipos. Proposta gerada e prévia nativa em docs/design/files-complete-{concept,native}.png; contratos, controles e limites em docs/file-manager.md. Integração de clipboard entre aplicativos e geração de prévias de vídeo/PDF permanecem pendentes; não declarar gerenciador final completo.
