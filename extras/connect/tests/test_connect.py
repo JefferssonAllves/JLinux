@@ -57,7 +57,7 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(self.companion.key, await response.text())
 
     async def test_all_privileged_routes_require_login(self):
-        for path in ['/api/status', '/api/files', '/api/media', '/api/codex/threads', '/api/files/download', '/api/system/status', '/ws/volume', '/ws/pointer', '/ws/codex/00000000-0000-7000-8000-000000000001', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
+        for path in ['/api/status', '/api/files', '/api/media', '/api/remote/apps', '/api/remote/icon/0', '/api/codex/threads', '/api/files/download', '/api/system/status', '/ws/volume', '/ws/pointer', '/ws/codex/00000000-0000-7000-8000-000000000001', '/terminal/', '/terminal/token', '/terminal/ws', '/ws/desktop', '/vendor/novnc/core/rfb.js']:
             response = await self.client.get(path, headers=HEADERS)
             self.assertEqual(response.status, 401, path)
         response = await self.client.post('/api/volume', json={'level': .5}, headers=HEADERS)
@@ -169,6 +169,20 @@ class ConnectTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(Exception) as caught:
                 await asyncio.wait_for(pending, 3)
             self.assertEqual(caught.exception.status, 401)
+
+    async def test_remote_routes_only_accept_fixed_actions(self):
+        await self.login()
+        self.companion.remote.key = AsyncMock(return_value={'ok': True})
+        response = await self.client.get('/api/remote/apps', headers=HEADERS)
+        self.assertEqual(len((await response.json())['apps']), 9)
+        response = await self.client.post('/api/remote/action', json={'key': 'ok'}, headers=HEADERS)
+        self.assertEqual(response.status, 200)
+        self.companion.remote.key.assert_awaited_once_with('ok')
+        for data in ({'command': 'freeform'}, {'key':'ok','app':'0'}):
+            response = await self.client.post('/api/remote/action', json=data, headers=HEADERS)
+            self.assertEqual(response.status, 400)
+        response = await self.client.get('/api/remote/icon/999', headers=HEADERS)
+        self.assertEqual(response.status, 400)
 
     async def test_relative_pointer_validates_deltas_and_stops_on_disconnect(self):
         await self.login()

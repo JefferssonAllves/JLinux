@@ -1,5 +1,9 @@
 # Plano central do JLinux
 
+## Controle remoto compacto — feature/iphone-remote-hub
+
+**Concluído na branch:** quatro abas, controle com volume/mídia/direcionais/OK, atalhos dos apps do dock e Voltar/Tab/trocar janela; arquivos, terminal e sistema agrupados em Mais. 38 testes e integração Playwright/headless passaram, com ícones reais, teclas nativas em sessão isolada e fluxos anteriores preservados. Instalação e limites em docs/validation-iphone-remote-hub.md.
+
 ## Tela móvel e touchpad — feature/mobile-touchpad-fullscreen
 
 **Concluído na branch e instalado:** controles sobrepostos ocultáveis e recuperados com dois dedos; cursor relativo via cliente C Wayland, toque para clicar e segurar para arrastar, preservando teclado e modo panorâmico. 34 testes unitários e integração Playwright/headless passaram com cliente nativo real, gestos em pontos diferentes, clique/arraste e tela cheia em retrato/paisagem. Instalação e limites em docs/validation-mobile-touchpad-fullscreen.md.

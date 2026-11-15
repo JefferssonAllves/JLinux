@@ -56,7 +56,7 @@ function setConnected(value) {
   $('connection').textContent = value ? 'Conectado ao JLinux' : 'Não conectado';
   $('connection').classList.toggle('connected', value);
   clearInterval(polling);
-  if (value) { startVolumeStream(); startMedia(); polling = setInterval(() => { if (!document.hidden) refresh().catch(e => message(e.message)); }, 15000); }
+  if (value) { loadRemoteApps().catch(e=>message(e.message)); startVolumeStream(); startMedia(); polling = setInterval(() => { if (!document.hidden) refresh().catch(e => message(e.message)); }, 15000); }
   else {
     clearTimeout(volumeReconnect); clearTimeout(volumeTimer); clearInterval(systemPolling); clearInterval(mediaTimer); codexUI.close();
     const socket = volumeSocket; volumeSocket = null; if (socket) socket.close();
@@ -132,21 +132,44 @@ $('logout').addEventListener('click', async () => {
   try { await api('logout', {}); setConnected(false); message('Este iPhone foi desconectado.'); }
   catch (e) { message(e.message); }
 });
+let activeTool='files';
+function selectTool(name) {
+  activeTool=name;clearInterval(systemPolling);
+  for(const tool of ['terminal','files','system'])$(tool+'-panel').hidden=tool!==name;
+  document.querySelectorAll('[data-tool]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.tool===name)));
+  if(name==='files')loadFiles().catch(e=>message(e.message));
+  if(name==='system'){
+    refreshSystem().catch(e=>message(e.message));
+    systemPolling=setInterval(()=>{if(!document.hidden)refreshSystem().catch(e=>message(e.message));},5000);
+  }
+}
+document.querySelectorAll('[data-tool]').forEach(button=>button.onclick=()=>selectTool(button.dataset.tool));
 document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => {
   document.querySelectorAll('[data-tab]').forEach(tab => tab.removeAttribute('aria-current'));
   button.setAttribute('aria-current', 'page');
-  for (const name of ['volume', 'desktop', 'codex', 'terminal', 'files', 'system']) $(name + '-panel').hidden = name !== button.dataset.tab;
+  for (const name of ['volume', 'desktop', 'codex', 'more']) $(name + '-panel').hidden = name !== button.dataset.tab;
   if (button.dataset.tab !== 'desktop') disconnectScreen();
   clearInterval(systemPolling); clearInterval(mediaTimer); codexUI.close();
   message('');
-  if (button.dataset.tab==='codex') codexUI.open();
-  if (button.dataset.tab==='volume') startMedia();
-  if (button.dataset.tab === 'files') loadFiles().catch(e => message(e.message));
-  if (button.dataset.tab === 'system') {
-    refreshSystem().catch(e => message(e.message));
-    systemPolling = setInterval(() => { if (!document.hidden) refreshSystem().catch(e => message(e.message)); }, 5000);
-  }
+  if(button.dataset.tab==='codex')codexUI.open();
+  if(button.dataset.tab==='volume'){startMedia();loadRemoteApps().catch(e=>message(e.message));}
+  if(button.dataset.tab==='more')selectTool(activeTool);
 }));
+async function remoteAction(data,button) {
+  button.disabled=true;
+  try{await api('remote/action',data);message('');}catch(error){message(error.message);}finally{button.disabled=false;}
+}
+async function loadRemoteApps() {
+  const data=await api('remote/apps');
+  $('remote-apps').replaceChildren();
+  for(const app of data.apps){
+    const button=document.createElement('button');button.type='button';button.className='remote-app';button.setAttribute('aria-label','Abrir ou alternar para '+app.name);
+    const icon=document.createElement('img');icon.src=app.icon;icon.alt='';icon.width=44;icon.height=44;
+    const name=document.createElement('span');name.textContent=app.name;button.append(icon,name);
+    button.onclick=()=>remoteAction({app:app.id},button);$('remote-apps').append(button);
+  }
+}
+document.querySelectorAll('[data-remote-key]').forEach(button=>button.onclick=()=>remoteAction({key:button.dataset.remoteKey},button));
 $('screen-toggle').addEventListener('click', async () => {
   if (rfb) { disconnectScreen(); return; }
   $('screen-toggle').disabled = true;

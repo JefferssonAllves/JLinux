@@ -14,6 +14,16 @@ try {
   await page.getByRole('button', {name: 'Conectar ao JLinux'}).click();
   await page.waitForFunction(() => document.getElementById('connection').classList.contains('connected'));
   await page.waitForFunction(() => document.getElementById('volume-number').textContent === '42%');
+  if(await page.locator('nav [data-tab]').count()!==4)throw new Error('Remote navigation was not simplified');
+  await page.getByRole('button',{name:'Abrir ou alternar para Brave',exact:true}).click();
+  await page.getByRole('button',{name:'Esquerda',exact:true}).click();
+  await page.getByRole('button',{name:'OK',exact:true}).click();
+  await page.waitForTimeout(100);
+  if((await readFile(fixture.remoteMarker,'utf8')).trim()!=='app 0\nkey left\nkey ok')throw new Error('Dock or navigation control did not reach its fixed action');
+  await page.waitForFunction(()=>Array.from(document.querySelectorAll('#remote-apps img')).every(image=>image.complete&&image.naturalWidth>0));
+  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Remote control overflows the mobile screen');
+  await page.screenshot({path:'/tmp/jlinux-connect-remote.png',fullPage:true});
+
   await page.locator('#volume').evaluate(element => {element.value = 37; element.dispatchEvent(new Event('input'));});
   await page.waitForTimeout(150);
   if (Number(await readFile(fixture.volumeMarker, 'utf8')) !== .37) throw new Error('Volume did not update while dragging');
@@ -92,7 +102,7 @@ try {
   });
   await page.waitForFunction(()=>document.getElementById('screen-touchpad').dataset.ready==='true');
   await page.locator('#screen-hide').click();
-  if(await page.locator('#screen-exit').isVisible())throw new Error('Fullscreen controls still cover the screen');
+  if(await page.locator('#screen-exit').isVisible())throw new Error('Fullscreen controls still cover the screen '+await page.evaluate(()=>JSON.stringify({classes:document.getElementById('screen-shell').className,fullscreen:!!document.fullscreenElement,toolbar:getComputedStyle(document.querySelector('.screen-toolbar')).display})));
   await page.screenshot({path:'/tmp/jlinux-connect-screen-hidden.png',fullPage:true});
   // Exercise Safari's CSS fullscreen fallback when rotating the mobile viewport.
   await page.evaluate(async()=>{if(document.fullscreenElement)await document.exitFullscreen();Object.defineProperty(document,'fullscreenEnabled',{value:false,configurable:true});});
@@ -102,6 +112,7 @@ try {
   await page.waitForFunction(()=>{const canvas=document.querySelector('#screen canvas').getBoundingClientRect();return canvas.width<=innerWidth+1 && canvas.height<=innerHeight+1 && canvas.left>=-1 && canvas.top>=-1;});
   await page.screenshot({path:'/tmp/jlinux-connect-screen-landscape.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});
+  await page.waitForFunction(()=>{const box=document.querySelector('#screen canvas').getBoundingClientRect();return box.width<=innerWidth+1&&box.width>=innerWidth-2;});
   const touch=await page.context().newCDPSession(page);
   const gesture=async(type,points)=>touch.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([x,y,id=1])=>({x,y,id}))});
   await gesture('touchStart',[[50,400]]);
@@ -112,7 +123,7 @@ try {
   await gesture('touchEnd',[]);
   await page.waitForTimeout(200);
   const moves=(await readFile(fixture.pointerMarker,'utf8')).trim().split('\n').filter(line=>line.startsWith('move ')).map(line=>line.split(' ').slice(1).map(Number));
-  if(moves.length!==2 || moves.some(([x,y])=>x<=0||y<=0) || Math.abs(moves[0][0]-moves[1][0])>.1 || Math.abs(moves[0][1]-moves[1][1])>.1)throw new Error('Touch movement was not relative across different finger positions');
+  if(moves.length!==2 || moves.some(([x,y])=>x<=0||y<=0) || Math.abs(moves[0][0]-moves[1][0])>.1 || Math.abs(moves[0][1]-moves[1][1])>.1)throw new Error('Touch movement was not relative across different finger positions '+JSON.stringify(moves));
   await gesture('touchStart',[[50,400],[90,400,2]]);
   await gesture('touchEnd',[]);
   await page.locator('#screen-exit').waitFor({state:'visible'});
@@ -134,7 +145,8 @@ try {
   if (result.trim() !== 'JL_REMOTE_OK') throw new Error('Remote keyboard did not reach headless terminal');
   await page.screenshot({path: '/tmp/jlinux-connect-desktop.png', fullPage: true});
   await page.locator('#screen-exit').click();
-  await page.locator('[data-tab=terminal]').click();
+  await page.locator('[data-tab=more]').click();
+  await page.locator('[data-tool=terminal]').click();
   await page.locator('#terminal-toggle').click();
   const terminal = page.frameLocator('iframe');
   await terminal.locator('.xterm-screen').waitFor();
@@ -144,7 +156,8 @@ try {
   await page.waitForTimeout(500);
   if (!await terminal.locator('.xterm-screen').count()) throw new Error('Terminal did not mount');
   await page.locator('#terminal-toggle').click();
-  await page.locator('[data-tab=files]').click();
+  await page.locator('[data-tab=more]').click();
+  await page.locator('[data-tool=files]').click();
   await page.getByRole('link', {name: 'Baixar do-pc.txt'}).waitFor();
   const downloading = page.waitForEvent('download');
   await page.getByRole('link', {name: 'Baixar do-pc.txt'}).click();
@@ -153,7 +166,8 @@ try {
   await page.locator('#file-input').setInputFiles({name:'do-iphone.txt',mimeType:'text/plain',buffer:Buffer.from('Arquivo do iPhone')});
   await page.waitForFunction(() => document.getElementById('upload-status').textContent === 'Arquivos enviados para o JLinux.');
   if (await readFile(fixture.fileRoot + '/do-iphone.txt', 'utf8') !== 'Arquivo do iPhone') throw new Error('Upload mismatch');
-  await page.locator('[data-tab=system]').click();
+  await page.locator('[data-tab=more]').click();
+  await page.locator('[data-tool=system]').click();
   await page.locator('[data-action=reboot]').click();
   await page.locator('#system-confirm').waitFor({state:'visible'});
   await page.getByRole('button', {name:'Cancelar', exact:true}).click();
@@ -164,7 +178,6 @@ try {
   if (!(await page.locator('[data-action=reboot]').isDisabled()) || !(await page.locator('[data-action=poweroff]').isDisabled())) throw new Error('Power actions enabled during update');
   if ((await readFile(fixture.actions,'utf8')).trim() !== 'update') throw new Error('Unexpected action');
   await page.screenshot({path:'/tmp/jlinux-connect-system.png',fullPage:true});
-  await page.locator('[data-tab=volume]').click();
   await page.locator('#logout').click();
   await page.locator('#key').waitFor({state: 'visible'});
   if (errors.length) throw new Error(errors.join('\n'));
