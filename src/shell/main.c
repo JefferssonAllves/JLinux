@@ -406,7 +406,7 @@ static void toggle_launcher(struct app *app, bool controls) {
 }
 static void launch_item(struct app *app, int index) {
     if(index<0 || index>=DOCK_APP_COUNT){return;}
-    if(index==5){
+    if(index==4){
         if(app->launcher.wl){destroy_launcher(app);}
         toggle_launcher(app,true);
         app->futurista.settings_open=true;
@@ -455,7 +455,7 @@ static void launcher_action(struct app *app, int hit) {
         app->launcher.dirty=true;return;
     }
     if(app->futurista.settings_open && hit==130){app->futurista.settings_open=false;volume_start(&app->volume,0);app->launcher.dirty=true;return;}
-    if(app->futurista.settings_open && (hit==131 || hit==132)){launch_item(app,hit==131?4:8);return;}
+    if(app->futurista.settings_open && (hit==131 || hit==132)){launch_item(app,hit==131?3:6);return;}
     if(hit==40){return;}
     if(hit==21){
         if(!app->bluetooth.pid){bluetooth_start(&app->bluetooth,app->bluetooth.available ? !app->bluetooth.powered : -1);}
@@ -654,7 +654,7 @@ static int preview_futurista(const char *path, bool controls, bool settings, boo
     cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, dock_crop ? 1254 : 1672, dock_crop ? 1254 : 941);
     cairo_t *cr = cairo_create(image);
     if(dock_crop){
-        scene.hover[0]=0;scene.selected=9;scene.hover[9]=1;
+        scene.hover[0]=0;scene.selected=7;scene.hover[7]=1;
         cairo_set_source_rgb(cr,17/255.,16/255.,28/255.);cairo_paint(cr);
         cairo_scale(cr,1254/700.,1254/700.);cairo_translate(cr,-486,-119);
     }else{

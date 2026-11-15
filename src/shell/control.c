@@ -72,7 +72,7 @@ void shell_control_close(int fd){close_control(fd,"jlinux-shell-control");}
 int window_control_open(void){return open_control("jlinux-window-control");}
 void window_control_close(int fd){close_control(fd,"jlinux-window-control");}
 bool window_control_launch(int index){
-    if(index<0||index>=DOCK_APP_COUNT||index==5){return false;}
+    if(index<0||index>=DOCK_APP_COUNT||index==4){return false;}
     struct sockaddr_un addr;if(!address(&addr,"jlinux-window-control")){return false;}
     int fd=socket(AF_UNIX,SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC,0);if(fd<0){return false;}
     unsigned char command=(unsigned char)index;
