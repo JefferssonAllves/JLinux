@@ -2,7 +2,7 @@
 
 ## Touchpad no Controle — feature/control-touchpad
 
-**Concluído na branch:** área de touchpad na aba Controle, reutilizando entrada relativa nativa sem transmitir vídeo. Integração Playwright/headless passou com movimento, clique, arraste e cancelamento, além dos fluxos anteriores. Instalação registrada em docs/validation-control-touchpad.md.
+**Concluído na branch e instalado:** área de touchpad na aba Controle, reutilizando entrada relativa nativa sem transmitir vídeo. Integração Playwright/headless passou com movimento, clique, arraste e cancelamento, além dos fluxos anteriores. Instalação registrada em docs/validation-control-touchpad.md.
 
 ## Controle remoto compacto — feature/iphone-remote-hub
 
