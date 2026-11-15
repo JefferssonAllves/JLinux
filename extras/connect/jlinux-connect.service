@@ -1,0 +1,15 @@
+[Unit]
+Description=JLinux Connect — controle privado pelo iPhone
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/.local/share/jlinux-connect/server.py
+WorkingDirectory=%h
+UMask=0077
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=10
+KillMode=control-group
+
+[Install]
+WantedBy=default.target

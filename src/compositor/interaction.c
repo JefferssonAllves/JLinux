@@ -816,9 +816,7 @@ static void update_capabilities(struct interaction *state) {
     wlr_seat_set_capabilities(state->seat, capabilities);
 }
 
-static void terminal(struct interaction *state) {
-    (void)state;
-    char *argv[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL};
+static void spawn_command(char *argv[]) {
     pid_t child;
     posix_spawnattr_t attributes;
     int error = posix_spawnattr_init(&attributes);
@@ -829,10 +827,14 @@ static void terminal(struct interaction *state) {
     posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETSIGMASK);
     error = posix_spawnp(&child, argv[0], NULL, &attributes, argv, environ);
     posix_spawnattr_destroy(&attributes);
-    if (error) { wlr_log(WLR_ERROR, "Não foi possível abrir Foot: %s", strerror(error)); }
+    if (error) { wlr_log(WLR_ERROR, "Não foi possível abrir %s: %s", argv[0], strerror(error)); }
 }
 
 static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t modifiers) {
+    if (symbol == XKB_KEY_Print && !(modifiers & (WLR_MODIFIER_SHIFT | WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_LOGO))) {
+        char *argv[] = {"jlinux-screenshot", NULL};
+        spawn_command(argv); return true;
+    }
     if (state->session && symbol >= XKB_KEY_XF86Switch_VT_1 && symbol <= XKB_KEY_XF86Switch_VT_12) {
         wlr_session_change_vt(state->session, symbol - XKB_KEY_XF86Switch_VT_1 + 1); return true;
     }
@@ -857,7 +859,8 @@ static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t mo
         wl_display_terminate(state->display); return true;
     }
     if ((modifiers & WLR_MODIFIER_LOGO) && symbol == XKB_KEY_Return) {
-        terminal(state); return true;
+        char *argv[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", NULL};
+        spawn_command(argv); return true;
     }
     if ((modifiers & WLR_MODIFIER_LOGO) && (symbol == XKB_KEY_q || symbol == XKB_KEY_Q)) {
         if (state->focused) { wlr_xdg_toplevel_send_close(state->focused->xdg); }
@@ -1255,9 +1258,10 @@ struct interaction *interaction_create(struct wl_display *display,
     state->dock_fd=window_control_open();
     if(state->dock_fd>=0){state->dock_requests=wl_event_loop_add_fd(wl_display_get_event_loop(display),state->dock_fd,WL_EVENT_READABLE,dock_requested,state);}
     if(state->dock_fd<0||!state->dock_requests){interaction_destroy(state);return NULL;}
-    /* Virtual input is opt-in only, for isolated automated tests. */
+    /* Virtual input is opt-in for tests or an explicitly enabled remote companion. */
     const char *test_input = getenv("JLINUX_TEST_INPUT");
-    if (test_input && strcmp(test_input, "1") == 0) {
+    const char *remote = getenv("JLINUX_REMOTE_CONTROL");
+    if ((test_input && !strcmp(test_input, "1")) || (remote && !strcmp(remote, "1"))) {
         struct wlr_virtual_keyboard_manager_v1 *keyboards = wlr_virtual_keyboard_manager_v1_create(display);
         struct wlr_virtual_pointer_manager_v1 *pointers = wlr_virtual_pointer_manager_v1_create(display);
         if (!keyboards || !pointers) { interaction_destroy(state); return NULL; }

@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+umask 077
+shot=$(mktemp "${XDG_RUNTIME_DIR:?}/jlinux-shot.XXXXXX")
+trap 'rm -f -- "$shot"' EXIT
+trap 'exit 1' HUP INT TERM
+grim "$shot"
+wl-copy --type image/png < "$shot"
