@@ -40,6 +40,13 @@ try {
   await page.context().setOffline(false);
   await page.waitForFunction(()=>document.getElementById('connection').classList.contains('connected'));
   await page.locator('[data-tab=codex]').click();
+  await page.waitForFunction(()=>document.querySelectorAll('.agent-group').length===3);
+  const groups=await page.locator('.agent-group').evaluateAll(nodes=>nodes.map(node=>({path:node.querySelector('.agent-group-path').textContent,count:node.querySelectorAll('.agent-card').length})));
+  if(groups.filter(group=>group.count===2).length!==1 || groups.filter(group=>group.count===1).length!==2 || !groups.some(group=>group.path===''))throw new Error('Chats were not grouped by their exact folder');
+  await page.locator('#agent-filter').selectOption('waiting');
+  await page.waitForFunction(()=>document.querySelectorAll('.agent-group').length===1 && document.querySelectorAll('.agent-card').length===1);
+  await page.locator('#agent-filter').selectOption('all');
+
   await page.getByRole('button',{name:/Agente aguardando/}).click();
   await page.getByRole('button',{name:'Rosa',exact:true}).click();
   await page.getByRole('button',{name:'Enviar resposta',exact:true}).click();

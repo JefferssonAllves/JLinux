@@ -81,7 +81,9 @@ async def main():
                     return {'id':ident,'title':'Agente aguardando' if ident==ids[0] else 'Agente trabalhando','cwd':str(root),
                         'state':'waiting' if ident==ids[0] and not answers else 'working' if ident==ids[1] else 'idle','can_send':True,'updated':1,'parent':None}
                 async def codex_list(cursor=None, search=''):
-                    return {'agents':[agent(ident) for ident in ids],'cursor':None}
+                    return {'agents':[agent(ident) for ident in ids] + [
+                        {**agent(ids[1]),'id':'00000000-0000-7000-8000-000000000003','title':'Outro projeto','cwd':'/outro/'+root.name},
+                        {**agent(ids[1]),'id':'00000000-0000-7000-8000-000000000004','title':'Sem projeto','cwd':''}], 'cursor':None}
                 async def codex_detail(ident,cursor=None):
                     chat=[{'id':'user','role':'user','text':'Trabalhe no projeto','time':1},
                           {'id':'agent','role':'agent','text':'Resposta final organizada.','time':2}]

@@ -9,3 +9,5 @@ input[type=search],textarea,select{background:#110f1d;border:1px solid var(--edg
 .screen-open .panel{animation:none}.screen-shell.immersive .screen{position:absolute;inset:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);width:auto;height:auto}
 
 .media-seek{display:flex;justify-content:space-between;margin-top:9px}.media-seek button{font-size:12px;color:var(--pink);min-width:60px;text-decoration:none}
+
+.agent-group{margin-bottom:26px}.agent-group h3{font-size:14px;font-weight:550;margin:0 0 6px;color:var(--text)}.agent-group-path{font-size:10px;color:var(--dim);overflow-wrap:anywhere;margin:0 0 12px;line-height:1.5}
