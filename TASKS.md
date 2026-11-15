@@ -2,7 +2,7 @@
 
 ## Codex em tempo real — feature/codex-live-messages
 
-**Concluído na branch:** respostas de texto transmitidas enquanto são geradas, via WebSocket autenticado e sem ferramentas/raciocínio/comentários de progresso; reconexão e recuperação pelo histórico preservadas. 32 testes unitários e integração Playwright/headless passaram, incluindo texto parcial antes da conclusão e filtragem de saída privada. Instalação e limites em docs/validation-codex-live-messages.md.
+**Concluído na branch e instalado:** respostas de texto transmitidas enquanto são geradas, via WebSocket autenticado e sem ferramentas/raciocínio/comentários de progresso; reconexão e recuperação pelo histórico preservadas. 32 testes unitários e integração Playwright/headless passaram, incluindo texto parcial antes da conclusão e filtragem de saída privada. Instalação e limites em docs/validation-codex-live-messages.md.
 
 ## Codex por pasta — feature/codex-project-groups
 
