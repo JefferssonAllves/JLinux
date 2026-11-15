@@ -2,18 +2,19 @@
 #define JLINUX_FUTURISTA_H
 #include "../effects/glass.h"
 #include "preferences.h"
+#include "apps.h"
 #include "media.h"
 enum { FUTURISTA_PANEL_HEIGHT = 40 };
 struct futurista {
     int bluetooth;
     bool bluetooth_busy;
-    cairo_surface_t *wallpaper, *blurred, *icons[11];
+    cairo_surface_t *wallpaper, *blurred, *icons[DOCK_APP_COUNT];
     struct jlinux_glass glass;
     struct media *media;
     int selected, wifi, battery, settings_category;
     bool settings_open;
     struct shell_preferences prefs;
-    double volume, brightness, hover[11];
+    double volume, brightness, hover[DOCK_APP_COUNT];
     bool muted, charging;
     char message[180];
 };

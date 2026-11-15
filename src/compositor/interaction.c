@@ -120,7 +120,7 @@ struct interaction {
     struct wl_listener motion, absolute, button, axis, frame, set_cursor, selection;
     struct wl_event_source *child_exit,*dock_requests;
     int dock_fd;
-    double dock_pending[11];
+    double dock_pending[DOCK_APP_COUNT];
 };
 
 static double animation_time(void) {
@@ -564,7 +564,7 @@ static void view_mapped(struct wl_listener *listener, void *data) {
     overview_close(view->owner,false);
     update_frame(view);
     view->mapped = true;view->minimized=false;
-    for(int index=0;index<11;index++){if(dock_app_matches(index,view->xdg->app_id,view->xdg->title)){view->owner->dock_pending[dock_app_key(index)]=0;}}
+    for(int index=0;index<DOCK_APP_COUNT;index++){if(dock_app_matches(index,view->xdg->app_id,view->xdg->title)){view->owner->dock_pending[dock_app_key(index)]=0;}}
     parent_changed(&view->parent, NULL);
     wlr_scene_node_set_enabled(&view->tree->node, true);
     arrange(view->owner);
@@ -1181,7 +1181,7 @@ static int children_exited(int number, void *data) {
 static int dock_requested(int fd,uint32_t mask,void *data){
     (void)mask;struct interaction *state=data;unsigned char command[2];ssize_t count;
     while((count=read(fd,command,sizeof(command)))>0){
-        if(count!=1||command[0]>=11||command[0]==5){continue;}
+        if(count!=1||command[0]>=DOCK_APP_COUNT||command[0]==5){continue;}
         int index=command[0],key=dock_app_key(index);struct view *view;bool found=false;
         wl_list_for_each(view,&state->views,link){
             if(view->mapped&&dock_app_matches(index,view->xdg->app_id,view->xdg->title)){
