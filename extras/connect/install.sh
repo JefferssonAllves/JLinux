@@ -9,9 +9,9 @@ python3 -c 'import aiohttp'
 python3 "$connect_source/fetch-vendor.py"
 connect_target="$HOME/.local/share/jlinux-connect"
 mkdir -p "$connect_target" "$HOME/.local/bin" "$HOME/.config/systemd/user" "$HOME/.config/jlinux"
-cp "$connect_source/server.py" "$connect_source/cli.py" "$connect_source/system_controls.py" "$connect_source/file_transfer.py" "$connect_source/README.md" "$connect_target/"
+cp "$connect_source/server.py" "$connect_source/cli.py" "$connect_source/system_controls.py" "$connect_source/file_transfer.py" "$connect_source/media_controls.py" "$connect_source/codex_bridge.py" "$connect_source/README.md" "$connect_target/"
 cp -R "$connect_source/web" "$connect_target/"
-cp "$connect_source/jlinux-connect.service" "$HOME/.config/systemd/user/"
+cp "$connect_source/jlinux-connect.service" "$connect_source/jlinux-codex.service" "$HOME/.config/systemd/user/"
 cat > "$HOME/.local/bin/jlinux-connect" <<'EOF'
 #!/bin/sh
 exec /usr/bin/python3 "$HOME/.local/share/jlinux-connect/cli.py" "$@"
@@ -22,6 +22,6 @@ umask 077
 sudo /usr/bin/loginctl enable-linger "$(id -un)"
 connect_runtime="/run/user/$(id -u)"
 XDG_RUNTIME_DIR="$connect_runtime" DBUS_SESSION_BUS_ADDRESS="unix:path=$connect_runtime/bus" systemctl --user daemon-reload
-XDG_RUNTIME_DIR="$connect_runtime" DBUS_SESSION_BUS_ADDRESS="unix:path=$connect_runtime/bus" systemctl --user enable jlinux-connect.service
+XDG_RUNTIME_DIR="$connect_runtime" DBUS_SESSION_BUS_ADDRESS="unix:path=$connect_runtime/bus" systemctl --user enable jlinux-connect.service jlinux-codex.service
 XDG_RUNTIME_DIR="$connect_runtime" DBUS_SESSION_BUS_ADDRESS="unix:path=$connect_runtime/bus" systemctl --user restart jlinux-connect.service
 echo 'Instalado. Execute jlinux-connect conectar para vincular o iPhone pelo Tailscale.'

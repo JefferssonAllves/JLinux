@@ -65,6 +65,37 @@ async def main():
                     return {'ok': True, 'action': action}
                 companion.system.status = system_status
                 companion.system.execute = system_action
+                media_playing = True
+                async def media_status():
+                    return {'players':[{'id':'mock-player','name':'Player de teste','title':'Música de teste','artist':'Artista',
+                        'playing':media_playing,'can_play_pause':True,'can_seek':True,'can_previous':True,'can_next':True}]}
+                async def media_action(player, action):
+                    nonlocal media_playing
+                    if action=='play_pause':media_playing=not media_playing
+                    with (root/'media-actions').open('a') as output:output.write(action+'\n')
+                    return {'ok':True}
+                companion.media.status=media_status;companion.media.action=media_action
+                ids=['00000000-0000-7000-8000-000000000001','00000000-0000-7000-8000-000000000002']
+                answers=[];prompts=[]
+                def agent(ident):
+                    return {'id':ident,'title':'Agente aguardando' if ident==ids[0] else 'Agente trabalhando','cwd':str(root),
+                        'state':'waiting' if ident==ids[0] and not answers else 'working' if ident==ids[1] else 'idle','can_send':True,'updated':1,'parent':None}
+                async def codex_list(cursor=None, search=''):
+                    return {'agents':[agent(ident) for ident in ids],'cursor':None}
+                async def codex_detail(ident,cursor=None):
+                    chat=[{'id':'user','role':'user','text':'Trabalhe no projeto','time':1},
+                          {'id':'agent','role':'agent','text':'Resposta final organizada.','time':2}]
+                    if prompts:chat.extend([{'id':'last-user','role':'user','text':prompts[-1],'time':3},
+                                            {'id':'last-agent','role':'agent','text':'Prompt recebido pelo agente.','time':4}])
+                    requests=[] if answers or ident!=ids[0] else [{'id':'question-one','kind':'question','questions':[
+                        {'id':'style','title':'Qual estilo você prefere?','secret':False,'options':['Rosa','Azul']}]}]
+                    return {'agent':agent(ident),'messages':chat,'requests':requests,'cursor':None}
+                async def codex_prompt(ident,text):
+                    prompts.append(text);(root/'codex-prompt').write_text(text);return {'ok':True}
+                async def codex_reply(ident,token,data):
+                    answers.append(data);return {'ok':True}
+                companion.codex.listing=codex_list;companion.codex.detail=codex_detail
+                companion.codex.prompt=codex_prompt;companion.codex.reply=codex_reply
                 runner = web.AppRunner(companion.application(), access_log=None)
                 await runner.setup()
                 site = web.TCPSite(runner, '127.0.0.1', 0)
@@ -74,7 +105,7 @@ async def main():
                 fixture = root / 'fixture.json'
                 fixture.write_text(json.dumps({'url': f'http://127.0.0.1:{port}', 'key': companion.key,
                                                'marker': str(root / 'remote-keyboard-marker'), 'volumeMarker': str(root / 'volume-marker'),
-                                               'fileRoot': str(home), 'actions': str(root / 'actions')}))
+                                               'fileRoot': str(home), 'actions': str(root / 'actions'), 'mediaActions':str(root/'media-actions'), 'codexPrompt':str(root/'codex-prompt')}))
                 browser = await asyncio.create_subprocess_exec('node', str(ROOT / 'tests/smoke-mobile.mjs'), str(fixture))
                 processes.append(browser)
                 assert await asyncio.wait_for(browser.wait(), 55) == 0, 'Mobile browser integration failed'
