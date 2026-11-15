@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Netflix
+Comment=Netflix em uma janela própria
+Exec=/usr/bin/brave --app=https://www.netflix.com/
+Icon=org.jlinux.Netflix
+Terminal=false
+Categories=AudioVideo;Video;
+StartupNotify=true

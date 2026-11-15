@@ -15,11 +15,12 @@ static const struct {const char *name, *desktop, *icon;} apps[] = {
     {"Monitor", "btop.desktop", "btop"},
     {"Spotube", "com.github.KRTirtho.Spotube.desktop", "org.jlinux.Spotube"},
     {"WhatsApp", "org.jlinux.WhatsApp.desktop", "org.jlinux.WhatsApp"},
+    {"Netflix", "org.jlinux.Netflix.desktop", "org.jlinux.Netflix"},
 };
-const char *dock_app_name(int index) { return index >= 0 && index < 11 ? apps[index].name : ""; }
+const char *dock_app_name(int index) { return index >= 0 && index < DOCK_APP_COUNT ? apps[index].name : ""; }
 
-const char *dock_app_desktop(int index){return index>=0&&index<11?apps[index].desktop:NULL;}
-const char *dock_app_icon_name(int index){return index>=0&&index<11?apps[index].icon:NULL;}
+const char *dock_app_desktop(int index){return index>=0&&index<DOCK_APP_COUNT?apps[index].desktop:NULL;}
+const char *dock_app_icon_name(int index){return index>=0&&index<DOCK_APP_COUNT?apps[index].icon:NULL;}
 int dock_app_key(int index){return index==7?4:index;}
 bool dock_app_matches(int index,const char *id,const char *title){
     if(!id){return false;}index=dock_app_key(index);
@@ -32,11 +33,12 @@ bool dock_app_matches(int index,const char *id,const char *title){
     if(index==8){return !strcmp(id,"org.jlinux.Monitor");}
     if(index==9){char *lower=g_ascii_strdown(id,-1);bool match=strstr(lower,"spotube")!=NULL;g_free(lower);return match;}
     if(index==10){return !strcmp(id,"org.jlinux.WhatsApp")||g_str_has_prefix(id,"brave-web.whatsapp.com")||((!g_ascii_strcasecmp(id,"brave-browser")||!g_ascii_strcasecmp(id,"brave"))&&title&&strstr(title,"WhatsApp"));}
+    if(index==11){return !strcmp(id,"org.jlinux.Netflix")||g_str_has_prefix(id,"brave-www.netflix.com")||g_str_has_prefix(id,"brave-netflix.com")||((!g_ascii_strcasecmp(id,"brave-browser")||!g_ascii_strcasecmp(id,"brave"))&&title&&strstr(title,"Netflix"));}
     return false;
 }
 static void reset_signals(gpointer data) { (void)data; sigset_t empty; sigemptyset(&empty); sigprocmask(SIG_SETMASK, &empty, NULL); }
 bool dock_app_launch(int index, GError **error) {
-    if (index < 0 || index >= 11 || index == 5) { return false; }
+    if (index < 0 || index >= DOCK_APP_COUNT || index == 5) { return false; }
     if (index == 1 || index == 8) {
         char *terminal[] = {"foot", "--term=xterm-256color", index==8?"--title=Monitor do sistema":"--title=JLinux Terminal", index==8?"--app-id=org.jlinux.Monitor":"--app-id=org.jlinux.Terminal", NULL, NULL, NULL};
         if (index == 8) { terminal[4] = "-e"; terminal[5] = "btop"; }

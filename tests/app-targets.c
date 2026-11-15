@@ -7,7 +7,7 @@ int main(void){
  {4,"org.jlinux.Files"},{6,"org.vinegarhq.Sober"},{6,"sober"},{7,"org.jlinux.Files"},
  {8,"org.jlinux.Monitor"},{9,"org-spotube-spotube-MainKt"},
  {9,"com.github.KRTirtho.Spotube"},{10,"org.jlinux.WhatsApp"},
- {10,"brave-web.whatsapp.com__-Default"}};
+ {10,"brave-web.whatsapp.com__-Default"},{11,"org.jlinux.Netflix"},{11,"brave-www.netflix.com__-Default"}};
  for(unsigned i=0;i<sizeof(cases)/sizeof(cases[0]);i++){assert(dock_app_matches(cases[i].index,cases[i].id,"Test"));}
  assert(!dock_app_matches(0,"brave-web.whatsapp.com__-Default","WhatsApp"));
  assert(dock_app_matches(10,"brave-browser","WhatsApp"));
@@ -17,5 +17,8 @@ int main(void){
  assert(!dock_app_matches(0,NULL,"Brave"));
  assert(dock_app_key(6)==6&&dock_app_key(7)==4);
  assert(!dock_app_matches(6,"org.jlinux.Files","Imagens"));
+ assert(dock_app_matches(11,"brave-browser","Netflix"));
+ assert(!dock_app_matches(11,"brave-browser","WhatsApp"));
+ assert(!dock_app_matches(0,"brave-www.netflix.com__-Default","Netflix"));
  return 0;
 }

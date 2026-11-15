@@ -53,7 +53,7 @@ static cairo_surface_t *settings_icon(void) {
     return image;
 }
 cairo_surface_t *dock_app_icon(int index) {
-    if (index < 0 || index >= 11) { return NULL; }
+    if (index < 0 || index >= DOCK_APP_COUNT) { return NULL; }
     if (index == 5) { return settings_icon(); }
     if (index == 9) { return find_icon("org.jlinux.Spotube"); }
     GDesktopAppInfo *info = dock_app_desktop(index) ? g_desktop_app_info_new(dock_app_desktop(index)) : NULL;

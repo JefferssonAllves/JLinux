@@ -32,7 +32,7 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
     (commands/'foot').symlink_to(mock)
     entries={'brave-browser.desktop':'brave','Neovim-Code.desktop':'nvim','org.qbittorrent.qBittorrent.desktop':'torrent',
              'org.jlinux.Files.desktop':'files','org.jlinux.WhatsApp.desktop':'whatsapp',
-             'com.github.KRTirtho.Spotube.desktop':'spotube','org.vinegarhq.Sober.desktop':'roblox'}
+             'com.github.KRTirtho.Spotube.desktop':'spotube','org.vinegarhq.Sober.desktop':'roblox','org.jlinux.Netflix.desktop':'netflix'}
     for entry,name in entries.items():
         (apps/entry).write_text(f'[Desktop Entry]\nType=Application\nName={name}\nExec=dock-test {name} %f\n')
     def log():return logfile.read_text(errors='replace')
@@ -52,14 +52,14 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
             client=subprocess.Popen([shell],env=env,stdout=out,stderr=subprocess.STDOUT);processes.append(client)
             wait(lambda:'Interface mapeada: jlinux-panel' in log(),processes,'shell')
             dock()
-            positions=tuple((836+250*math.cos(math.radians(-90+i*360/11)),469+250*math.sin(math.radians(-90+i*360/11))) for i in range(11))
-            for i in (0,1,2,3,4,6,8,9,10):
+            positions=tuple((836+250*math.cos(math.radians(-90+i*360/12)),469+250*math.sin(math.radians(-90+i*360/12))) for i in range(12))
+            for i in (0,1,2,3,4,6,8,9,10,11):
                 before=len(recorded());click(*positions[i])
                 wait(lambda:len(recorded())>before,processes,f'app {i}')
             before=len(recorded());click(*positions[7]);time.sleep(.15)
             assert len(recorded())==before,'Videos duplicated pending Files launch'
             data=recorded()
-            for name in ('brave','nvim','torrent','files','spotube','whatsapp','roblox'):assert any(name in row for row in data),name
+            for name in ('brave','nvim','torrent','files','spotube','whatsapp','roblox','netflix'):assert any(name in row for row in data),name
             assert any('btop' in row for row in data),'monitor command'
             click(*positions[5]);wait(lambda:'Configurações abertas.' in log(),processes,'settings gear')
             click(1260,350)

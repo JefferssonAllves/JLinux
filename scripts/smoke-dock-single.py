@@ -26,7 +26,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-dock-single-') as directory:
    wait(lambda:'JLinux compositor pronto:' in log(),processes,'ready')
    env['WAYLAND_DISPLAY']=next(p.name for p in root.glob('wayland-*') if p.is_socket())
    assert (root/'jlinux-window-control').stat().st_mode&0o777==0o600
-   apps=((0,'brave-browser'),(1,'org.jlinux.Terminal'),(2,'org.jlinux.Neovim'),(3,'org.qbittorrent.qBittorrent'),(4,'org.jlinux.Files'),(6,'org.vinegarhq.Sober'),(8,'org.jlinux.Monitor'),(9,'org-spotube-spotube-MainKt'),(10,'brave-web.whatsapp.com__-Default'))
+   apps=((0,'brave-browser'),(1,'org.jlinux.Terminal'),(2,'org.jlinux.Neovim'),(3,'org.qbittorrent.qBittorrent'),(4,'org.jlinux.Files'),(6,'org.vinegarhq.Sober'),(8,'org.jlinux.Monitor'),(9,'org-spotube-spotube-MainKt'),(10,'brave-web.whatsapp.com__-Default'),(11,'brave-www.netflix.com__-Default'))
    for index,appid in apps:
     title=f'Dock-{index}'
     client=subprocess.Popen([foot,'--config=/dev/null','--app-id='+appid,'--title='+title,'sh'],env=env,stdout=out,stderr=out);processes.append(client)

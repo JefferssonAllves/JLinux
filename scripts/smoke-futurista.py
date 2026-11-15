@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Real Super hold/release, native launcher hit testing and shell restart in private Wayland."""
 import socket
+import math
 import shutil
 import time
 import os
@@ -59,10 +60,10 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
                 if iteration==0:
                     # This point is beyond the old dock bounding box. Hover must select Foot;
                     # clicking the center then confirms that selection rather than the click angle.
-                    subprocess.run([pointer,'940','90','--motion'],env=env,check=True,timeout=4)
+                    subprocess.run([pointer,'800','90','--motion'],env=env,check=True,timeout=4)
                     mouse(640,365)
                 else:
-                    mouse(940,90)  # Direct click in the same angular sector outside the dock.
+                    mouse(800,90)  # Direct click in the same angular sector outside the dock.
                 wait(lambda:log().count('Janela mapeada: JLinux Terminal')>mapped,processes,'angular hover/outer click opens Foot')
                 held.wait(timeout=4);processes.remove(held)
                 keys('-M','logo','-k','q','-m','logo')
@@ -98,7 +99,8 @@ with tempfile.TemporaryDirectory(prefix='jlinux-futurista-') as directory:
                     time.sleep(.25)
                     marker=root/'whatsapp-opened'
                     focused=log().count('Aplicativo existente focado: WhatsApp')
-                    mouse(round(674*1280/1672),round(277*720/941))
+                    angle=math.radians(-90+10*360/12)
+                    mouse(round((836+250*math.cos(angle))*1280/1672),round((469+250*math.sin(angle))*720/941))
                     if iteration==0:
                         wait(marker.exists,processes,'WhatsApp command launched from former Steam slot')
                         wait(lambda:'Janela mapeada: WhatsApp fixture' in log(),processes,'WhatsApp fixture window')

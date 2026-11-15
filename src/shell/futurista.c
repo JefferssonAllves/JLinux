@@ -45,7 +45,7 @@ bool futurista_init(struct futurista *s, struct jlinux_glass glass) {
     s->hover[s->selected] = 1;
     s->wallpaper = asset("/org/jlinux/futurista/wallpaper.png");
     s->prefs = shell_preferences_default();
-    for (int i=0;i<11;i++) { s->icons[i] = dock_app_icon(i); }
+    for (int i=0;i<DOCK_APP_COUNT;i++) { s->icons[i] = dock_app_icon(i); }
     if (s->wallpaper && glass.blur) {
         s->blurred = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 418, 236);
         cairo_t *cr = cairo_create(s->blurred);
@@ -64,7 +64,7 @@ void futurista_finish(struct futurista *s) {
     if (s->wallpaper) {
         cairo_surface_destroy(s->wallpaper);
     }
-    for (int i=0;i<11;i++) { if (s->icons[i]) { cairo_surface_destroy(s->icons[i]); } }
+    for (int i=0;i<DOCK_APP_COUNT;i++) { if (s->icons[i]) { cairo_surface_destroy(s->icons[i]); } }
 
 }
 static void roundrect(cairo_t *cr, double x, double y, double w, double h, double r) {
@@ -382,7 +382,7 @@ void futurista_panel(struct futurista *s,cairo_t *cr,int width) {
     cairo_restore(cr);
 }
 static void sector(cairo_t *cr, int index, double focus, struct jlinux_glass effects) {
-    double a = (-90 - 180.0 / 11 + index * 360.0 / 11 + .6) * pi / 180, b = (-90 + 180.0 / 11 + index * 360.0 / 11 - .6) * pi / 180;
+    double a = (-90 - 180.0 / DOCK_APP_COUNT + index * 360.0 / DOCK_APP_COUNT + .6) * pi / 180, b = (-90 + 180.0 / DOCK_APP_COUNT + index * 360.0 / DOCK_APP_COUNT - .6) * pi / 180;
     double outer = 326 + 4 * focus, inner = 176 - 11 * focus;
     const double corner = 5;
     cairo_new_path(cr);
@@ -554,13 +554,13 @@ void futurista_overlay(struct futurista *s, cairo_t *cr, int width, int height, 
     cairo_set_source_rgba(cr, .015, .045, .14, .50);
     circle(cr, 836, 469, 325);
     cairo_fill(cr);
-    double positions[11][2];
-    for (int i = 0; i < 11; i++) {
-        double angle = (-90 + i * 360.0 / 11) * pi / 180;
+    double positions[DOCK_APP_COUNT][2];
+    for (int i = 0; i < DOCK_APP_COUNT; i++) {
+        double angle = (-90 + i * 360.0 / DOCK_APP_COUNT) * pi / 180;
         positions[i][0] = 836 + 250 * cos(angle);
         positions[i][1] = 469 + 250 * sin(angle);
     }
-    for (int i = 0; i < 11; i++) {
+    for (int i = 0; i < DOCK_APP_COUNT; i++) {
         sector(cr, i, s->prefs.neon ? s->hover[i] : 0, s->glass);
         double size = (i == 0 ? 86 : i == 6 ? 68 : 74) * (1 + (s->prefs.zoom ? .12 : 0) * s->hover[i]);
         double y = positions[i][1] - (s->prefs.zoom ? 5 : 0) * s->hover[i];
@@ -615,14 +615,14 @@ int futurista_hit(double x, double y, int width, int height, bool control_panel)
     if (!control_panel) {
         double dx = x - 836, dy = y - 469, r = hypot(dx, dy);
         if (r < 132) {
-            return 11;
+            return DOCK_APP_COUNT;
         }
         if (r >= 132) {
-            double a = atan2(dy, dx) * 180 / pi + 90 + 180.0 / 11;
+            double a = atan2(dy, dx) * 180 / pi + 90 + 180.0 / DOCK_APP_COUNT;
             while (a < 0) {
                 a += 360;
             }
-            return ((int)(a / (360.0 / 11))) % 11;
+            return ((int)(a / (360.0 / DOCK_APP_COUNT))) % DOCK_APP_COUNT;
         }
         return -1;
     }

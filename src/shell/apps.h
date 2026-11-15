@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <cairo.h>
 #include <glib.h>
+enum { DOCK_APP_COUNT = 12 };
 const char *dock_app_name(int index);
 const char *dock_app_desktop(int index);
 const char *dock_app_icon_name(int index);
