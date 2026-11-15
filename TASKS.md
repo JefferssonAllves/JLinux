@@ -2,7 +2,7 @@
 
 ## Energia no topo do Controle — feature/remote-power-shortcuts
 
-**Concluído na branch:** atalhos Desligar, Reiniciar e Sair da sessão no topo, reutilizando confirmação e bloqueio de atualização. Integração Playwright/headless passou: três confirmações canceladas sem executar ações e atalhos de energia bloqueados durante atualização simulada. Instalação registrada em docs/validation-remote-power-shortcuts.md.
+**Concluído na branch e instalado:** atalhos Desligar, Reiniciar e Sair da sessão no topo, reutilizando confirmação e bloqueio de atualização. Integração Playwright/headless passou: três confirmações canceladas sem executar ações e atalhos de energia bloqueados durante atualização simulada. Instalação registrada em docs/validation-remote-power-shortcuts.md.
 
 ## Touchpad no Controle — feature/control-touchpad
 
