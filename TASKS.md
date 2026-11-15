@@ -1,5 +1,9 @@
 # Plano central do JLinux
 
+## Energia no topo do Controle — feature/remote-power-shortcuts
+
+**Concluído na branch:** atalhos Desligar, Reiniciar e Sair da sessão no topo, reutilizando confirmação e bloqueio de atualização. Integração Playwright/headless passou: três confirmações canceladas sem executar ações e atalhos de energia bloqueados durante atualização simulada. Instalação registrada em docs/validation-remote-power-shortcuts.md.
+
 ## Touchpad no Controle — feature/control-touchpad
 
 **Concluído na branch e instalado:** área de touchpad na aba Controle, reutilizando entrada relativa nativa sem transmitir vídeo. Integração Playwright/headless passou com movimento, clique, arraste e cancelamento, além dos fluxos anteriores. Instalação registrada em docs/validation-control-touchpad.md.

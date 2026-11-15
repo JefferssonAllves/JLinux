@@ -17,6 +17,13 @@ try {
   await page.waitForFunction(() => document.getElementById('connection').classList.contains('connected'));
   await page.waitForFunction(() => document.getElementById('volume-number').textContent === '42%');
   if(await page.locator('nav [data-tab]').count()!==4)throw new Error('Remote navigation was not simplified');
+  for(const action of ['poweroff','reboot','logout']){
+    await page.locator('#volume-panel [data-action='+action+']').click();
+    await page.locator('#system-confirm').waitFor({state:'visible'});
+    await page.getByRole('button',{name:'Cancelar',exact:true}).click();
+  }
+  try {await readFile(fixture.actions);throw new Error('Cancelled remote power action executed');}catch(error){if(error.code!=='ENOENT')throw error;}
+
   await page.getByRole('button',{name:'Abrir ou alternar para Brave',exact:true}).click();
   await page.getByRole('button',{name:'Esquerda',exact:true}).click();
   await page.getByRole('button',{name:'OK',exact:true}).click();
@@ -190,15 +197,16 @@ try {
   if (await readFile(fixture.fileRoot + '/do-iphone.txt', 'utf8') !== 'Arquivo do iPhone') throw new Error('Upload mismatch');
   await page.locator('[data-tab=more]').click();
   await page.locator('[data-tool=system]').click();
-  await page.locator('[data-action=reboot]').click();
+  await page.locator('#system-panel [data-action=reboot]').click();
   await page.locator('#system-confirm').waitFor({state:'visible'});
   await page.getByRole('button', {name:'Cancelar', exact:true}).click();
   try {await readFile(fixture.actions);throw new Error('Cancelled action executed');}catch(error){if(error.code!=='ENOENT')throw error;}
-  await page.locator('[data-action=update]').click();
+  await page.locator('#system-panel [data-action=update]').click();
   await page.locator('#confirm-action').click();
   await page.waitForFunction(() => document.getElementById('update-state').textContent === 'Atualizando…');
-  if (!(await page.locator('[data-action=reboot]').isDisabled()) || !(await page.locator('[data-action=poweroff]').isDisabled())) throw new Error('Power actions enabled during update');
+  if (!(await page.locator('#system-panel [data-action=reboot]').isDisabled()) || !(await page.locator('#system-panel [data-action=poweroff]').isDisabled())) throw new Error('Power actions enabled during update');
   if ((await readFile(fixture.actions,'utf8')).trim() !== 'update') throw new Error('Unexpected action');
+  if(!(await page.locator('#volume-panel [data-action=reboot]').isDisabled()) || !(await page.locator('#volume-panel [data-action=poweroff]').isDisabled()))throw new Error('Remote power shortcuts bypassed the update lock');
   await page.screenshot({path:'/tmp/jlinux-connect-system.png',fullPage:true});
   await page.locator('#logout').click();
   await page.locator('#key').waitFor({state: 'visible'});

@@ -83,6 +83,8 @@ A seção de áudio inclui música, artista, reproduzir/pausar, anterior/próxim
 
 ## Controle remoto e navegação
 
+Desligar, Reiniciar e Sair da sessão também ficam no topo da aba Controle. Reutilizam as confirmações existentes e o bloqueio de reinício/desligamento durante atualização; um toque não executa a ação imediatamente.
+
 A aba Controle também tem uma área de touchpad: deslizar move o cursor relativamente à posição atual, tocar clica e segurar antes de arrastar move objetos. Reutiliza o mesmo cliente Wayland da aba Tela, sem iniciar vídeo. A conexão do ponteiro fecha ao sair dessa aba e é retomada ao voltar; gestos cancelados soltam o botão.
 
 Quatro abas: **Controle**, **Tela**, **Codex** e **Mais**. Controle reúne volume/mudo, mídia, direcionais e OK (Enter), Voltar (Esc), Tab e Trocar janela (Alt+Tab). Os direcionais atuam no aplicativo atualmente focado; a resposta depende de ele aceitar navegação por teclado. Arquivos, terminal e sistema ficam em Mais, sem remover suas funções ou confirmações de energia.
