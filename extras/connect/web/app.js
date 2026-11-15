@@ -56,7 +56,7 @@ function setConnected(value) {
   $('connection').textContent = value ? 'Conectado ao JLinux' : 'Não conectado';
   $('connection').classList.toggle('connected', value);
   clearInterval(polling);
-  if (value) { startPointer(); loadRemoteApps().catch(e=>message(e.message)); startVolumeStream(); startMedia(); polling = setInterval(() => { if (!document.hidden) refresh().catch(e => message(e.message)); }, 15000); }
+  if (value) { refreshSystem().catch(e=>message(e.message)); startPointer(); loadRemoteApps().catch(e=>message(e.message)); startVolumeStream(); startMedia(); polling = setInterval(() => { if (!document.hidden) refresh().catch(e => message(e.message)); }, 15000); }
   else {
     clearTimeout(volumeReconnect); clearTimeout(volumeTimer); clearInterval(systemPolling); clearInterval(mediaTimer); codexUI.close();
     const socket = volumeSocket; volumeSocket = null; if (socket) socket.close();
@@ -153,7 +153,7 @@ document.querySelectorAll('[data-tab]').forEach(button => button.addEventListene
   clearInterval(systemPolling); clearInterval(mediaTimer); codexUI.close();
   message('');
   if(button.dataset.tab==='codex')codexUI.open();
-  if(button.dataset.tab==='volume'){startPointer();startMedia();loadRemoteApps().catch(e=>message(e.message));}
+  if(button.dataset.tab==='volume'){refreshSystem().catch(e=>message(e.message));startPointer();startMedia();loadRemoteApps().catch(e=>message(e.message));}
   if(button.dataset.tab==='more')selectTool(activeTool);
 }));
 async function remoteAction(data,button) {
