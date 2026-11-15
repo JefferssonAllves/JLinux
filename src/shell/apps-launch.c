@@ -11,7 +11,7 @@ static const struct {const char *name, *desktop, *icon;} apps[] = {
     {"Arquivos", "org.jlinux.Files.desktop", "system-file-manager"},
     {"Configurações", NULL, "preferences-system"},
     {"Roblox", "org.vinegarhq.Sober.desktop", "org.vinegarhq.Sober"},
-    {"Stremio", "com.stremio.Stremio.desktop", "com.stremio.Stremio"},
+    {"Vídeos", "org.jlinux.Files.desktop", "folder-videos"},
     {"Monitor", "btop.desktop", "btop"},
     {"Spotube", "com.github.KRTirtho.Spotube.desktop", "org.jlinux.Spotube"},
     {"WhatsApp", "org.jlinux.WhatsApp.desktop", "org.jlinux.WhatsApp"},
@@ -20,7 +20,7 @@ const char *dock_app_name(int index) { return index >= 0 && index < 11 ? apps[in
 
 const char *dock_app_desktop(int index){return index>=0&&index<11?apps[index].desktop:NULL;}
 const char *dock_app_icon_name(int index){return index>=0&&index<11?apps[index].icon:NULL;}
-int dock_app_key(int index){return index;}
+int dock_app_key(int index){return index==7?4:index;}
 bool dock_app_matches(int index,const char *id,const char *title){
     if(!id){return false;}index=dock_app_key(index);
     if(index==0){return !g_ascii_strcasecmp(id,"brave-browser")||!g_ascii_strcasecmp(id,"brave");}
@@ -29,7 +29,6 @@ bool dock_app_matches(int index,const char *id,const char *title){
     if(index==3){return !g_ascii_strcasecmp(id,"org.qbittorrent.qBittorrent")||!g_ascii_strcasecmp(id,"qbittorrent");}
     if(index==4){return !strcmp(id,"org.jlinux.Files");}
     if(index==6){return !strcmp(id,"org.vinegarhq.Sober")||!g_ascii_strcasecmp(id,"sober");}
-    if(index==7){return !strcmp(id,"com.stremio.Stremio");}
     if(index==8){return !strcmp(id,"org.jlinux.Monitor");}
     if(index==9){char *lower=g_ascii_strdown(id,-1);bool match=strstr(lower,"spotube")!=NULL;g_free(lower);return match;}
     if(index==10){return !strcmp(id,"org.jlinux.WhatsApp")||g_str_has_prefix(id,"brave-web.whatsapp.com")||((!g_ascii_strcasecmp(id,"brave-browser")||!g_ascii_strcasecmp(id,"brave"))&&title&&strstr(title,"WhatsApp"));}
@@ -45,7 +44,14 @@ bool dock_app_launch(int index, GError **error) {
     }
     GDesktopAppInfo *info = g_desktop_app_info_new(apps[index].desktop);
     if (!info) { g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "Aplicativo não instalado: %s", apps[index].name); return false; }
-    bool ok = g_desktop_app_info_launch_uris_as_manager(info, NULL, NULL,
+    GList *uris = NULL;
+    if (index == 7) {
+        const char *directory = g_get_user_special_dir(G_USER_DIRECTORY_VIDEOS);
+        char *uri = g_filename_to_uri(directory ? directory : g_get_home_dir(), NULL, error);
+        if (!uri) { g_object_unref(info); return false; }
+        uris = g_list_append(NULL, uri);
+    }
+    bool ok = g_desktop_app_info_launch_uris_as_manager(info, uris, NULL,
         G_SPAWN_SEARCH_PATH, reset_signals, NULL, NULL, NULL, error);
-    g_object_unref(info); return ok;
+    g_list_free_full(uris, g_free); g_object_unref(info); return ok;
 }

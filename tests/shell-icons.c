@@ -6,7 +6,7 @@ int main(int argc,char **argv){
     (void)argv;
     if(argc>1){for(int i=0;i<11;i++){cairo_surface_t *icon=dock_app_icon(i);CHECK(icon);cairo_surface_destroy(icon);printf("Ícone instalado: %s OK\n",dock_app_name(i));}return 0;}
     char *directory=g_dir_make_tmp("jlinux-icons-XXXXXX",NULL);CHECK(directory);g_setenv("XDG_DATA_HOME",directory,true);
-    const char *icons[]={"brave-desktop","foot","nvim","qbittorrent","system-file-manager","preferences-system","org.vinegarhq.Sober","com.stremio.Stremio","btop","org.jlinux.Spotube","org.jlinux.WhatsApp"};
+    const char *icons[]={"brave-desktop","foot","nvim","qbittorrent","system-file-manager","preferences-system","org.vinegarhq.Sober","folder-videos","btop","org.jlinux.Spotube","org.jlinux.WhatsApp"};
     char *path=g_build_filename(directory,"icons","hicolor","128x128","apps",NULL);CHECK(!g_mkdir_with_parents(path,0700));
     for(int i=0;i<11;i++){
         char *file=g_strdup_printf("%s/%s.png",path,icons[i]);cairo_surface_t *image=cairo_image_surface_create(CAIRO_FORMAT_ARGB32,8,8);
