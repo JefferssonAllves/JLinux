@@ -83,6 +83,8 @@ A seção de áudio inclui música, artista, reproduzir/pausar, anterior/próxim
 
 ## Controle remoto e navegação
 
+A aba Controle também tem uma área de touchpad: deslizar move o cursor relativamente à posição atual, tocar clica e segurar antes de arrastar move objetos. Reutiliza o mesmo cliente Wayland da aba Tela, sem iniciar vídeo. A conexão do ponteiro fecha ao sair dessa aba e é retomada ao voltar; gestos cancelados soltam o botão.
+
 Quatro abas: **Controle**, **Tela**, **Codex** e **Mais**. Controle reúne volume/mudo, mídia, direcionais e OK (Enter), Voltar (Esc), Tab e Trocar janela (Alt+Tab). Os direcionais atuam no aplicativo atualmente focado; a resposta depende de ele aceitar navegação por teclado. Arquivos, terminal e sistema ficam em Mais, sem remover suas funções ou confirmações de energia.
 
 A faixa de apps mostra os nove atalhos de aplicativos do dock nativo, com os ícones instalados, incluindo as personalizações do Spotube e WhatsApp. Deslize horizontalmente para ver os demais. Tocar envia ao compositor o mesmo índice usado pelo dock: foca a janela existente ou solicita a abertura. A confirmação HTTP indica envio ao compositor, não comprova que o aplicativo terminou de abrir. Configurações é um painel do shell, não um aplicativo desses índices; as ações de sistema ficam em Mais → Sistema. O catálogo segue a API atual do dock e precisa acompanhar mudanças futuras dela.

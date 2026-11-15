@@ -56,7 +56,7 @@ function setConnected(value) {
   $('connection').textContent = value ? 'Conectado ao JLinux' : 'Não conectado';
   $('connection').classList.toggle('connected', value);
   clearInterval(polling);
-  if (value) { loadRemoteApps().catch(e=>message(e.message)); startVolumeStream(); startMedia(); polling = setInterval(() => { if (!document.hidden) refresh().catch(e => message(e.message)); }, 15000); }
+  if (value) { startPointer(); loadRemoteApps().catch(e=>message(e.message)); startVolumeStream(); startMedia(); polling = setInterval(() => { if (!document.hidden) refresh().catch(e => message(e.message)); }, 15000); }
   else {
     clearTimeout(volumeReconnect); clearTimeout(volumeTimer); clearInterval(systemPolling); clearInterval(mediaTimer); codexUI.close();
     const socket = volumeSocket; volumeSocket = null; if (socket) socket.close();
@@ -148,11 +148,12 @@ document.querySelectorAll('[data-tab]').forEach(button => button.addEventListene
   document.querySelectorAll('[data-tab]').forEach(tab => tab.removeAttribute('aria-current'));
   button.setAttribute('aria-current', 'page');
   for (const name of ['volume', 'desktop', 'codex', 'more']) $(name + '-panel').hidden = name !== button.dataset.tab;
+  stopPointer();
   if (button.dataset.tab !== 'desktop') disconnectScreen();
   clearInterval(systemPolling); clearInterval(mediaTimer); codexUI.close();
   message('');
   if(button.dataset.tab==='codex')codexUI.open();
-  if(button.dataset.tab==='volume'){startMedia();loadRemoteApps().catch(e=>message(e.message));}
+  if(button.dataset.tab==='volume'){startPointer();startMedia();loadRemoteApps().catch(e=>message(e.message));}
   if(button.dataset.tab==='more')selectTool(activeTool);
 }));
 async function remoteAction(data,button) {
@@ -207,31 +208,33 @@ function resetPointer() {
   dragging=false;contact=null;contacts.clear();
 }
 function stopPointer() {
-  $('screen-touchpad').dataset.ready='false';
+  for(const area of [$('screen-touchpad'),$('control-touchpad')])area.dataset.ready='false';
+  $('control-touchpad-state').textContent='Aguardando conexão';
   resetPointer();clearTimeout(pointerRetry);
   if(pointerSocket){const socket=pointerSocket;pointerSocket=null;socket.close();}
 }
 function startPointer() {
   stopPointer();
-  if(!rfb || document.hidden || !matchMedia('(pointer:coarse)').matches)return;
+  if(!authenticated || document.hidden || ($('volume-panel').hidden && (!rfb || !matchMedia('(pointer:coarse)').matches)))return;
   const socket=new WebSocket(`${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/ws/pointer`);
   pointerSocket=socket;
-  socket.onopen=()=>{pad.dataset.ready='true';};
+  socket.onopen=()=>{if(pointerSocket!==socket)return;for(const area of [$('screen-touchpad'),$('control-touchpad')])area.dataset.ready='true';$('control-touchpad-state').textContent='Pronto';};
   socket.onmessage=event=>{const data=JSON.parse(event.data);if(data.error)message(data.error);};
-  socket.onclose=()=>{if(pointerSocket!==socket)return;resetPointer();pointerSocket=null;pad.dataset.ready='false';pointerRetry=setTimeout(startPointer,1000);};
+  socket.onclose=()=>{if(pointerSocket!==socket)return;resetPointer();pointerSocket=null;for(const area of [$('screen-touchpad'),$('control-touchpad')])area.dataset.ready='false';$('control-touchpad-state').textContent='Reconectando…';pointerRetry=setTimeout(startPointer,1000);};
 }
 function flushPointer() {
   pointerFrame=null;
   if(dx||dy)sendPointer({dx:Math.max(-4096,Math.min(4096,dx)),dy:Math.max(-4096,Math.min(4096,dy))});
   dx=dy=0;
 }
-const pad=$('screen-touchpad');
+for(const pad of [$('screen-touchpad'),$('control-touchpad')]) {
 pad.onpointerdown=event=>{
   event.preventDefault();pad.setPointerCapture(event.pointerId);contacts.add(event.pointerId);
   if(contacts.size>1){cancelAnimationFrame(pointerFrame);pointerFrame=null;dx=dy=0;clearTimeout(pointerHold);if(dragging)sendPointer({button:false});dragging=false;contact=null;suppressTap=true;$('screen-shell').classList.remove('controls-hidden');return;}
   suppressTap=false;
-  const canvas=$('screen').querySelector('canvas');
-  contact={id:event.pointerId,x:event.clientX,y:event.clientY,distance:0,scale:canvas?canvas.width/canvas.getBoundingClientRect().width:1};
+  if(pointerSocket?.readyState!==WebSocket.OPEN)return;
+  const canvas=pad.id==='screen-touchpad'?$('screen').querySelector('canvas'):null;
+  contact={id:event.pointerId,x:event.clientX,y:event.clientY,distance:0,scale:canvas?canvas.width/canvas.getBoundingClientRect().width:2};
   pointerHold=setTimeout(()=>{if(contact && contact.distance<8 && !suppressTap){dragging=true;sendPointer({button:true});}},350);
 };
 pad.onpointermove=event=>{
@@ -252,7 +255,8 @@ function endPointer(event) {
   dragging=false;contact=null;
 }
 pad.onpointerup=endPointer;pad.onpointercancel=endPointer;pad.onlostpointercapture=endPointer;
-document.addEventListener('visibilitychange',()=>{if(document.hidden)stopPointer();else if(rfb)startPointer();});
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopPointer();else startPointer();});
 window.addEventListener('blur',resetPointer);
 document.addEventListener('keydown',event=>{if(event.key==='Escape')$('screen-shell').classList.remove('controls-hidden');});
 $('pan').addEventListener('click', () => {

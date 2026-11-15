@@ -9,6 +9,8 @@ try {
   const page = await browser.newPage({viewport: {width: 390, height: 844}, isMobile: true, hasTouch: true, deviceScaleFactor: 2});
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  const touch=await page.context().newCDPSession(page);
+  const gesture=async(type,points)=>touch.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([x,y,id=1])=>({x,y,id}))});
   await page.goto(fixture.url);
   await page.locator('#key').fill(fixture.key);
   await page.getByRole('button', {name: 'Conectar ao JLinux'}).click();
@@ -22,6 +24,26 @@ try {
   if((await readFile(fixture.remoteMarker,'utf8')).trim()!=='app 0\nkey left\nkey ok')throw new Error('Dock or navigation control did not reach its fixed action');
   await page.waitForFunction(()=>Array.from(document.querySelectorAll('#remote-apps img')).every(image=>image.complete&&image.naturalWidth>0));
   if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Remote control overflows the mobile screen');
+  await page.waitForFunction(()=>document.getElementById('control-touchpad').dataset.ready==='true');
+  if(await page.locator('#screen canvas').count())throw new Error('Control touchpad started video capture');
+  await page.locator('#control-touchpad').scrollIntoViewIfNeeded();
+  const box=await page.locator('#control-touchpad').boundingBox();
+  const px=box.x+40,py=box.y+45;
+  await gesture('touchStart',[[px,py]]);
+  await gesture('touchMove',[[px+30,py+10]]);
+  await gesture('touchEnd',[]);
+  await gesture('touchStart',[[px+90,py+25]]);
+  await gesture('touchEnd',[]);
+  await gesture('touchStart',[[px,py]]);
+  await page.waitForTimeout(400);
+  await gesture('touchMove',[[px+30,py+15]]);
+  await gesture('touchEnd',[]);
+  await gesture('touchStart',[[px,py]]);
+  await page.waitForTimeout(400);
+  await gesture('touchCancel',[]);
+  await page.waitForTimeout(150);
+  const homePointer=(await readFile(fixture.pointerMarker,'utf8')).trim().split('\n');
+  if(!homePointer.includes('move 60 20') || homePointer.filter(line=>line.startsWith('button ')).join(',')!=='button 1,button 0,button 1,button 0,button 1,button 0')throw new Error('Control touchpad movement, tap, drag or cancellation failed');
   await page.screenshot({path:'/tmp/jlinux-connect-remote.png',fullPage:true});
 
   await page.locator('#volume').evaluate(element => {element.value = 37; element.dispatchEvent(new Event('input'));});
@@ -113,8 +135,8 @@ try {
   await page.screenshot({path:'/tmp/jlinux-connect-screen-landscape.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});
   await page.waitForFunction(()=>{const box=document.querySelector('#screen canvas').getBoundingClientRect();return box.width<=innerWidth+1&&box.width>=innerWidth-2;});
-  const touch=await page.context().newCDPSession(page);
-  const gesture=async(type,points)=>touch.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([x,y,id=1])=>({x,y,id}))});
+  const homeInputs=(await readFile(fixture.pointerMarker,'utf8')).split('\n');
+  const homeMoveCount=homeInputs.filter(line=>line.startsWith('move ')).length, homeButtonCount=homeInputs.filter(line=>line.startsWith('button ')).length;
   await gesture('touchStart',[[50,400]]);
   await gesture('touchMove',[[70,410]]);
   await gesture('touchEnd',[]);
@@ -122,7 +144,7 @@ try {
   await gesture('touchMove',[[270,510]]);
   await gesture('touchEnd',[]);
   await page.waitForTimeout(200);
-  const moves=(await readFile(fixture.pointerMarker,'utf8')).trim().split('\n').filter(line=>line.startsWith('move ')).map(line=>line.split(' ').slice(1).map(Number));
+  const moves=(await readFile(fixture.pointerMarker,'utf8')).trim().split('\n').filter(line=>line.startsWith('move ')).slice(homeMoveCount).map(line=>line.split(' ').slice(1).map(Number));
   if(moves.length!==2 || moves.some(([x,y])=>x<=0||y<=0) || Math.abs(moves[0][0]-moves[1][0])>.1 || Math.abs(moves[0][1]-moves[1][1])>.1)throw new Error('Touch movement was not relative across different finger positions '+JSON.stringify(moves));
   await gesture('touchStart',[[50,400],[90,400,2]]);
   await gesture('touchEnd',[]);
@@ -134,7 +156,7 @@ try {
   await gesture('touchMove',[[170,410]]);
   await gesture('touchEnd',[]);
   await page.waitForTimeout(150);
-  const buttons=(await readFile(fixture.pointerMarker,'utf8')).trim().split('\n').filter(line=>line.startsWith('button '));
+  const buttons=(await readFile(fixture.pointerMarker,'utf8')).trim().split('\n').filter(line=>line.startsWith('button ')).slice(homeButtonCount);
   if(buttons.join(',')!=='button 1,button 0,button 1,button 0')throw new Error('Relative tap or hold-drag did not release its button');
   await page.locator('#screen-keyboard').click();
   await page.locator('#text').fill(`printf '%s%s\\n' JL_REMOTE _OK > ${fixture.marker}`);
