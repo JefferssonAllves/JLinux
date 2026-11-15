@@ -82,7 +82,7 @@ async def main():
                         'state':'waiting' if ident==ids[0] and not answers else 'working' if ident==ids[1] else 'idle','can_send':True,'updated':1,'parent':None}
                 async def codex_list(cursor=None, search=''):
                     return {'agents':[agent(ident) for ident in ids] + [
-                        {**agent(ids[1]),'id':'00000000-0000-7000-8000-000000000003','title':'Outro projeto','cwd':'/outro/'+root.name},
+                        {**agent(ids[1]),'id':'00000000-0000-7000-8000-000000000003','title':'Outro projeto','cwd':'/outro/'+root.name,'state':'idle','completion':'finished-one'},
                         {**agent(ids[1]),'id':'00000000-0000-7000-8000-000000000004','title':'Sem projeto','cwd':''}], 'cursor':None}
                 async def codex_detail(ident,cursor=None):
                     companion.codex.subscribed.add(ident)
@@ -92,7 +92,10 @@ async def main():
                                             {'id':'last-agent','role':'agent','text':'Prompt recebido pelo agente.','time':4}])
                     requests=[] if answers or ident!=ids[0] else [{'id':'question-one','kind':'question','questions':[
                         {'id':'style','title':'Qual estilo você prefere?','secret':False,'options':['Rosa','Azul']}]}]
-                    return {'agent':agent(ident),'messages':chat,'requests':requests,'cursor':None}
+                    info = agent(ident)
+                    if ident.endswith('0003'):
+                        info.update(title='Outro projeto',cwd='/outro/'+root.name,state='idle',completion='finished-one')
+                    return {'agent':info,'messages':chat,'requests':requests,'cursor':None}
                 async def codex_prompt(ident,text):
                     prompts.append(text);(root/'codex-prompt').write_text(text)
                     async def stream_answer():

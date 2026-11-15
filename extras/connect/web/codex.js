@@ -1,7 +1,16 @@
 // Only human prompts, answer text and explicit decisions are rendered here.
 export function initCodex(api, message) {
   const $ = id => document.getElementById(id);
-  const labels = {working: 'Trabalhando', waiting: 'Aguardando você', idle: 'Parado', error: 'Erro'};
+  const labels = {working: 'Trabalhando', waiting: 'Aguardando você', idle: 'Parado', completed: 'Finalizado · não lido', error: 'Erro'};
+  let seen = {};
+  try {const saved = JSON.parse(localStorage.getItem('jlinux-codex-seen') || '{}'); if (saved && typeof saved === 'object' && !Array.isArray(saved)) seen = saved;} catch {}
+  const displayState = agent => agent.state === 'idle' && agent.completion && seen[agent.id] !== agent.completion ? 'completed' : agent.state;
+  function markRead(agent) {
+    if (!opened || document.hidden || !agent?.completion) return;
+    seen[agent.id] = agent.completion;
+    try {localStorage.setItem('jlinux-codex-seen', JSON.stringify(seen));} catch {}
+  }
+  let currentAgent = null;
   let selected = null, agents = [], timer = null, busy = false, cursor = null, historyCursor = null, etag = null, fingerprint = '', generation = 0, displayed = [], historyLoaded = false;
   let stream = null, reconnect = null, opened = false;
   function stopStream() {
@@ -29,8 +38,8 @@ export function initCodex(api, message) {
   function renderList() {
     $('agent-list').replaceChildren();
     const filter = $('agent-filter').value;
-    const visible = agents.filter(agent => filter === 'all' || agent.state === filter);
-    visible.sort((a, b) => ({waiting:0,working:1,error:2,idle:3}[a.state] - {waiting:0,working:1,error:2,idle:3}[b.state]) || b.updated-a.updated);
+    const visible = agents.map(agent => ({...agent, state: displayState(agent)})).filter(agent => filter === 'all' || agent.state === filter);
+    visible.sort((a, b) => ({waiting:0,completed:1,working:2,error:3,idle:4}[a.state] - {waiting:0,completed:1,working:2,error:3,idle:4}[b.state]) || b.updated-a.updated);
     const groups = new Map();
     for (const agent of visible) {
       const path = agent.cwd || '';
@@ -54,7 +63,7 @@ export function initCodex(api, message) {
     }
     $('agents-empty').hidden = visible.length > 0;
     $('agents-more').hidden = !cursor;
-    $('agents-count').textContent = `${agents.filter(a=>a.state==='working').length} trabalhando · ${agents.filter(a=>a.state==='waiting').length} aguardando`;
+    $('agents-count').textContent = `${agents.filter(a=>a.state==='working').length} trabalhando · ${agents.filter(a=>a.state==='waiting').length} aguardando · ${agents.filter(a=>displayState(a)==='completed').length} finalizados não lidos`;
   }
   async function listing(more = false) {
     const query = new URLSearchParams({search: $('agent-search').value});
@@ -126,7 +135,7 @@ export function initCodex(api, message) {
     const ident=selected, version=generation;
     const query=older&&historyCursor?'?'+new URLSearchParams({cursor:historyCursor}):'';
     const response=await fetch(`/api/codex/threads/${ident}${query}`, {headers:!older&&etag?{'If-None-Match':etag}:{}});
-    if(response.status===304)return;
+    if(response.status===304){if(selected===ident && generation===version)markRead(currentAgent);return;}
     if(!response.ok)throw new Error(await response.text());
     const data=await response.json();if(selected!==ident || generation!==version)return;
     if(!older)etag=response.headers.get('ETag');
@@ -137,9 +146,10 @@ export function initCodex(api, message) {
     $('agent-prompt').disabled=data.agent.can_send===false; $('agent-send').disabled=data.agent.can_send===false;
     $('agent-prompt').placeholder=data.agent.can_send===false?'Envie sua orientação ao agente principal':'Escreva seu prompt…';
     renderMessages(data.messages,older);renderRequests(data.requests);
+    if (!older) {currentAgent=data.agent;markRead(currentAgent);}
   }
   async function select(ident) {
-    stopStream();generation++;selected=ident;etag=null;fingerprint='';historyCursor=null;historyLoaded=false;displayed=[];
+    stopStream();currentAgent=null;generation++;selected=ident;etag=null;fingerprint='';historyCursor=null;historyLoaded=false;displayed=[];
     $('agents-overview').hidden=true;$('agent-conversation').hidden=false;$('agent-chat').replaceChildren();$('agent-requests').replaceChildren();$('agent-requests').dataset.content='';
     $('agent-title').textContent='Carregando agente…';
     await detail();startStream();

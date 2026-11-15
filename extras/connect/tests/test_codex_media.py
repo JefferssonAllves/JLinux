@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 from aiohttp import web
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from codex_bridge import CodexBridge, card, messages, public_item
+from codex_bridge import CodexBridge, card, messages, public_item, completion
 from media_controls import MediaControls
 
 ONE='00000000-0000-7000-8000-000000000001'
@@ -23,6 +23,8 @@ class CodexTests(unittest.IsolatedAsyncioTestCase):
         self.socket=Path(self.temp.name)/'codex.sock'
         self.calls=[];self.replies=[];self.requests=False;self.direct=True
         self.active=True
+        self.turn_status="inProgress"
+        self.turn_ident="turn-one"
         self.thread={'id':ONE,'name':'Agente de teste','cwd':self.temp.name,'status':{'type':'active','activeFlags':[]},'canAcceptDirectInput':True}
         async def connection(request):
             ws=web.WebSocketResponse();await ws.prepare(request)
@@ -38,7 +40,7 @@ class CodexTests(unittest.IsolatedAsyncioTestCase):
                 if method=='initialize':result={'userAgent':'test'}
                 elif method=='thread/list':result={'data':[thread],'nextCursor':None}
                 elif method in ('thread/read','thread/resume','thread/start'):result={'thread':thread}
-                elif method=='thread/turns/list':result={'data':[{'id':'turn-one','status':'inProgress','startedAt':1,'items':[
+                elif method=='thread/turns/list':result={'data':[{'id':self.turn_ident,'status':self.turn_status,'startedAt':1,'items':[
                     {'id':'user','type':'userMessage','content':[{'type':'text','text':'Meu prompt'}]},
                     {'id':'progress','type':'agentMessage','phase':'commentary','text':'Vou abrir arquivos e testar'},
                     {'id':'command','type':'commandExecution','aggregatedOutput':'PRIVATE_TOOL_OUTPUT'},
@@ -83,6 +85,23 @@ class CodexTests(unittest.IsolatedAsyncioTestCase):
         self.direct=False
         with self.assertRaises(web.HTTPConflict):await self.bridge.prompt(ONE,'não permitido')
         self.assertEqual(card({'id':ONE,'status':{'type':'active','activeFlags':['waitingOnUserInput']}})['state'],'waiting')
+
+    async def test_completed_status_uses_successful_turn_and_caches_metadata(self):
+        self.assertIsNone((await self.bridge.listing())['agents'][0]['completion'])
+        self.active = False
+        self.turn_status = 'completed'
+        self.assertEqual((await self.bridge.listing())['agents'][0]['completion'], 'turn-one')
+        count = sum(method == 'thread/turns/list' for method, _ in self.calls)
+        self.assertEqual((await self.bridge.listing())['agents'][0]['completion'], 'turn-one')
+        self.assertEqual(count, sum(method == 'thread/turns/list' for method, _ in self.calls))
+        self.thread['updatedAt'] = 2
+        self.turn_ident = 'turn-two'
+        self.assertEqual((await self.bridge.listing())['agents'][0]['completion'], 'turn-two')
+        self.assertEqual((await self.bridge.detail(ONE))['agent']['completion'], 'turn-two')
+        for state in ('interrupted', 'failed', 'inProgress'):
+            self.assertIsNone(completion({'status': {'type': 'idle'}}, {'data': [{'id':'turn', 'status':state}]}))
+        self.assertIsNone(completion({'status': {'type': 'idle'}}, {'data': []}))
+        self.assertIsNone(completion({'status': {'type': 'active'}}, {'data': [{'id':'turn', 'status':'completed'}]}))
 
     async def test_socket_delivers_text_notifications(self):
         await self.bridge.detail(ONE)

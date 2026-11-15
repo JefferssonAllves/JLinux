@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import time
 
 from aiohttp import ClientSession, ClientTimeout, ClientError, UnixConnector, WSMsgType, web
 
@@ -33,6 +34,14 @@ def card(thread):
             'state': state, 'status': status.get('type'), 'cwd': thread.get('cwd', ''),
             'updated': thread.get('updatedAt', 0), 'parent': thread.get('parentThreadId'),
             'role': thread.get('agentRole'), 'can_send': thread.get('canAcceptDirectInput', True)}
+
+
+def completion(thread, turns):
+    latest = next(iter(turns.get('data', [])), {})
+    if (thread.get('status', {}).get('type') in ('idle', 'notLoaded')
+            and latest.get('status') == 'completed' and not latest.get('error')):
+        return latest.get('id')
+    return None
 
 
 def messages(turns):
@@ -94,6 +103,7 @@ class CodexBridge:
         self.question_heads = {}
         self.live = OrderedDict()
         self.listeners = {}
+        self.completions = OrderedDict()
 
     async def open_socket(self):
         self.client = ClientSession(connector=UnixConnector(path=str(self.socket)), timeout=ClientTimeout(total=5))
@@ -222,12 +232,30 @@ class CodexBridge:
         finally:
             self.pending.pop(ident, None)
 
+    async def completed_turn(self, thread):
+        ident = thread['id']
+        if thread.get('status', {}).get('type') not in ('idle', 'notLoaded'):
+            self.completions.pop(ident, None)
+            return None
+        signature = (thread.get('updatedAt'), thread.get('status', {}).get('type'))
+        cached = self.completions.get(ident)
+        if cached and cached[0] == signature and time.monotonic() - cached[1] < 30:
+            return cached[2]
+        turns = await self.call('thread/turns/list', {'threadId': ident, 'limit': 1, 'itemsView': 'notLoaded'})
+        marker = completion(thread, turns)
+        self.completions[ident] = (signature, time.monotonic(), marker)
+        self.completions.move_to_end(ident)
+        while len(self.completions) > 200:
+            self.completions.popitem(last=False)
+        return marker
+
     async def listing(self, cursor=None, search=''):
         data = await self.call('thread/list', {'limit': 50, 'cursor': cursor, 'searchTerm': search or None,
                   'sortKey': 'updated_at', 'sortDirection': 'desc', 'sourceKinds': KINDS, 'currentAccountOnly': True})
         cards = []
         for thread in data.get('data', []):
             info = card(thread)
+            info['completion'] = await self.completed_turn(thread)
             if info['status'] == 'active':
                 turns = await self.call('thread/turns/list', {'threadId': info['id'], 'limit': 1, 'itemsView': 'summary'})
                 for turn in turns.get('data', []):
@@ -365,6 +393,7 @@ class CodexBridge:
             text = list(merged.values())[-80:]
         pending = self.waiting(ident)
         info = card(thread)
+        info['completion'] = completion(thread, turns)
         if pending:
             info['state'] = 'waiting'
         return {'agent': info, 'messages': text,
@@ -457,6 +486,7 @@ class CodexBridge:
         self.async_answers.clear()
         self.question_heads.clear()
         self.live.clear()
+        self.completions.clear()
         for listeners in self.listeners.values():
             for changed in listeners:
                 changed.set()
