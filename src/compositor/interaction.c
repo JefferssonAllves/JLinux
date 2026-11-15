@@ -1255,9 +1255,10 @@ struct interaction *interaction_create(struct wl_display *display,
     state->dock_fd=window_control_open();
     if(state->dock_fd>=0){state->dock_requests=wl_event_loop_add_fd(wl_display_get_event_loop(display),state->dock_fd,WL_EVENT_READABLE,dock_requested,state);}
     if(state->dock_fd<0||!state->dock_requests){interaction_destroy(state);return NULL;}
-    /* Virtual input is opt-in only, for isolated automated tests. */
+    /* Virtual input is opt-in for tests or an explicitly enabled remote companion. */
     const char *test_input = getenv("JLINUX_TEST_INPUT");
-    if (test_input && strcmp(test_input, "1") == 0) {
+    const char *remote = getenv("JLINUX_REMOTE_CONTROL");
+    if ((test_input && !strcmp(test_input, "1")) || (remote && !strcmp(remote, "1"))) {
         struct wlr_virtual_keyboard_manager_v1 *keyboards = wlr_virtual_keyboard_manager_v1_create(display);
         struct wlr_virtual_pointer_manager_v1 *pointers = wlr_virtual_pointer_manager_v1_create(display);
         if (!keyboards || !pointers) { interaction_destroy(state); return NULL; }

@@ -1,0 +1,45 @@
+// Run against the private headless fixture, never the user's current desktop.
+import {readFile} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+const require = createRequire(process.env.JLINUX_PLAYWRIGHT_MODULE + '/package.json');
+const {chromium} = require('playwright');
+const fixture = JSON.parse(await readFile(process.argv[2], 'utf8'));
+const browser = await chromium.launch({headless: true});
+try {
+  const page = await browser.newPage({viewport: {width: 390, height: 844}, isMobile: true, hasTouch: true, deviceScaleFactor: 2});
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(fixture.url);
+  await page.locator('#key').fill(fixture.key);
+  await page.getByRole('button', {name: 'Conectar ao JLinux'}).click();
+  await page.waitForFunction(() => document.getElementById('connection').classList.contains('connected'));
+  await page.waitForFunction(() => document.getElementById('volume-number').textContent === '42%');
+  await page.locator('#volume').evaluate(element => {element.value = 60; element.dispatchEvent(new Event('change'));});
+  await page.waitForFunction(() => document.getElementById('volume-number').textContent === '60%');
+  await page.screenshot({path: '/tmp/jlinux-connect-mobile.png', fullPage: true});
+  await page.locator('[data-tab=desktop]').click();
+  await page.locator('#screen-toggle').click();
+  await page.waitForFunction(() => document.getElementById('message').textContent === 'Tela conectada.', {timeout: 15000});
+  await page.locator('#text').fill(`printf '%s%s\\n' JL_REMOTE _OK > ${fixture.marker}`);
+  await page.locator('#typing button').click();
+  await page.locator('#enter').click();
+  await page.waitForTimeout(500);
+  const result = await readFile(fixture.marker, 'utf8');
+  if (result.trim() !== 'JL_REMOTE_OK') throw new Error('Remote keyboard did not reach headless terminal');
+  await page.screenshot({path: '/tmp/jlinux-connect-desktop.png', fullPage: true});
+  await page.locator('[data-tab=terminal]').click();
+  await page.locator('#terminal-toggle').click();
+  const terminal = page.frameLocator('iframe');
+  await terminal.locator('.xterm-screen').waitFor();
+  await terminal.locator('.xterm-helper-textarea').focus();
+  await page.keyboard.type("printf '%s%s\\n' CONNECT_ BROWSER_TEST");
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(500);
+  if (!await terminal.locator('.xterm-screen').count()) throw new Error('Terminal did not mount');
+  await page.locator('#terminal-toggle').click();
+  await page.locator('[data-tab=volume]').click();
+  await page.locator('#logout').click();
+  await page.locator('#key').waitFor({state: 'visible'});
+  if (errors.length) throw new Error(errors.join('\n'));
+  console.log('Mobile UI: pairing, volume, desktop capture, real remote keyboard, terminal and logout passed');
+} finally { await browser.close(); }

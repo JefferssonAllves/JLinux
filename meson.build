@@ -159,3 +159,5 @@ else
 endif
 
 test('decoration-advertisement', find_program('scripts/smoke-decorations.py'), args: [compositor], timeout: 15)
+
+test('remote-protocols-opt-in', find_program('extras/connect/tests/smoke-protocols.py'), args: [compositor], timeout: 15)

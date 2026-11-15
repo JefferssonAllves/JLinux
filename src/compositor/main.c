@@ -3,6 +3,9 @@
 #include "../toolkit/painter.h"
 #include "../renderer/renderer.h"
 #include <signal.h>
+#include <glib.h>
+#include <wlr/types/wlr_screencopy_v1.h>
+#include <wlr/types/wlr_xdg_output_v1.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -275,6 +278,9 @@ static int stop_server(int signal_number, void *data) {
 
 int main(void) {
     wlr_log_init(WLR_INFO, NULL);
+    char *remote_config = g_build_filename(g_get_user_config_dir(), "jlinux", "connect-enabled", NULL);
+    if (g_file_test(remote_config, G_FILE_TEST_IS_REGULAR)) { setenv("JLINUX_REMOTE_CONTROL", "1", 1); }
+    g_free(remote_config);
     struct desktop desktop = {0};
     wl_list_init(&desktop.new_output.link);
     wl_list_init(&desktop.new_layer.link);
@@ -294,6 +300,10 @@ int main(void) {
     desktop.layout = wlr_output_layout_create(desktop.display);
     desktop.scene = wlr_scene_create();
     if (!desktop.layout || !desktop.scene) { goto cleanup; }
+    const char *remote = getenv("JLINUX_REMOTE_CONTROL");
+    if (remote && !strcmp(remote, "1") &&
+        (!wlr_screencopy_manager_v1_create(desktop.display) ||
+         !wlr_xdg_output_manager_v1_create(desktop.display, desktop.layout))) { goto cleanup; }
     desktop.wallpapers = wlr_scene_tree_create(&desktop.scene->tree);
     if (!desktop.wallpapers) { goto cleanup; }
     for (int level = 0; level < 4; level++) {
