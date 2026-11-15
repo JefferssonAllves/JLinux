@@ -2,7 +2,7 @@
 
 ## Controle remoto compacto — feature/iphone-remote-hub
 
-**Concluído na branch:** quatro abas, controle com volume/mídia/direcionais/OK, atalhos dos apps do dock e Voltar/Tab/trocar janela; arquivos, terminal e sistema agrupados em Mais. 38 testes e integração Playwright/headless passaram, com ícones reais, teclas nativas em sessão isolada e fluxos anteriores preservados. Instalação e limites em docs/validation-iphone-remote-hub.md.
+**Concluído na branch e instalado:** quatro abas, controle com volume/mídia/direcionais/OK, atalhos dos apps do dock e Voltar/Tab/trocar janela; arquivos, terminal e sistema agrupados em Mais. 38 testes e integração Playwright/headless passaram, com ícones reais, teclas nativas em sessão isolada e fluxos anteriores preservados. Instalação e limites em docs/validation-iphone-remote-hub.md.
 
 ## Tela móvel e touchpad — feature/mobile-touchpad-fullscreen
 
