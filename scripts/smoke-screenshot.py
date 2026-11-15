@@ -20,7 +20,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-screenshot-') as directory:
     (commands / 'jlinux-screenshot').symlink_to(script)
     env = dict(os.environ, XDG_RUNTIME_DIR=directory, WLR_BACKENDS='headless',
                WLR_RENDERER='pixman', WLR_HEADLESS_OUTPUTS='1', JLINUX_TEST_INPUT='1',
-               PATH=str(commands) + os.pathsep + os.environ['PATH'])
+               PATH=str(commands) + os.pathsep + os.environ['PATH'], HOME=str(root), XDG_CONFIG_HOME=str(root / "config"))
     log_path = root / 'log'
     def log():
         return log_path.read_text(errors='replace')
@@ -43,6 +43,10 @@ with tempfile.TemporaryDirectory(prefix='jlinux-screenshot-') as directory:
             assert png[:8] == b'\x89PNG\r\n\x1a\n'
             assert struct.unpack('>II', png[16:24]) == (1280, 720)
             wait(lambda: not list(root.glob('jlinux-shot.*')), processes, 'temporary image cleanup')
+            saved=list(root.glob('Pictures/Capturas/*.png'))
+            assert len(saved)==1 and saved[0].read_bytes()==png
+            subprocess.run([wtype, '-M', 'logo', '-M', 'shift', '-k', 's', '-m', 'shift', '-m', 'logo'],env=env,check=True,timeout=4)
+            wait(lambda: len(list(root.glob('Pictures/Capturas/*.png')))==2,processes,'alternative screenshot key')
             subprocess.run(['wl-copy', '--type', 'text/plain'], input=b'preserve-me', env=env, check=True, timeout=4)
             (commands / 'grim').write_text('#!/bin/sh\nexit 1\n')
             (commands / 'grim').chmod(0o755)

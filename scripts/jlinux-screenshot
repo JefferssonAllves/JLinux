@@ -5,4 +5,14 @@ shot=$(mktemp "${XDG_RUNTIME_DIR:?}/jlinux-shot.XXXXXX")
 trap 'rm -f -- "$shot"' EXIT
 trap 'exit 1' HUP INT TERM
 grim "$shot"
-wl-copy --type image/png < "$shot"
+pictures=$(xdg-user-dir PICTURES 2>/dev/null || printf '%s/Pictures' "$HOME")
+[ -n "$pictures" ] || pictures="$HOME/Pictures"
+directory="$pictures/Capturas"
+mkdir -p -- "$directory"
+saved=$(mktemp "$directory/Captura-$(date +%Y%m%d-%H%M%S)-XXXXXX.png")
+if ! mv -- "$shot" "$saved"; then
+    rm -f -- "$saved"
+    exit 1
+fi
+printf 'Captura salva: %s\n' "$saved"
+wl-copy --type image/png < "$saved"

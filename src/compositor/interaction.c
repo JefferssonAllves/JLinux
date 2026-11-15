@@ -831,7 +831,8 @@ static void spawn_command(char *argv[]) {
 }
 
 static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t modifiers) {
-    if (symbol == XKB_KEY_Print && !(modifiers & (WLR_MODIFIER_SHIFT | WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_LOGO))) {
+    if ((symbol == XKB_KEY_Print && !(modifiers & (WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_LOGO))) ||
+        ((symbol == XKB_KEY_s || symbol == XKB_KEY_S) && modifiers == (WLR_MODIFIER_LOGO | WLR_MODIFIER_SHIFT))) {
         char *argv[] = {"jlinux-screenshot", NULL};
         spawn_command(argv); return true;
     }
