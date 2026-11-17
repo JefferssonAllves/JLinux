@@ -1,6 +1,6 @@
 # Prévia Live no NvimCode — feature/nvim-html-live
 
-Implementado na branch: botão HTML para iniciar/parar prévia local, recarga automática e integração com autosave. Evidências e instalação em docs/validation-nvim-html-live.md.
+Implementado na branch e instalado (ativação ao reabrir o editor): botão HTML para iniciar/parar prévia local, recarga automática e integração com autosave. Evidências e instalação em docs/validation-nvim-html-live.md.
 
 # Índice de trabalho
 
