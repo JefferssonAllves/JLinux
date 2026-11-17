@@ -1,5 +1,5 @@
 local M = {}
-local terminal_win, shell_buf, run_buf, run_job
+local terminal_win, shell_buf, run_buf, run_job, preview_job
 local function bottom(buffer)
     if not terminal_win or not vim.api.nvim_win_is_valid(terminal_win) then
         if vim.bo.buftype ~= '' then
@@ -34,21 +34,13 @@ function M.terminal()
     end
     vim.api.nvim_set_current_win(previous)
 end
-local html_preview = [[
-import http.server, os, sys, subprocess, urllib.parse
-os.chdir(os.path.dirname(sys.argv[1]))
-server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), http.server.SimpleHTTPRequestHandler)
-url = 'http://127.0.0.1:%s/%s' % (server.server_port, urllib.parse.quote(os.path.basename(sys.argv[1])))
-print(url, flush=True)
-subprocess.Popen(['xdg-open', url])
-server.serve_forever()
-]]
+local preview_script = vim.fn.fnamemodify(debug.getinfo(1, 'S').source:sub(2), ':p:h:h') .. '/preview.py'
 function M.command(file, filetype)
     local commands = {
         python = { 'python', file }, java = { 'java', file },
         javascript = { 'node', file }, typescript = { 'node', file },
         sh = { 'bash', file }, lua = { 'lua', file }, go = { 'go', 'run', file },
-        html = { 'python', '-c', html_preview, file },
+        html = { 'python3', preview_script, file },
     }
     if filetype == 'c' or filetype == 'cpp' then
         local output = vim.fn.tempname()
@@ -56,7 +48,7 @@ function M.command(file, filetype)
     end
     if filetype == 'css' then
         local index = vim.fs.dirname(file) .. '/index.html'
-        if vim.fn.filereadable(index) == 1 then return { 'python', '-c', html_preview, index } end
+        if vim.fn.filereadable(index) == 1 then return { 'python3', preview_script, index } end
     end
     return commands[filetype]
 end
@@ -72,6 +64,21 @@ exit $?
     vim.list_extend(wrapped, command)
     return wrapped
 end
+function M.preview_running()
+    return preview_job ~= nil and vim.fn.jobwait({ preview_job }, 0)[1] == -1
+end
+function M.toggle_preview()
+    if M.preview_running() then
+        vim.fn.jobstop(preview_job)
+        return
+    end
+    local win, mode = vim.api.nvim_get_current_win(), vim.fn.mode()
+    M.run()
+    if vim.api.nvim_win_is_valid(win) then
+        vim.api.nvim_set_current_win(win)
+        if mode:sub(1, 1) ~= 'i' then vim.cmd.stopinsert() end
+    end
+end
 function M.run()
     if run_job and vim.fn.jobwait({ run_job }, 0)[1] == -1 then
         vim.notify('Há uma execução ativa. Use Ctrl+C no terminal para encerrá-la.', vim.log.levels.WARN)
@@ -82,6 +89,7 @@ function M.run()
         vim.notify('Abra e salve um arquivo de código antes de executar.', vim.log.levels.WARN)
         return
     end
+    local preview = vim.bo.filetype == 'html' or vim.bo.filetype == 'css'
     vim.cmd.write()
     local command, temporary = M.command(file, vim.bo.filetype)
     if not command then
@@ -99,6 +107,7 @@ function M.run()
     run_job = vim.fn.jobstart(M.execution_command(command, file), { term = true, cwd = vim.fs.dirname(file), on_exit = function()
         if temporary then vim.fn.delete(temporary) end
     end })
+    if preview then preview_job = run_job end
     vim.cmd.startinsert()
 end
 function M.setup()

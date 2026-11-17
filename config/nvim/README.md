@@ -22,7 +22,7 @@ Detecção por nome/extensão com sintaxe do Neovim, diagnósticos/LSP e autocom
 
 Execução simples do arquivo: C/C++ com gcc/g++, Java pelo modo de arquivo-fonte do JDK, Python, JavaScript/TypeScript pelo Node, Lua, Bash e Go. Binários temporários de C/C++ são apagados após a execução. Projetos com vários arquivos, dependências, Maven/Gradle/CMake/npm etc. podem exigir seus comandos próprios no terminal: F5 não substitui o sistema de build do projeto. Depurador com breakpoints não foi configurado.
 
-HTML inicia um servidor **somente em 127.0.0.1**, em porta livre, e abre o navegador; Ctrl+C encerra o servidor. CSS abre `index.html` da mesma pasta quando existe. Arquivos declarativos como JSON/YAML não são programas executáveis. Rust tem LSP; seu compilador não foi instalado por este perfil.
+HTML inicia um servidor **somente em 127.0.0.1**, em porta livre, e abre o navegador com recarga automática. O botão discreto **▷ Live**, na barra inferior de arquivos HTML, inicia a prévia e passa a **■ Parar Live** para encerrá-la. O clique mantém o foco no código; F5 e Ctrl+C no terminal continuam disponíveis. CSS abre `index.html` da mesma pasta quando existe. Arquivos declarativos como JSON/YAML não são programas executáveis. Rust tem LSP; seu compilador não foi instalado por este perfil.
 
 ## Reinstalação
 
@@ -122,3 +122,18 @@ Execuções exibem nome do arquivo e fim da execução em negrito rosa-violeta n
 As mensagens de início e fim recebem um `>` verde para facilitar a localização no terminal.
 
 Para o comando nvimcode fechar o terminal de origem sem alterar fonte ou aparência, instalar `nvimcode` em ~/.local/bin e carregar `nvimcode.bash` pelo ~/.bashrc. A função preserva o terminal se houver jobs ou se estiver dentro do terminal integrado do Neovim. Novos shells carregam a função automaticamente; nos atuais, usar `source ~/.bashrc`. A janela dedicada mantém os mesmos argumentos Foot do atalho de aplicativos.
+
+## Prévia HTML com recarga automática — 16/11/2026
+
+Ao salvar HTML, CSS, JavaScript ou outro recurso já carregado pela página, o navegador recarrega automaticamente, inclusive com o autosave existente. O servidor observa apenas os arquivos usados pela prévia, em intervalos de 400 ms, e avisa o navegador por EventSource; não varre o projeto inteiro. O HTML no disco não é modificado para inserir o script de recarga. Não há plugin ou dependência nova: usa Python 3 já instalado.
+
+Serve a pasta do HTML e suas subpastas, sem seguir links para fora dela, e valida o Host local. Arquivos referenciados acima dessa pasta não são servidos. É uma prévia estática com recarga completa, sem executar backends ou substituir Vite/npm. Uma CSP que bloqueie scripts inline pode impedir a recarga; a política da página não é removida.
+
+Validação: testes HTTP/SSE de recarga e limites locais; navegador Chromium real atualizando HTML/CSS/JS sem recarga manual; clique real na barra do Neovim iniciando e parando o servidor, com foco preservado e autosave; regressões de layout e execução C/C++/Java/Python/JS/CSS. O navegador pessoal não foi aberto pelos testes.
+
+```sh
+python3 config/nvim/tests/preview.py
+python3 config/nvim/tests/live-ui.py
+```
+
+O teste de navegador em preview.py requer JLINUX_PLAYWRIGHT_MODULE apontando para um Playwright já instalado; sem ele, esse caso fica explicitamente ignorado. Os testes UI usam perfil temporário e os plugins já instalados. Após instalar os arquivos de configuração e preview.py, reabra o NvimCode para carregar o botão. Editores abertos não são encerrados ou recarregados à força.

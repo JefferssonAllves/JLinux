@@ -19,7 +19,7 @@ end
 assert(workspace.command(dir .. '/x.json', 'json') == nil)
 assert(workspace.command(dir .. '/x.css', 'css') == nil)
 vim.fn.writefile({ '<h1>ok</h1>' }, dir .. '/index.html')
-assert(workspace.command(dir .. '/x.css', 'css')[4] == dir .. '/index.html')
+assert(workspace.command(dir .. '/x.css', 'css')[3] == dir .. '/index.html')
 local opener = dir .. '/xdg-open'
 local marker = dir .. '/preview-url'
 vim.fn.writefile({ '#!/bin/sh', 'printf "%s" "$1" > "$NVIM_PREVIEW_URL"' }, opener)
