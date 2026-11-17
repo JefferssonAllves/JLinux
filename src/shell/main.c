@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "../toolkit/painter.h"
 #include "volume.h"
+#include "recording.h"
 #include "bluetooth.h"
 #include "apps.h"
 #include "preferences.h"
@@ -71,6 +72,7 @@ struct app {
     struct volume volume;
     struct bluetooth bluetooth;
     struct media media;
+    struct recording recording;
     struct surface *pointer_surface;
     struct wl_list buffers;
     double pointer_x, pointer_y;
@@ -285,6 +287,11 @@ static bool create_surface(struct app *app, struct surface *surface, const char 
     }
     wl_surface_commit(surface->wl);
     return true;
+}
+static void recording_status(struct app *app) {
+    app->futurista.recording_started=app->recording.started;app->panel.dirty=true;
+    struct itimerspec timer={.it_value={.tv_sec=app->recording.pid?1:30},.it_interval={.tv_sec=app->recording.pid?1:30}};
+    if(timerfd_settime(app->timer,0,&timer,NULL))fprintf(stderr,"Falha no relógio da barra: %s\n",strerror(errno));
 }
 static void notice(struct app *app, const char *message) {
     snprintf(app->notice, sizeof(app->notice), "%s", message); app->info = true; app->panel.dirty = true;
@@ -785,6 +792,13 @@ int main(int argc, char **argv) {
                     char message[180];snprintf(message,sizeof(message),"%.*s",(int)count-6,command+6);notice(&app,message);
                     snprintf(app.futurista.message,sizeof(app.futurista.message),"%s",message);app.launcher.dirty=app.launcher.wl!=NULL;
                 }
+                else if(count==13 && !memcmp(command,"record toggle",13)){
+                    GError *error=NULL;
+                    if(!recording_toggle(&app.recording,&error)){
+                        notice(&app,error?error->message:"Gravador indisponível");g_clear_error(&error);
+                    }else{app.info=false;}
+                    recording_status(&app);
+                }
                 else if(count==4 && !memcmp(command,"show",4)){
                     if(app.launcher.wl && !app.showing_controls && app.dock_closing){
                         app.dock_closing=false;
@@ -814,6 +828,13 @@ int main(int argc, char **argv) {
                             if(app.bluetooth.error[0]){snprintf(app.futurista.message,sizeof(app.futurista.message),"%s",app.bluetooth.error);}
                             else{app.futurista.message[0]=0;}
                             app.launcher.dirty=app.launcher.wl!=NULL;
+                        } else if (child == app.recording.pid) {
+                            bool saved=recording_complete(&app.recording,status);
+                            recording_status(&app);
+                            if(saved){
+                                char message[180];snprintf(message,sizeof(message),"Gravação salva: %s",app.recording.path);
+                                fprintf(stderr,"%s\n",message);
+                            }else{notice(&app,"Gravação interrompida. Verifique a pasta de gravações e o espaço livre.");}
                         } else if (child == app.power_pid) {
                             app.power_pid = 0;
                             if (!WIFEXITED(status) || WEXITSTATUS(status)) {
@@ -833,6 +854,7 @@ cleanup:
     if(app.dock_frame){wl_callback_destroy(app.dock_frame);app.dock_frame=NULL;}
     if (result) { fprintf(stderr, "Shell falhou: Wayland=%d, errno=%d\n", app.display ? wl_display_get_error(app.display) : 0, errno); }
     if(app.media.cancel){media_finish(&app.media);}
+    recording_finish(&app.recording);
     shell_control_close(app.control);
     futurista_finish(&app.futurista);
     bluetooth_finish(&app.bluetooth);

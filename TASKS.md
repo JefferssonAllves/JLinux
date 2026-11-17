@@ -1,5 +1,9 @@
 # Plano central do JLinux
 
+## Gravador de tela — feature/screen-recorder
+
+**Implementado e validado na branch:** Shift+Print inicia/para MP4, indicador REC/tempo na top bar, nomes exclusivos e finalização do processo. 51 testes release passaram; integração de gravação também passou em ASan/UBSan. Instalação/ativação e limites em docs/validation-screen-recorder.md.
+
 ## Navegador visível no dock — fix/visible-browser-dock
 
 O ID `org.jlinux.Browser.desktop` já estava fixado, mas ficava fora das três posições visíveis após iniciar o shell. O dock passa a quatro posições/292 px: Arquivos, Terminal, Codex e o primeiro app fixado aparecem juntos. A roda continua acessando apps além do primeiro; botões vazios não executam comandos. Tests de clique/posição atualizados para o shell e modo `--dock-panel`, verificando que o atalho persistido abre sem rolar. Preferências e instalação separada do navegador preservadas. Instalação/ativação e resultados finais serão registrados após os checks.

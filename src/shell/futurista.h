@@ -4,6 +4,7 @@
 #include "preferences.h"
 #include "apps.h"
 #include "media.h"
+#include <time.h>
 enum { FUTURISTA_PANEL_HEIGHT = 40 };
 struct futurista {
     int bluetooth;
@@ -16,6 +17,7 @@ struct futurista {
     struct shell_preferences prefs;
     double volume, brightness, hover[DOCK_APP_COUNT];
     bool muted, charging;
+    time_t recording_started;
     char message[180];
 };
 bool futurista_init(struct futurista *scene, struct jlinux_glass glass);

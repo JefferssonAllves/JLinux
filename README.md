@@ -35,6 +35,7 @@ O iniciador localiza os binários na própria pasta, cria runtime privado, aguar
 | --- | --- |
 | Abrir terminal | Super+Enter |
 | Copiar captura da tela para a área de transferência | Print Screen |
+| Iniciar/parar gravação da tela | Shift+Print Screen |
 | Mostrar dock circular | Manter Super pressionada; soltar para ocultar |
 | Abrir Codex | `codex` no terminal |
 | Abrir Arquivos | `jlinux-files` no terminal |
@@ -91,3 +92,5 @@ Interface Futurista nativa, evidências e limites: [docs/futurista.md](docs/futu
 ## Visão de janelas
 
 **Super+Tab** abre miniaturas das janelas do espaço atual sobre o desktop desfocado. Clique ou Enter seleciona; Esc cancela. Tab/setas navegam e a roda troca páginas. Veja [controles, recursos e validação](docs/window-overview.md).
+
+Gravação simples: Shift+Print inicia e para vídeo MP4 sem áudio; indicador vermelho REC e tempo ficam à direita da barra superior. Salva na pasta de vídeos do usuário, em Gravações. Veja [uso e limites](docs/screen-recording.md).

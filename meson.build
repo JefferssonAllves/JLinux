@@ -89,7 +89,7 @@ if get_option('shell')
   install_data('data/icons/spotify.svg', install_dir: get_option('datadir') / 'icons/hicolor/scalable/apps', rename: 'org.jlinux.Spotube.svg')
   install_data('data/futurista/README.md', install_dir: get_option('datadir') / 'licenses/jlinux-desktop-git', rename: 'futurista-assets.md')
   futurista_resources = import('gnome').compile_resources('futurista-resources', 'data/futurista/assets.xml', source_dir: 'data/futurista')
-  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/apps.c', 'src/shell/apps-launch.c', 'src/shell/preferences.c', 'src/shell/battery.c', 'src/shell/volume.c', 'src/shell/bluetooth.c', 'src/shell/media.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/effects/dock.c', 'src/renderer/dock-transform.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
+  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/apps.c', 'src/shell/apps-launch.c', 'src/shell/preferences.c', 'src/shell/battery.c', 'src/shell/volume.c', 'src/shell/bluetooth.c', 'src/shell/media.c', 'src/shell/recording.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/effects/dock.c', 'src/renderer/dock-transform.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
     c_args: ['-Wno-overlength-strings'], dependencies: [client, cursor, cairo, pango, fontconfig, math, dependency('gio-2.0'), dependency('gio-unix-2.0'), dependency('librsvg-2.0')], install: true)
   preferences_test = executable('jlinux-test-shell-preferences', 'tests/shell-preferences.c', 'src/shell/preferences.c', dependencies: glib)
   test('shell-preferences', preferences_test)
@@ -172,4 +172,8 @@ test('remote-protocols-opt-in', find_program('extras/connect/tests/smoke-protoco
 install_data('scripts/jlinux-screenshot', install_dir: get_option('bindir'), install_mode: 'rwxr-xr-x')
 if foot.found() and wtype.found()
   test('print-screen-clipboard', find_program('scripts/smoke-screenshot.py'), args: [compositor, wtype, foot], timeout: 25)
+endif
+
+if get_option('shell') and foot.found() and wtype.found() and find_program('wf-recorder', required: false).found() and find_program('ffprobe', required: false).found() and find_program('grim', required: false).found()
+  test('screen-recording', find_program('scripts/smoke-recording.py'), args: [compositor, shell, wtype, foot], timeout: 35)
 endif

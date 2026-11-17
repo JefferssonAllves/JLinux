@@ -375,6 +375,17 @@ void futurista_panel(struct futurista *s,cairo_t *cr,int width) {
     text(cr,date,cx+64,14,20,true,0xf4edff);
     cairo_set_source_rgba(cr,.75,.79,.92,.20);cairo_move_to(cr,cx+224,13);cairo_line_to(cr,cx+224,41);cairo_stroke(cr);
     text(cr,clock,cx+246,11,26,true,0xfaf5ff);
+    if(s->recording_started){
+        double badge=MIN(148.,width-198-(cx+358));
+        double x=width-198-MAX(18.,badge);
+        if(badge>=90)panel_card(cr,x,8,badge,38,s->glass);
+        cairo_set_source_rgb(cr,1,.27,.42);cairo_arc(cr,x+10,27,5,0,2*G_PI);cairo_fill(cr);
+        if(badge>=90){
+            long elapsed=MAX(0L,(long)(g_get_monotonic_time()/G_USEC_PER_SEC-s->recording_started));char label[40];
+            snprintf(label,sizeof(label),"REC %02ld:%02ld",elapsed/60,elapsed%60);
+            text(cr,label,x+23,17,15,true,0xffc3d2);
+        }
+    }
     cairo_set_source_rgb(cr,.94,.94,1);roundrect(cr,width-181,18,29,16,3);cairo_set_line_width(cr,1.5);cairo_stroke(cr);cairo_rectangle(cr,width-150,23,3,6);cairo_fill(cr);
     if(s->battery>=0){cairo_rectangle(cr,width-178,21,23*s->battery/100.,10);cairo_fill(cr);}
     char battery[20];snprintf(battery,sizeof(battery),s->battery>=0?"%d%%":"—",s->battery);text(cr,battery,width-134,14,20,true,0xf4edff);

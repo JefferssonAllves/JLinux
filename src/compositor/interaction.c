@@ -831,6 +831,11 @@ static void spawn_command(char *argv[]) {
 }
 
 static bool shortcut(struct interaction *state, xkb_keysym_t symbol, uint32_t modifiers) {
+    if ((symbol == XKB_KEY_Print || symbol == XKB_KEY_Sys_Req) && (modifiers & WLR_MODIFIER_SHIFT) &&
+        !(modifiers & (WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_LOGO))) {
+        if (!shell_control_record()) wlr_log(WLR_ERROR, "%s", "Gravador indisponível: shell não conectado");
+        return true;
+    }
     if (symbol == XKB_KEY_Print && !(modifiers & (WLR_MODIFIER_SHIFT | WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT | WLR_MODIFIER_LOGO))) {
         char *argv[] = {"jlinux-screenshot", NULL};
         spawn_command(argv); return true;

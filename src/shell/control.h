@@ -4,6 +4,7 @@
 int shell_control_open(void);
 void shell_control_close(int fd);
 bool shell_control_dock(bool visible);
+bool shell_control_record(void);
 int window_control_open(void);
 void window_control_close(int fd);
 bool window_control_launch(int index);

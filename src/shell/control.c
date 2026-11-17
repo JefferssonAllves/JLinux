@@ -67,6 +67,15 @@ bool shell_control_dock(bool visible) {
     return sent;
 }
 
+bool shell_control_record(void) {
+    struct sockaddr_un addr;
+    if (!address(&addr, "jlinux-shell-control")) return false;
+    int fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+    if (fd < 0) return false;
+    bool sent = sendto(fd, "record toggle", 13, MSG_NOSIGNAL, (struct sockaddr *)&addr, sizeof(addr)) == 13;
+    close(fd); return sent;
+}
+
 int shell_control_open(void){return open_control("jlinux-shell-control");}
 void shell_control_close(int fd){close_control(fd,"jlinux-shell-control");}
 int window_control_open(void){return open_control("jlinux-window-control");}
