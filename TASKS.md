@@ -2,7 +2,7 @@
 
 ## Gravador de tela — feature/screen-recorder
 
-**Implementado e validado na branch:** Shift+Print inicia/para MP4, indicador REC/tempo na top bar, nomes exclusivos e finalização do processo. 51 testes release passaram; integração de gravação também passou em ASan/UBSan. Instalação/ativação e limites em docs/validation-screen-recorder.md.
+**Instalado; ativação no próximo login:** Shift+Print inicia/para MP4, indicador REC/tempo na top bar, nomes exclusivos e finalização do processo. 51 testes release passaram; integração de gravação também passou em ASan/UBSan. Instalação/ativação e limites em docs/validation-screen-recorder.md.
 
 ## Navegador visível no dock — fix/visible-browser-dock
 

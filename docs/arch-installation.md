@@ -160,3 +160,7 @@ A sessão ativa foi preservada: **o novo material entra no próximo login**. Ref
 ### Login sem terminal automático
 
 A abertura automática foi retirada dos pontos de entrada do login: greeter/greetd e `data/wayland-sessions/jlinux.desktop` usam `jlinux-session --drm --no-terminal`. Reutiliza a opção existente, sem editar PAM ou a configuração do greetd. Super+Enter e o item Terminal do dock continuam abrindo terminais manualmente. As sessões headless/aninhadas mantêm seus padrões anteriores. Aplicação no próximo login; não encerrar a sessão do usuário durante a atualização.
+
+## Gravador de tela — 17/11/2026
+
+Instalado `0.5.0.r150.gea2e730-1`, fonte ea2e730, com wf-recorder 0.6.0-2 e 51 checks aprovados no makepkg. Shift+Print inicia/para MP4 e o shell mostra REC/tempo. Pacote preservado no cache pacman; backup anterior em `/var/backups/jlinux-before-screen-recorder-ea2e730/`. Supervisor, compositor e shell correntes preservados: **sair e entrar novamente ativa o atalho e o indicador**. Sem logout/reinício/VT automático. [Validação e limites](validation-screen-recorder.md).
