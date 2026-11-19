@@ -1,0 +1,81 @@
+{
+  "installed_on": "2026-11-05",
+  "skills": [
+    {
+      "name": "gh-fix-ci",
+      "repository": "openai/skills",
+      "ref": null,
+      "files": {
+        "LICENSE.txt": "4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9",
+        "SKILL.md": "7b326b4a2f0f5f85122144628ec02077e48841e0e0e82efce88b3415bcfb7c26",
+        "agents/openai.yaml": "36f73b9450504983d1647c960689596f59bf9147c14b1b43162912ed7ada9af6",
+        "assets/github-small.svg": "ee05e92d373d4d84f4612af3c1090ef67698d421bbe30896a4ed5a00cb86a069",
+        "assets/github.png": "d55a9baa41798d8b5108e3058df3a5bda09914ea9fd73b49929cc38a8832424f",
+        "scripts/inspect_pr_checks.py": "9459e5b03f86785d184a83e5cd8d621b832e918ec04158a2962d867785812c6c"
+      }
+    },
+    {
+      "name": "gh-address-comments",
+      "repository": "openai/skills",
+      "ref": null,
+      "files": {
+        "LICENSE.txt": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+        "SKILL.md": "77389eefd3fb6584210668ca8e43f4b8de87e7722ddd953474bc9e24cdfaaedd",
+        "agents/openai.yaml": "12cf845a78254dde85e60eefb45a60e6ce2129d321f3e1d691d4ebca9a140861",
+        "assets/github-small.svg": "ee05e92d373d4d84f4612af3c1090ef67698d421bbe30896a4ed5a00cb86a069",
+        "assets/github.png": "d55a9baa41798d8b5108e3058df3a5bda09914ea9fd73b49929cc38a8832424f",
+        "scripts/fetch_comments.py": "d7bc64f6b26f7482f9ca9dd7c923a5b8b20e1ef13491ae2d9052cd208a7c1ad1"
+      }
+    },
+    {
+      "name": "address-sanitizer",
+      "repository": "trailofbits/skills",
+      "ref": "470419e16f97e112d01fc32f4898aea1755015d9",
+      "files": {
+        "SKILL.md": "eb9ea8210fa55d50477fbe52993a704e320c88739c10d619864b6ce377ebce25",
+        "agents/openai.yaml": "cbad1378f4912a71dec8c1c9307b806f787c559e751a5fd1926028f1c0c2e7b5",
+        "assets/trail-of-bits-mark.svg": "4bf74c789b38dcf6ad762c136b6832363d27ae19fbaa9a18ec18d66ecce6ca05"
+      }
+    },
+    {
+      "name": "libfuzzer",
+      "repository": "trailofbits/skills",
+      "ref": "470419e16f97e112d01fc32f4898aea1755015d9",
+      "files": {
+        "SKILL.md": "56b2c68b193f7fed4ae00ade6c6395196d44612d140ad51de43d150404dde2eb",
+        "agents/openai.yaml": "0edbd68f53abc679b392ac26315d4b3fb0647119a27babeba05b59120f806cb7",
+        "assets/trail-of-bits-mark.svg": "4bf74c789b38dcf6ad762c136b6832363d27ae19fbaa9a18ec18d66ecce6ca05"
+      }
+    },
+    {
+      "name": "differential-review",
+      "repository": "trailofbits/skills",
+      "ref": "470419e16f97e112d01fc32f4898aea1755015d9",
+      "files": {
+        "SKILL.md": "f9af6a8193fc1a9f8ca3c54bb8d19095a5f20c9472ca6d014488bbde50b67da0",
+        "adversarial.md": "3cb823f38c6e551cbcf5f72325d2bb219dacdad774072519c31d50d92db19800",
+        "agents/openai.yaml": "0279d56f88dc1a04d4b1941a25fa7672912a3ceb0557b13c38d069908b30ae61",
+        "assets/trail-of-bits-mark.svg": "4bf74c789b38dcf6ad762c136b6832363d27ae19fbaa9a18ec18d66ecce6ca05",
+        "methodology.md": "16b335d24cf2145e3dc4a37f50056550d29db2efa20e6df78fec95ec1e6fb0b4",
+        "patterns.md": "52abb18abbc73502a3d3b2f36a7a035adc1db40fd812d1d5424cf065036a06e9",
+        "reporting.md": "0016876dc6f158e926448bff1b6f634796757c7afe09dff177cfe30250724fc4"
+      }
+    },
+    {
+      "name": "property-based-testing",
+      "repository": "trailofbits/skills",
+      "ref": "470419e16f97e112d01fc32f4898aea1755015d9",
+      "files": {
+        "README.md": "ffbe30eec09cc64fb1eae836b07ca1d82939bda3f1e6f0dceadcdd78793a3112",
+        "SKILL.md": "9448cacb65c6237a7c22dc59602667177ecae405524079ae9ff92240590b995a",
+        "agents/openai.yaml": "51d635deefa254d8cdf6dc56450851b6ec9545cd37f88a4eb4035cf3f2262fff",
+        "assets/trail-of-bits-mark.svg": "4bf74c789b38dcf6ad762c136b6832363d27ae19fbaa9a18ec18d66ecce6ca05",
+        "references/generating.md": "c0e72dfc89babe3c32de718b81b94044362c85e776d7475e950dfeaab78bb58e",
+        "references/interpreting-failures.md": "dbae7db8773712ba03268a3d56ea5aa6720af0650a5189580bfd88aa2edc3f9a",
+        "references/libraries.md": "f7218acf8e668130ef3048983472579d04e12030c5401926f666363e5f69c686",
+        "references/refactoring.md": "6eb5c206f575704791f089608bb06e41d6eed91b9d3c7fb27912f969aed07a18",
+        "references/reviewing.md": "110b08118a1e7b1a2566def6e9d2a0bf43fc2deefce857d2ce3b4382b07bc774"
+      }
+    }
+  ]
+}

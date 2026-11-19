@@ -22,3 +22,254 @@ A arquitetura passou a usar o executável jlinux-compositor com wlroots 0.20.2 e
 - O teste cobre ciclo de vida do servidor. Não cobre clientes Wayland, janelas, entrada, renderização em GPU ou personalização.
 
 A configuração TOML é somente proposta. Nenhuma animação, efeito ou adaptação dinâmica foi implementada nesta etapa.
+
+## Interface mínima (0.3.0)
+
+- `meson setup build-desktop --buildtype=release -Dshell=true`, compilação e dois testes: passaram.
+- Shell headless: GTK mapeou wallpaper e painel no compositor próprio. O teste encerrou/reiniciou o cliente duas vezes, manteve o compositor vivo, rejeitou tema CSS inválido e verificou encerramento limpo do servidor e remoção do socket.
+- Build separado `build-sanitize` com `-Db_sanitize=address,undefined -Db_lundef=false`: compilação e os dois testes passaram. Bibliotecas do sistema não foram recompiladas com instrumentação. O cliente é encerrado por sinal; este teste não prova ausência de vazamentos do toolkit.
+- `scripts/run-desktop.py --headless --duration 1 --theme config/jlinux/theme.css`: passou.
+- Instalação em staging: passou. Build exclusivo de compositor com `-Dshell=false` e smoke test: passaram.
+
+O suporte layer-shell inicial configura tamanho/posição e camadas, fecha layers quando sua saída é destruída e permite reiniciar o shell. Não implementa entrada, popups, política para janelas xdg, bloqueio ou portais. Não houve inspeção visual em monitor físico, teste aninhado com GPU ou benchmark; somente mapeamento headless. O relógio atualiza a cada 30 segundos; não há efeitos ou animações contínuas.
+
+## Terminal e entrada (0.4.0)
+
+Release e ASan/UBSan: os três testes passaram. Novo teste abre dois Foot reais, digita comandos que escrevem uma identificação em arquivo temporário, troca foco com cliente de ponteiro virtual, fecha a janela focada e confirma entrada na outra; encerra o compositor por Super+Esc. Introduz espera de sincronização para criação dos recursos de entrada dos clientes antes de injetar eventos.
+
+Runner headless com terminal e duração limitada: passou. Execução curta DRM/libinput por quatro segundos: passou sem queda dos processos. Não equivale a teste manual de teclado/mouse ou inspeção visual. A execução persistente solicitada pelo usuário será verificada pelos logs de dispositivos e mapeamento antes da entrega. Não há benchmark nesta etapa.
+
+Foot e wtype são binários do sistema, não instrumentados no build ASan. O teste injeta entrada somente quando JLINUX_TEST_INPUT=1; a sessão normal não publica os protocolos de entrada virtual. Bibliotecas do sistema continuam fora da instrumentação.
+
+### Execução persistente no hardware
+
+Em 05/11/2026, após CI verde do PR #6, a sessão foi iniciada por `run-desktop.py --drm --codex`, sem temporizador. Logs confirmaram renderização GLES2 pela Radeon/radeonsi, saída HDMI-A-1 ativa, teclado USB/interno e mouse/touchpad conectados. Wallpaper, painel e terminal foram mapeados. A árvore de processos confirmou `foot` com `codex` como filho; Codex CLI estava autenticado com ChatGPT.
+
+Isso confirma inicialização e detecção dos periféricos no hardware real, sem afirmar teste manual de movimento/digitação pelo usuário, inspeção visual ou benchmark. Logs locais de supervisão ficam em `~/.local/state/jlinux/desktop.log`; a sessão pode ser encerrada por Super+Esc. A inicialização não instalou serviço ou entrada de login.
+
+## Separação do pipeline visual
+
+Criação/limpeza de renderizador e alocador wlroots e apresentação/frame-done foram extraídas para src/renderer/renderer.c. Release e ASan/UBSan passaram nos três testes existentes: ciclo de vida, reinício do shell e entrada/foco em terminais reais no backend headless. O TOML v2 foi analisado por tomllib sem erro de sintaxe.
+
+animation/ e effects/ contêm contratos documentados; ainda não há motores, shaders, toggles funcionais ou mudança visual Glass. Esta etapa não mediu desempenho nem reiniciou a sessão gráfica do usuário para teste físico.
+
+## Shell e iniciador nativos — 0.5
+
+O shell GTK/CSS foi substituído por cliente Wayland/C com painel, dock, ponteiro, tipografia Pango e buffers SHM desenhados com Cairo. O iniciador jlinux-session também é C; o script Python de execução e o tema CSS foram removidos. Python permanece nos testes.
+
+- Build release: passou com warnings como erros.
+- Quatro testes headless: passaram; cobrem ciclo de vida, shell/dock/wallpaper e clique que abre terminal, reinício do shell, teclado/foco em terminais e iniciador C com timeout/SIGTERM/validação de duração e limpeza do runtime.
+- Build ASan/UBSan: os mesmos quatro testes passaram, com verificação do status zero do shell no encerramento. Caches de fontes são liberados no shutdown; não foram usadas supressões ou desativação de leak detection.
+- Instalação em staging: passou para compositor, shell e iniciador.
+- `ldd jlinux-shell`: sem GTK ou interpretador Python.
+- PNG de preview: gerado e inspecionado; usa as rotinas nativas de desenho, não uma captura de DRM.
+
+O backend do toolkit ainda rasteriza buffers em CPU, com apresentação pelo compositor. Não houve benchmark ou comparação de eficiência. Não há blur/refração Glass, parser de tema, integração Wi-Fi/Bluetooth/energia ou fidelidade visual completa às referências. Dados e ações ainda indisponíveis são explicitados pelo shell.
+
+## Material inicial do shell — feature/glass-material
+
+Seis testes passaram em build-native (release) e build-native-asan (address,undefined), sem supressões: ciclo de compositor/shell/sessão, terminal/entrada, blur ARGB32 e oito combinações independentes de blur/tint/reflection. Prévia nativa inspecionada em docs/design/native-glass-preview.png. Blur usa wallpaper reduzido, não conteúdo de janelas; não valida fidelidade às referências ou posicionamento em múltiplos monitores.
+
+Medição exploratória única no ambiente local: execução completa de `jlinux-shell --preview /tmp/jlinux-cost.png`, via `time.monotonic` e `resource.getrusage(RUSAGE_CHILDREN)`: 0,335 s e pico RSS 27.836 KiB. Inclui inicialização, fontes, rasterização e escrita PNG; não é tempo de quadro, benchmark comparável ou medição de GPU/energia. Cache de fundo 1600×900 usa imagem 400×225 ARGB32 (360.000 bytes, além de scratch temporário durante blur). Custos sustentados da sessão e adaptação continuam pendentes.
+
+### Ajuste de contraste do Glass — fix/glass-contrast
+
+Seis testes locais passaram novamente em release e ASan/UBSan após alterar tonalização, reflexos estáticos e opacidade dos botões. As oito combinações dos controles continuam distintas e válidas. Prévia nativa atualizada e inspecionada; wallpaper preservado. Não houve benchmark de GPU/energia nem confirmação de aprovação pelo usuário.
+
+## Molduras nativas e reflexos localizados — feature/window-glass-frames
+
+Oito testes locais release e ASan/UBSan passaram, sem supressões. Novos testes validam recriação/liberação dos quatro buffers, limites de tamanho, opacidade por foco e quantidade de pixels alocados; teste de entrada com Foot real arrasta pelo cabeçalho, fecha pelo botão e redimensiona pela borda inferior/direita, conferindo mudança de linhas/colunas via stty. Testes anteriores de foco, desconexão, terminal, shell e sessão continuam passando. Negociação de decoração foi ajustada para aguardar inicialização do xdg_surface antes do configure.
+
+Prévias de moldura e barra inspecionadas. Não há blur nas molduras ou máscara arredondada do conteúdo dos aplicativos. Sem benchmark GPU/energia nesta entrega. Testes headless não comprovam comportamento físico completo.
+
+Sessão aninhada iniciada automaticamente usando jlinux-session, mantendo o compositor DRM e terminais anteriores. Logs locais registram backend Wayland, GLES2/Mesa na AMD Radeon e terminal/painel/dock mapeados. Isso confirma inicialização aninhada com GPU, não inspeção visual da sessão ou benchmark. O shell da sessão externa também foi atualizado para os pontos de brilho. Molduras do compositor antigo não podem ser atualizadas ao vivo; a avaliação das molduras novas ocorre na sessão aninhada.
+
+### Aplicação na sessão DRM principal
+
+Após autorização explícita do usuário para reiniciar, a sessão principal antiga e a prévia aninhada foram encerradas. Nova sessão iniciada com `jlinux-session --drm --codex`, supervisionada pelo iniciador C. Logs confirmam renderizador AMD Radeon/GLES2, saída HDMI-A-1 e mapeamento de Codex, wallpaper, painel e dock. As molduras agora pertencem ao compositor da sessão principal. Essa evidência confirma inicialização/mapeamento; aprovação visual e interação física pelo usuário permanecem pendentes.
+
+## Maximização/restauração — feature/window-maximize
+
+Oito testes locais passaram em release e ASan/UBSan. Foot real valida maximizar por Super+↑ e botão, restaurar pelo botão e Super+↓, preservação do tamanho anterior, pedido inicial `--maximized` e resize posterior. Cabeçalho/fechar/drag continuam cobertos. Teste com shell valida área de conteúdo maximizada 1198×628 em 76,86 dentro de saída headless 1280×720, descontando barra, dock e moldura. Esse teste revelou reserva incorreta antes do map; listeners de map/unmap agora recalculam a área útil.
+
+Prévia de componentes atualizada. Sessão DRM corrente preservada e ainda usa a versão anterior; ativação e avaliação física desta mudança pendentes. Não houve benchmark GPU/energia.
+
+### Ativação da maximização na sessão principal
+
+Usuário autorizou novo reinício da sessão. Supervisor anterior encerrado normalmente e sessão iniciada com a versão feature/window-maximize via `jlinux-session --drm --codex`. Logs confirmam AMD Radeon/GLES2, saída HDMI-A-1 e Codex/wallpaper/painel/dock mapeados. Maximizar/restaurar e a correção da área útil agora estão no compositor da sessão principal; teste físico e avaliação do usuário continuam pendentes.
+
+## Reflexos adicionais das janelas — fix/window-glass-depth
+
+Oito testes release e ASan/UBSan passaram. Teste de moldura adicional confirma que desativar REFLECTION remove o brilho extra (comparação de alpha em ponto iluminado), mantendo a tonalização. Prévia nativa inspecionada. Nova versão aplicada por reinício autorizado da sessão DRM; Codex/painel/dock mapeados. Sem benchmark ou validação visual física pelo assistente. Blur/refração nas molduras permanecem pendentes.
+
+## Acabamento contínuo das bordas — fix/window-dock-material
+
+Oito testes release e ASan/UBSan passaram. Gradiente de cores compartilhado com o dock; decoração usa faixa contínua no lugar dos pontos extras de luz. Prévia de componente inspecionada. Sessão DRM reiniciada com autorização vigente e Codex/painel/dock mapeados. Sem benchmark, blur nas molduras ou aprovação visual final do usuário.
+
+## Bordas finas e pontos intensos — fix/thin-window-highlights
+
+Oito testes release e ASan/UBSan passaram após reduzir bordas para 3 px e remover a faixa larga. Teste do componente verifica contraste de alpha entre o centro de um brilho e trecho discreto, além da desativação de REFLECTION. Testes de maximização adaptados à nova moldura: conteúdo 1274×681 em 3,36 sem shell; 1204×631 em 73,86 com barra/dock, na saída simulada 1280×720. Prévia nativa inspecionada e atualizada. Sessão DRM reiniciada usando autorização vigente; Codex/painel/dock mapeados. Sem benchmark ou aprovação visual final; blur nas molduras segue pendente.
+
+## Sombra interna e contorno superior fino — fix/window-rim-shading
+
+Oito testes locais release e ASan/UBSan passaram. Novos asserts verificam sombreamento independente com REFLECTION desligado; preferência SHADOW inválida é rejeitada. Prévias de janela/barra inspecionadas. Nenhum benchmark ou novo reinício DRM nesta etapa: usuário solicitou preparar instalação/inicialização real no Arch.
+
+## Login próprio e instalação Arch — feature/arch-session-install
+
+Onze testes locais release e ASan/UBSan passaram. Novos testes: autenticação IPC com servidor simulado (prompts secretos/visíveis, info, recusa/cancelamento, resposta inválida/oversize/desconexão); greeter headless e recusa sem GREETD_SOCK; fluxo real de digitação de usuário/senha fictícios na UI, pedido de sessão e ausência da senha nos logs. Isso não valida PAM físico. CI do commit 45c6752 passou com dez testes, antes da ampliação do teste de digitação.
+
+Pacote Arch `jlinux-desktop-git 0.5.0.r33.g45c6752-1` compilado a partir do GitHub com arch-meson/makepkg, dez testes aprovados no build de pacote, instalado pelo pacman. Não houve release/tag. `pacman -Qo` confirmou propriedade de compositor/greeter/entrada Wayland; binários root:root 0755. Staging, validação desktop-file/TOML, shell syntax e systemd-analyze verify passaram. O binário instalado também iniciou sessão headless com limpeza e gerou a prévia do login.
+
+Configurador executado: greetd habilitado (alias display-manager), graphical.target padrão, TTY2 habilitado/ativo. Backup em `/var/lib/jlinux-login-backup.qsemGPVh`. Serviço greetd permanece inativo nesta sessão para não encerrar o TTY1 que sustenta o trabalho; será iniciado no próximo boot. Nenhuma regra PAM foi alterada, nenhum autologin configurado. Primeiro boot/login com senha e troca física de VT permanecem pendentes.
+
+Sessão principal anterior encerrada conforme autorização vigente e iniciada com `/usr/bin/jlinux-session --drm --codex`; processos compositor/shell também são os instalados em `/usr/bin`. Logs confirmam Codex/painel/dock mapeados. É execução instalada real, sem dependência de binários em /srv/JLinux, mas ainda não é uma sessão autenticada através do novo greeter.
+
+### Verificação adicional antes de encerrar a instalação
+
+A checagem final encontrou a primeira sessão instalada já encerrada; o log antigo não distinguia o status de compositor e shell. Foi preservado localmente e adicionada identificação de código/sinal no supervisor e diagnóstico de fechamento/configuração do shell. Uma sessão de diagnóstico foi iniciada e permaneceu ativa após o terminal inicial encerrar. A causa daquele encerramento isolado ainda não foi comprovada; não registrar como corrigida apenas por adicionar logs.
+
+Também foi corrigido um caso concreto de extensão vazia durante rearranjo de saída: não configurar layers com área de saída nula, e manter último buffer do shell diante de configure sem extensão desenhável. Onze testes locais release e ASan/UBSan passaram novamente. Reempacotamento e teste físico de recuperação estão em andamento.
+
+### Falha de recuperação por VT reproduzida e corrigida
+
+Um teste real com `chvt 2` reproduziu saída normal do compositor: logind pausou o DRM e o wlroots removeu temporariamente HDMI-A-1; a política antiga encerrava o compositor quando output_count chegava a zero e fechava os layers do shell. Essa falha concreta foi identificada; não é prova de que explica todo encerramento anterior sem logs suficientes.
+
+Correção: em sessão DRM, manter compositor vivo sem saídas, desassociar/ocultar layers até haver saída disponível e reassociá-los no retorno. Em backend aninhado/headless, comportamento de encerrar na última saída permanece. Layers novos também podem aguardar saída, sem ser destruídos imediatamente. Teste real VT1 -> VT2 -> VT1 manteve supervisor/compositor/shell vivos e os logs confirmaram novo modeset HDMI-A-1 1600×900@60 no retorno. Não equivale à inspeção visual da tela pelo assistente ou teste manual da combinação de teclas.
+
+Script manual reproduzível em scripts/check-vt-recovery.py, fora da CI. Onze testes release e ASan/UBSan passaram novamente. Nova atualização do pacote em andamento.
+
+### Recuperação com janelas abertas
+
+Repetir a troca de VT com um terminal aberto revelou uma segunda falha: assert de listener pendente em `wlr_output_finish`. A scene_output não era destruída explicitamente no callback de remoção da saída. Adicionada destruição antes de liberar monitor, removendo referências/listeners da cena em tempo. Após essa correção, três ciclos reais VT1 -> VT2 -> VT1 preservaram quatro processos (supervisor, compositor, shell e Foot) e onze testes release passaram. ASan/UBSan também repetidos nesta etapa. Não tratar o primeiro teste sem terminal como validação suficiente de lifecycle com janelas.
+
+## Boot após relato de congelamento — 05/11/2026
+
+Usuário relatou PC travado e o sistema reapareceu em novo boot. Journal atual registra greetd iniciado às 16:40:12, sessão greeter e autenticação PAM do usuário jlinux com abertura de sessão às 16:40:27. Supervisor PID 667, compositor 668 e shell 690 são binários instalados em `/usr/bin`, pacote `0.5.0.r37.g77ecbc1-1`, sob sessão logind autenticada pelo greetd. Foot/Codex em uso. Isso valida primeiro boot e login real; não é resultado simulado.
+
+O teste final de VT da instalação anterior perdeu seu processo/sessão de execução durante o reinício; resultado não recuperado, portanto não declarar aprovação desse teste de pacote. Três ciclos na build local com terminal e onze testes do pacote estão registrados separadamente.
+
+Journal anterior encerra após comandos chvt às 16:38:36, sem registro conclusivo de GPU hang/OOM/kernel panic. Journal novo indica desligamento não limpo e aviso FAT para a partição EFI. Não foi identificado evento suficiente para atribuir causa ao congelamento nem executado reparo de partição. Sessão atual apresenta memória disponível e compositor em espera epoll entre eventos; investigação do incidente permanece aberta. Não repetir testes físicos de VT nesta sessão de trabalho.
+
+## Remoção da marca da barra — fix/remove-panel-brand
+
+Build e teste local shell-headless passaram. Pacote Arch `0.5.0.r39.g766bcaf-1` compilado da branch correta com onze testes aprovados e instalado pelo pacman. Prévia atualizada. Nenhum teste novo ou repetição de ASan para essa remoção de texto/layout. Sessão autenticada pelo greetd preservada; ativação visual ocorre no próximo login. Não confundir versão instalada com processo antigo em execução.
+
+## Aviso de locale ao iniciar o terminal — fix/terminal-locale
+
+Ambiente do Foot na sessão real não continha LANG/LC_*, e shell.log registrava "C is not a UTF-8 locale". /etc/locale.conf contém LANG=pt_BR.UTF-8, disponível em locale -a. Correção no iniciador C carrega LANG somente quando não fornecido pelo ambiente, com leitura sem execução do arquivo e fallback C.UTF-8. Categorias LC_* explícitas não são alteradas.
+
+Doze testes release e ASan/UBSan passaram. Teste unitário cobre locale entre aspas/comentário, preferência herdada, entrada inválida e fallback. Teste de sessão remove variáveis de locale antes de iniciar, verifica LANG nos filhos e ausência do aviso UTF-8 no log do terminal real. Avisos de capacidades Wayland permanecem e não foram suprimidos. Não houve teste de VT ou reinício de sessão.
+
+Pacote `0.5.0.r41.g94ddb52-1` compilado da branch correta com doze testes aprovados e instalado pelo pacman. Novo Foot aberto na sessão existente com LANG=pt_BR.UTF-8; permaneceu ativo e seu log não contém aviso de locale. Os avisos de protocolos permanecem. Não houve reinício/logout/VT. Processos antigos continuam com ambiente anterior até novo login; o iniciador instalado corrige a herança nas sessões futuras.
+
+## Gerenciador de arquivos — feature/file-manager
+
+- FILES-01 implementado: aplicativo C/Wayland separado, toolkit próprio, barra Glass, pastas primeiro, seleção/rolagem, navegação, ocultos e abertura pelo aplicativo associado via GIO sem shell. Primeiro ícone do dock e entrada desktop integrados. Sem operações de escrita de arquivos nesta etapa.
+- Quatorze testes locais release e ASan/UBSan passaram. Novos testes de modelo e UI headless cobrem nomes especiais/UTF-8, links, erro de navegação, teclado, clique e argumentos de abertura; teste do shell verifica lançamento pelo dock. Prévia com dados fictícios inspecionada. Sem benchmark ou teste de VT.
+- Empacotamento/ativação ainda pendentes neste registro. Novo dock exige próximo login; aplicativo pode abrir na sessão existente. Limites em docs/files.md.
+
+**FILES-01 · instalação:** pacote `0.5.0.r43.gf98f87e-1`, fonte f98f87e, compilado do GitHub com 14 testes aprovados no makepkg e instalado pelo pacman. `/usr/bin/jlinux-files` aberto na sessão autenticada existente e permaneceu ativo após inicialização. Shell/compositor existentes preservados, sem logout, reinício ou troca de VT. Novo dock só no próximo login. Inspeção visual física pelo usuário pendente; CI ainda em execução neste registro. PR #30, base temporária fix/terminal-locale, sem merge.
+
+## Bordas neon discretas — feature/window-neon-rim
+
+Pedido atual substitui pontos focais nas janelas: contorno contínuo de 0,85 px azul/violeta, halo interno discreto de 2,8 px recortado à moldura, sem núcleos brancos. Cabeçalho retangular de 36 px, borda física de 3 px e cantos de 6 px preservados. Dock/barra superior não mudam. Gerenciador recebe fundo opaco em gradiente azul-ardósia mais claro e barra interna com o mesmo acabamento contínuo; não altera conteúdo de aplicativos externos.
+
+Quatorze testes locais release e ASan/UBSan passaram. Teste da moldura passa a conferir continuidade de opacidade e variação cromática em vez dos antigos pontos intensos; controles independentes preservados. Prévias dos componentes inspecionadas junto às referências, sem declarar correspondência exata. Sem timer, animação, blur novo ou benchmark. Ativação das molduras exige novo compositor no próximo login; sessão atual preservada devido à investigação STABILITY-BOOT.
+
+**NEON-01 · instalado:** pacote `0.5.0.r45.g13cadc7-1`, fonte 13cadc7, compilado do GitHub com 14 testes aprovados no makepkg e instalado via pacman. Apenas o gerenciador foi reaberto com o novo fundo e barra interna; processo permaneceu ativo. Compositor/shell da sessão preservados: novas molduras globais aguardam próximo login. Sem teste físico de VT, benchmark ou confirmação visual pelo usuário. PR #31 sem merge; CI pendente neste registro.
+
+## Sidebar do Arquivos — feature/files-sidebar
+
+FILES-02 implementado: barra lateral Pessoal/Downloads/Documentos/Imagens/Vídeos com caminhos XDG, destaque da pasta atual, clique e Alt+1…5. Pastas ausentes não são criadas; erro preserva o diretório anterior. Lista reposicionada e coluna de detalhes oculta em janela estreita, mínimo 540×360.
+
+Quatorze testes locais release e ASan/UBSan passaram. Teste headless ampliado abre os cinco locais com HOME/configuração isolados, nomes personalizados com espaços/acentos, verifica argumentos do aplicativo associado e tentativa de pasta ausente. Prévia com arquivos fictícios inspecionada. Sem benchmark, teste de VT ou confirmação visual física. Empacotamento/ativação pendentes neste registro. Alteração local concorrente em src/shell/main.c preservada fora desta entrega.
+
+**FILES-02 · instalado:** pacote `0.5.0.r47.g0578b80-1`, fonte 0578b80, compilado do GitHub com 14 testes aprovados no makepkg e instalado via pacman. Gerenciador instalado reaberto com sidebar na sessão existente e permaneceu ativo. Esta entrega não reiniciou compositor/shell nem realizou troca de VT. PR #33, base temporária feature/window-neon-rim, sem merge. CI e avaliação visual pelo usuário pendentes neste registro. Alterações concorrentes de shell/empacotamento preservadas fora dos commits desta entrega.
+
+## Dock configurável — feature/configurable-dock
+
+DOCK-01 implementado: lista nativa de aplicativos .desktop via GIO, botão +, fixar/remover com persistência atômica por usuário e scroll no dock/lista. Três ações básicas e geometria preservadas. Atalhos adicionais usam monogramas, não ícones reais. Configuração inválida preservada; limite 32; sem comando de shell montado para lançar aplicativos. Modo auxiliar --dock-panel permite ativação sem encerrar a sessão, com fundo próprio opaco; não confundir com material integrado ou recarga do processo antigo.
+
+Testes locais release e ASan/UBSan, prévia e instalação registrados na conclusão abaixo. Fluxo isolado cobre pin, launch, sinais do filho, persistência, scroll, unpin e configuração inválida em ambos os modos. Sem benchmark, teste de VT ou validação de multimonitor/acessibilidade completa. Limites em docs/dock.md. Base na branch do tema escuro para preservar o visual instalado; alterações concorrentes da árvore principal não incluídas.
+
+**DOCK-01 · concluído/instalado:** 17 testes locais release e ASan/UBSan passaram. Pacote `0.5.0.r54.ge7ec423-1`, fonte e7ec423 da branch feature/configurable-dock, compilado do GitHub com 17 testes aprovados e instalado via pacman, preservando a base do tema escuro. `/usr/bin/jlinux-shell --dock-panel` ativado na sessão existente e permaneceu ativo; ambiente herdou LANG=pt_BR.UTF-8. Nenhum aplicativo foi fixado por conta do usuário. Supervisor/compositor/shell principal não foram encerrados; sem VT, logout ou reinício nesta entrega. Runtime principal permanece no código anterior, com novo dock em processo auxiliar; próximo login usa integração do pacote. Prévia dos componentes inspecionada; confirmação visual física e CI pendentes neste registro. PR #39, base feature/darker-desktop, sem merge.
+
+## Ajuste automático na base atual — feature/window-auto-layout
+
+WM-AUTO integrado a partir de 6a0f028 sobre a base instalada 8c5c803: uma janela preenche a área útil, duas dividem a tela, demais empilham à direita; abrir/fechar e mudar área útil reorganizam por eventos. Mantidos atalhos de proporção/principal/flutuante, workspaces, limites e diálogos. Dock configurável e tema preservados. Base temporária fix/visible-browser-dock; reaproveitamento de #38, sem integrar PRs.
+
+Dezenove testes release passaram nesta base. ASan/UBSan e empacotamento registrados na conclusão abaixo. Compositor atual preservado; ativação somente no próximo login. Sem reinício, VT, benchmark ou declaração de validação física.
+
+**WM-AUTO · instalado em 06/11/2026:** pacote `0.5.0.r58.gc1bcc75-1`, fonte c1bcc75 (implementação integrada em 0e31436), compilado do GitHub com 19 testes aprovados no makepkg e instalado pelo pacman. Dezenove testes locais release e ASan/UBSan passaram. PR #42, base fix/visible-browser-dock, reutilizando implementação de #38 sem merge de PR. Compositor da sessão atual preservado e ainda executa código anterior: comportamento automático será ativado no próximo login, por padrão, salvo JLINUX_TILING=0 explícito. Não houve logout, reinício, VT ou teste físico de GPU nesta entrega. CI e avaliação visual do usuário pendentes no registro.
+
+## Substituição do ajuste automático — feature/window-side-snap
+
+WM-SNAP substitui WM-AUTO por decisão do usuário. Removidos algoritmo de divisão principal/pilha, estado/lista exclusivos desse modo, JLINUX_TILING e atalhos de proporção/principal/flutuante. Janelas livres não são reorganizadas ao abrir/fechar. Soltar arraste nos 12 px das bordas esquerda/direita encaixa na metade da área útil. Topo/baixo não encaixam. Puxar para fora restaura tamanho anterior; resize continua manual; limites do aplicativo respeitados. Mantidos maximização, fullscreen, workspaces e diálogos existentes.
+
+21 testes locais release e ASan/UBSan passaram, incluindo ambos os lados com barra/dock, restauração, ausência de efeito no topo, ausência de rearranjo ao abrir/fechar e mínimo incompatível com meia tela. Teste de tiling removido/substituído; regressões de limites/transientes preservadas. Sem benchmark ou VT. Base instalada com volume/dock/tema preservada; pacote/ativação registrados na conclusão. Estado atual em docs/window-management.md prevalece sobre os registros históricos de WM-AUTO.
+
+**WM-SNAP · instalado em 06/11/2026:** pacote `0.5.0.r62.g6df67d0-1`, fonte 6df67d0, compilado do GitHub com 21 testes aprovados no makepkg e instalado via pacman. 21 testes locais release e ASan/UBSan passaram. Instalação substitui o modo automático rejeitado e preserva volume, dock e tema. Compositor da sessão atual preservado: janelas livres e encaixe lateral passam a valer no próximo login. Sem reinício/logout/VT nesta entrega. PR #44, base feature/panel-volume, sem merge; CI e avaliação visual física pendentes neste registro.
+
+## Dock expandindo do centro — feature/dock-center-reveal
+
+DOCK-CENTER remove entrada vertical e aplica expansão 18%→100% com fade, ancorada no centro da tela. Hit testing inverte a mesma matriz e mantém seleção angular. Novo halo azul-violeta independente em effects/, controlado por REFLECTION, e elevação de até 4 px no hover; animation/ mantém tempo e renderer/ a transformação. Nenhum loop adicional: callbacks existentes somente durante transições. Movimento reduzido preservado.
+
+24 testes locais release e ASan/UBSan passaram antes do refinamento final de clip; repetição relevante e pacote registrados na conclusão. Teste novo verifica centro fixo, escala final, inversa e halo zero/positivo. Prévia do estado final inspecionada. Sem benchmark ou teste físico de GPU/VT. Shell ativo preservado; ativação no próximo login.
+
+**DOCK-CENTER · instalado:** pacote `0.5.0.r85.g024bcbb-1`, fonte 024bcbb, compilado do GitHub com 24 testes aprovados no makepkg e instalado pelo pacman. Release final: 24 aprovados; ASan/UBSan: bateria de 24 antes do refinamento final de clip e três testes relevantes (dock-visual/futurista-headless/dock-reduced-motion) repetidos depois, aprovados. Prévia estática inspecionada; sem benchmark ou avaliação visual da animação no hardware. Shell supervisionado atual preservado, nova animação/halo entram no próximo login. Sem logout/reinício/VT. PR #68, base feature/angular-dock-selection, sem merge; CI pendente no registro.
+
+## Barra compacta com carga da bateria — feature/compact-status-panel
+
+PANEL-COMPACT implementado: barra 36 px de largura total e cantos retos; logo/texto JLinux e ícone/hit area de volume removidos. Relógio/bateria/ajustes redimensionados. Raio de carregamento depende do status Charging da fonte que forneceu capacity; percentuais inválidos resultam em bateria desconhecida. Volume permanece no centro de controle. Sem novo timer; política de uma bateria preservada.
+
+25 testes locais release passaram; ASan/UBSan e instalação registrados na conclusão. Novo teste usa sysfs fictício para estados de carga/descarga/cheia/ausente e capacidade inválida. Regressões de área útil, snap e clique no espaço do volume antigo atualizadas. Prévia inspecionada com Charging/75% ilustrativos; sysfs real informava Charging na inspeção, sem confundir com prévia. Sem reinício da sessão, benchmark ou teste físico visual. Próximo login ativa a barra compilada.
+
+Integração preserva o dock WhatsApp já instalado (15b821a). A repetição identificou uma condição anterior de fechamento da animação: se o desenho começasse após o término da transição, podia não haver callback final para destruir a superfície. O desenho de fechamento agora solicita esse callback mesmo com transição vencida. Após o ajuste, 25 testes release e quatro relevantes ASan/UBSan passaram; bateria completa ASan/UBSan também havia passado na base integrada antes desse ajuste. Sem timer adicional. O primeiro pacote gerado desta entrega não foi instalado, para não remover a atualização concorrente do dock.
+
+
+### Transições de janelas — 06/11/2026
+
+Base b2eec64, GCC 16.2.1, wlroots 0.20.2. `meson test -C build-transitions --print-errorlogs` em `buildtype=release`: **28/28**. Build separado `-Db_sanitize=address,undefined -Db_lundef=false`, suíte com `ASAN_OPTIONS=detect_leaks=0`: **28/28**. O teste `window-effects-lifecycle` passou separadamente com `detect_leaks=1`. `window-side-snap` também passou com `JLINUX_REDUCED_MOTION=1`.
+
+Novos testes: referências de buffers sobrevivem à destruição da origem e são liberadas ao destruir snapshot; coordenadas corretas com parent deslocado, opacidades originais preservadas, decoração/prévia sem entrada, efeitos desativados sem buffers exclusivos, dimensões limitadas. Integração mantém cursor pressionado na borda para verificar prévia antes do drop/configure; snapshot de saída inclui 13 buffers (cliente e decoração). Fixture repete unmap/remap, alterna fullscreen, mata o cliente e termina compositor com ghosts ativos; também executa com movimento reduzido.
+
+Prévia estática dos componentes reais gerada por `jlinux-test-window-effects --preview docs/design/window-transitions.png` e inspecionada. Cliente e wallpaper são ilustrativos; não é captura da sessão do usuário. Testes de integração usam backend headless/Pixman isolado. Sem medição de latência, memória/energia GPU, teste físico DRM/VT ou resultado de CI nesta entrega. Nenhum serviço/sessão do usuário foi reiniciado.
+
+
+Pacote final Arch `0.5.0.r92.g5abb0af-1`: check() repetiu **28/28**. Integridade pós-instalação (`pacman -Qkk`): 23 arquivos, zero alterações; cenário de transições também passou com o compositor instalado em `/usr/bin`. Sessão física preservada, ativação no próximo login; instalação/backup em [arch-installation.md](arch-installation.md).
+
+## Encaixe lateral com movimento suave — feature/smooth-side-snap
+
+WM-SMOOTH implementado: cópia dos buffers da janela interpola posição e tamanho até a metade escolhida em 220 ms/smoothstep, em vez de configurar o destino visual instantaneamente. Um único tamanho final enviado ao cliente. Usa snapshots/relógio/frame scheduling existentes; sem timer ou cópia de pixels por quadro. Cancelamento central libera snapshot e reativa visual em clique, nova posição, maximização/fullscreen, parent/workspace, unmap/destroy e teardown. Movimento reduzido/falta de snapshot mantêm fallback imediato.
+
+29 testes locais release e ASan/UBSan passaram; dois testes de encaixe repetidos em release após ampliar cobertura de desconexão durante a animação. Renderer verifica início/meio/fim e ownership dos buffers; headless verifica conclusão, geometria final, restauração, ausência de reorganização automática, modo reduzido e desconexão logo após drop. Sem benchmark ou teste físico de VT/GPU. Instalação/ativação registradas na conclusão abaixo; docs/window-management.md explicita imagem temporária e handoff ao conteúdo vivo.
+
+**WM-SMOOTH · instalado em 07/11/2026:** pacote `0.5.0.r94.ge43e58f-1`, fonte e43e58f, compilado do GitHub com 29 testes aprovados no makepkg e instalado via pacman. 29 testes locais release e ASan/UBSan passaram; casos de snap release repetidos após ampliar desconexão durante a animação. Compositor da sessão atual preservado: deslizamento/redimensionamento animados entram no próximo login. Sem logout/reinício/VT ou benchmark. PR #74, base feature/window-transitions, sem merge; CI e avaliação visual física pendentes no registro.
+
+
+### Correção de movimento/encaixe — 07/11/2026
+
+Base instalada e43e58f/r94; branch fix/window-motion-sync sobre feature/smooth-side-snap. GCC/wlroots 0.20.2, backend headless/Pixman. Regressão reproduzida no compositor instalado: fixture com buffer 1280×720 e geometria 1000×600 recebia clique fora da moldura. Versão corrigida recorta a superfície e passou no teste. Cenário de commit deliberadamente atrasado 650 ms verifica que o conteúdo vivo não reaparece aos 220 ms antes do novo buffer.
+
+30 testes release passaram; cinco direcionados com ASan/UBSan (`detect_leaks=0`) passaram: motion-sync, side-snap, transitions, reduced-motion e effects-lifecycle. Cenário de navegação do navegador instalado passou com o novo compositor em runtime isolado, além de uma execução que encaixou WPE e verificou viewport/handoff final. Sem benchmark de GPU/energia ou ensaio DRM/VT; plano de validação física: repetir arraste livre e encaixe alternado com Foot e navegador, medir p95/p99 de apresentação e latência de entrada em builds release equivalentes, respeitando efeitos escolhidos.
+
+## Data e hora com material de janela — feature/glass-clock-panel
+
+CLOCK-GLASS implementado: bloco central de 28 px com 14 px de espaço lateral ao texto, cantos de 5 px e helpers existentes de tonalização, sombreado e reflexão das molduras. Fonte reduzida de 16 para 14 px e posição vertical ajustada à barra de 36 px. Cada efeito respeita o controle global correspondente. Nenhum timer, dependência ou lógica de animação novo.
+
+29 testes locais release passaram; prévia nativa inspecionada. Sem repetição de sanitizadores para esta alteração de layout que reutiliza helpers existentes; sem benchmark ou validação física visual. Pacote/ativação registrados na conclusão; shell ativo preservado, ativação no próximo login.
+
+
+A regressão de handoff prematuro também foi reproduzida separadamente no binário e43e58f, ignorando apenas a primeira asserção de recorte: o cliente com atraso de 650 ms voltava ao conteúdo vivo aos 220 ms. A base 9613200 (relógio Glass) foi incorporada antes da instalação para não regredir o desktop atualizado durante o trabalho. A suíte release repetiu 30/30 após essa integração; o ajuste final compartilha a geometria pendente entre arraste pelo cabeçalho e Super+arraste, com três regressões direcionadas passando. O pacote final repetiu 30/30.
+
+## Seleção de janelas com Super+Tab — feature/window-overview
+
+WM-OVERVIEW implementado: grade Glass do espaço atual, miniaturas clicáveis, foco por Enter, navegação Tab/setas/páginas/roda e cancelamento com Esc/clique vazio. Até nove por página com proporção preservada e título. Teclado/cliques bloqueados para o fundo; alterações de mapeamento fecham a visão antes de invalidar referências. Dock/overlays ficam ocultos e são restaurados ao sair.
+
+Blur real usa uma composição da saída central, redução GPU para 1/4 por eixo, leitura e box blur CPU em cache. Miniaturas reutilizam buffers; nenhuma recaptura ao paginar e nenhum timer de overview. BLUR=0 evita captura; falha de captura usa fundo escuro com aviso. Mantém efeitos independentes e recursos pertencentes ao compositor. Base atual instalada de volume/movimento preservada por integração local, sem merge de PR.
+
+Validação e limites em docs/window-overview.md: testes locais release/ASan e GPU headless Radeon, prévia de componentes com dados fictícios e custo descritivo de preparação (sem afirmar latência de apresentação ou desempenho físico). Resultados finais e pacote registrados na conclusão. Sem VT, reinício de sessão ou captura persistida do desktop do usuário.
+
+Integração final preserva a instalação 299b482 (restrição de arraste/topo), além de volume contínuo e relógio Glass. 33 testes release e 33 ASan/UBSan passaram nessa base. A roda em página única e hover no item já selecionado não reconstroem cartões. Teste de página única adicionado. Primeiro pacote a9226fb não instalado, para preservar a atualização concorrente do desktop.
+
+**WM-OVERVIEW · instalado em 07/11/2026:** pacote `0.5.0.r109.gc4753d0-1`, fonte c4753d0, compilado do GitHub com 33 testes aprovados no makepkg e instalado pelo pacman. 33 testes locais release e ASan/UBSan passaram na base integrada; teste adicional final em headless/GLES2 no Radeon real passou com blur e navegação. Preservados 299b482 e ajustes anteriores. Compositor da sessão atual preservado; Super+Tab entra no próximo login. Sem logout/reinício/VT; apresentação na saída física, energia e multimonitor permanecem não validados. PR #80, base feature/top-bar-window-snap, sem merge; CI pendente no registro.

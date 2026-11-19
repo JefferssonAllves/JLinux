@@ -1,0 +1,23 @@
+# Arquivos JLinux — versão inicial
+
+Cliente separado em C, Wayland direto e toolkit Cairo/Pango do JLinux. Reutiliza o material de effects/ na barra interna e as molduras existentes do compositor. Não usa GTK, CSS ou Python no runtime. O corpo é opaco; não implementa blur sobre outras janelas nem o Glass completo.
+
+Execute `jlinux-files [pasta]` pelo terminal (Super+Enter). Sem argumento abre a pasta pessoal. O aplicativo pode ser aberto na sessão existente sem logout.
+
+- Clique seleciona; duplo clique ou Enter abre.
+- Setas selecionam, roda do mouse rola, Backspace/Alt+Seta acima sobe uma pasta.
+- Botões: pasta pessoal, subir e atualizar. F5 atualiza; Ctrl+H alterna ocultos.
+- Pastas aparecem primeiro. Links para pastas são navegáveis; falhas preservam a pasta atual.
+- Arquivos abrem pelo aplicativo associado através de `gio open`, com argumentos separados, sem shell. Associações/aplicativos devem existir no Arch; falhas aparecem na barra de estado.
+
+Esta versão não copia, move, renomeia ou exclui arquivos. Não monitora alterações externas: use F5. Listagem síncrona limitada a 50 mil itens; pastas lentas/remotas podem bloquear temporariamente este aplicativo. Não há benchmark de desempenho ou validação de acessibilidade completa. Renderização por buffers SHM ocorre por eventos; não é um renderer acelerado novo.
+
+A prévia em design/native-files-preview.png usa arquivos fictícios e o mesmo desenho do aplicativo; não é captura da pasta pessoal ou da sessão real. Testes headless cobrem navegação, teclado, clique, abertura por associação com nomes especiais. Teste de modelo cobre links, ocultos, nomes inválidos em UTF-8 e preservação após erro.
+
+O fundo atual é um gradiente opaco azul-ardósia, sem preto predominante; barra interna usa contorno contínuo azul/violeta sem pontos focais. Transparência e blur do conteúdo continuam pendentes.
+
+## Barra lateral de locais
+
+Atalhos fixos à esquerda: Pessoal, Downloads, Documentos, Imagens e Vídeos. Um clique navega; Alt+1…5 segue a mesma ordem. A pasta atual recebe destaque. Caminhos seguem user-dirs.dirs via GLib, incluindo pastas personalizadas fora da home; sem configuração, usam nomes padrão Downloads/Documents/Pictures/Videos dentro da home. Pastas ausentes ficam esmaecidas; a tentativa mostra erro e preserva a pasta atual. Nenhuma pasta é criada automaticamente.
+
+Lista e área de clique ficam à direita da barra lateral; a roda sobre a barra não rola a lista. Tamanho mínimo passa a 540×360 para manter os cinco atalhos legíveis; abaixo de 760 px de largura a coluna de tamanho fica oculta. A prévia usa apenas arquivos fictícios.

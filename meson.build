@@ -1,13 +1,183 @@
-project('jlinux-desktop', 'c', version: '0.2.0',
+project('jlinux-desktop', 'c', meson_version: '>=1.6.0', version: '0.5.0',
   default_options: ['c_std=c11', 'warning_level=3', 'werror=true'])
 wlroots = dependency('wlroots-0.20', version: ['>=0.20.0', '<0.21.0'])
 wayland = dependency('wayland-server')
-executable('jlinux-compositor', 'src/compositor/main.c',
-  dependencies: [wlroots, wayland], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
-if get_option('panel')
-  gtk = dependency('gtk+-3.0', version: '>=3.22')
-  layer_shell = dependency('gtk-layer-shell-0', version: '>=0.6')
-  executable('jlinux-panel', 'src/panel.c', dependencies: [gtk, layer_shell], install: true)
+xkb = dependency('xkbcommon')
+scanner = find_program('wayland-scanner')
+protocols = dependency('wayland-protocols')
+protocol_dir = protocols.get_variable(pkgconfig: 'pkgdatadir')
+layer_header = custom_target('layer-shell-header',
+  input: 'protocols/wlr-layer-shell-unstable-v1.xml', output: 'wlr-layer-shell-unstable-v1-protocol.h',
+  command: [scanner, 'server-header', '@INPUT@', '@OUTPUT@'])
+xdg_header = custom_target('xdg-shell-header',
+  input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-protocol.h',
+  command: [scanner, 'server-header', '@INPUT@', '@OUTPUT@'])
+math = meson.get_compiler('c').find_library('m')
+cairo = dependency('cairo')
+pango = dependency('pangocairo')
+pixman = dependency('pixman-1')
+fontconfig = dependency('fontconfig')
+compositor = executable('jlinux-compositor', 'src/compositor/main.c', 'src/compositor/interaction.c', 'src/shell/apps-launch.c', 'src/shell/control.c', 'src/renderer/renderer.c', 'src/renderer/window-frame.c', 'src/renderer/backdrop.c', 'src/renderer/blur.c', 'src/renderer/window-effects.c', 'src/renderer/overview.c', 'src/effects/window.c', 'src/animation/transition.c', 'src/effects/glass.c', 'src/toolkit/painter.c', layer_header, xdg_header,
+  dependencies: [wlroots, wayland, xkb, dependency('gio-unix-2.0'), cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'], install: true)
+backdrop_test = executable('jlinux-test-backdrop', 'tests/backdrop.c', 'src/renderer/backdrop.c', 'src/renderer/renderer.c', 'src/renderer/window-effects.c', 'src/renderer/blur.c', 'src/effects/window.c', 'src/effects/glass.c', 'src/toolkit/painter.c', dependencies: [wlroots, wayland, cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'])
+test('live-backdrop', backdrop_test, env: ['WLR_RENDERER=pixman'])
+app_targets_test = executable('jlinux-test-app-targets', 'tests/app-targets.c', 'src/shell/apps-launch.c', dependencies: [cairo, dependency('gio-unix-2.0')])
+test('dock-app-targets', app_targets_test)
+frame_test = executable('jlinux-test-window-frame', 'tests/window-frame.c',
+  'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
+  dependencies: [wlroots, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
+test('window-frame-lifecycle', frame_test)
+overview_test = executable('jlinux-test-overview', 'tests/overview.c', 'src/renderer/overview.c', 'src/renderer/window-effects.c', 'src/renderer/blur.c', 'src/effects/window.c', 'src/effects/glass.c', 'src/toolkit/painter.c', dependencies: [wlroots, wayland, cairo, pango, fontconfig, math, pixman], c_args: ['-DWLR_USE_UNSTABLE'])
+test('overview-lifecycle', overview_test)
+
+window_effects_test = executable('jlinux-test-window-effects', 'tests/window-effects.c',
+  'src/renderer/window-effects.c', 'src/effects/window.c', 'src/renderer/window-frame.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
+  dependencies: [wlroots, wayland, cairo, pango, fontconfig, math], c_args: ['-DWLR_USE_UNSTABLE'])
+test('window-effects-lifecycle', window_effects_test)
+panel_test = executable('jlinux-test-glass-panel', 'tests/glass-panel.c', 'src/effects/glass.c', 'src/toolkit/painter.c',
+  dependencies: [cairo, pango, fontconfig, math])
+test('glass-panel-fade', panel_test)
+transition_test = executable('jlinux-test-transition', 'tests/transition.c', 'src/animation/transition.c', dependencies: math)
+test('animation-transition', transition_test)
+battery_test = executable('jlinux-test-battery', 'tests/battery.c', 'src/shell/battery.c')
+test('battery-status', battery_test)
+dock_visual_test = executable('jlinux-test-dock-visual', 'tests/dock-visual.c', 'src/renderer/dock-transform.c', 'src/effects/dock.c', dependencies: [cairo, math])
+test('dock-visual', dock_visual_test)
+if get_option('shell')
+  client = dependency('wayland-client')
+  cursor = dependency('wayland-cursor')
+  client_layer_header = custom_target('layer-client-header',
+    input: 'protocols/wlr-layer-shell-unstable-v1.xml', output: 'layer-shell-client.h',
+    command: [scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
+  client_layer_code = custom_target('layer-client-code',
+    input: 'protocols/wlr-layer-shell-unstable-v1.xml', output: 'layer-shell-client.c',
+    command: [scanner, 'private-code', '@INPUT@', '@OUTPUT@'])
+  client_xdg_code = custom_target('xdg-client-code',
+    input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-client.c',
+    command: [scanner, 'private-code', '@INPUT@', '@OUTPUT@'])
+  json = dependency('json-c')
+  client_xdg_header = custom_target('xdg-client-header',
+    input: protocol_dir / 'stable/xdg-shell/xdg-shell.xml', output: 'xdg-shell-client.h',
+    command: [scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
+  glib = dependency('glib-2.0')
+  files = executable('jlinux-files', 'src/files/main.c', 'src/files/thumbnails.c', 'src/files/browser.c', 'src/session/locale.c',
+    'src/toolkit/painter.c', 'src/effects/glass.c', client_xdg_header, client_xdg_code,
+    dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, glib, dependency('gdk-pixbuf-2.0'), dependency('gio-2.0')], install: true)
+  thumbnails_test = executable('jlinux-test-thumbnails', 'tests/thumbnails.c', 'src/files/thumbnails.c',
+    dependencies: [cairo, glib, dependency('gdk-pixbuf-2.0')])
+  test('files-thumbnails', thumbnails_test)
+  files_actions_test = executable('jlinux-test-files-actions', 'tests/files-actions.c', 'src/files/thumbnails.c', 'src/files/browser.c', 'src/session/locale.c',
+    'src/toolkit/painter.c', 'src/effects/glass.c', client_xdg_header, client_xdg_code,
+    dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, glib, dependency('gdk-pixbuf-2.0'), dependency('gio-2.0')])
+  test('files-actions', files_actions_test, timeout: 20)
+  browser_test = executable('jlinux-test-browser', 'tests/browser.c', 'src/files/browser.c', dependencies: glib)
+  test('files-browser', find_program('scripts/smoke-browser.py'), args: [browser_test], timeout: 15)
+  install_data('data/xdg/mimeapps.list', install_dir: get_option('sysconfdir') / 'xdg')
+  install_data('data/applications/org.jlinux.Files.desktop', install_dir: get_option('datadir') / 'applications')
+  greeter = executable('jlinux-greeter', 'src/greeter/main.c', 'src/greeter/auth.c',
+    'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_xdg_header, client_xdg_code,
+    dependencies: [client, cursor, cairo, pango, fontconfig, math, xkb, json], install: true)
+  auth_test = executable('jlinux-test-login-auth', 'tests/login-auth.c', 'src/greeter/auth.c', dependencies: json)
+  test('login-auth', find_program('scripts/smoke-login-auth.py'), args: [auth_test], timeout: 20)
+  test('login-headless', find_program('scripts/smoke-login.py'), args: [compositor, greeter], timeout: 20)
+  install_data('packaging/greetd/config.toml', install_dir: get_option('datadir') / 'jlinux', rename: 'greetd.toml')
+  install_data('packaging/arch/enable-login.sh', install_dir: get_option('libexecdir') / 'jlinux', install_mode: 'rwxr-xr-x')
+  install_data('data/wayland-sessions/jlinux.desktop', install_dir: get_option('datadir') / 'wayland-sessions')
+  install_data('data/applications/org.jlinux.Netflix.desktop', install_dir: get_option('datadir') / 'applications')
+  install_data('data/icons/whatsapp-dock.svg', install_dir: get_option('datadir') / 'icons/hicolor/scalable/apps', rename: 'org.jlinux.WhatsAppDock.svg')
+  install_data('data/icons/netflix.png', install_dir: get_option('datadir') / 'icons/hicolor/128x128/apps', rename: 'org.jlinux.Netflix.png')
+  install_data('data/icons/spotify.svg', install_dir: get_option('datadir') / 'icons/hicolor/scalable/apps', rename: 'org.jlinux.Spotube.svg')
+  install_data('data/futurista/README.md', install_dir: get_option('datadir') / 'licenses/jlinux-desktop-git', rename: 'futurista-assets.md')
+  futurista_resources = import('gnome').compile_resources('futurista-resources', 'data/futurista/assets.xml', source_dir: 'data/futurista')
+  shell = executable('jlinux-shell', 'src/shell/main.c', 'src/shell/apps.c', 'src/shell/apps-launch.c', 'src/shell/preferences.c', 'src/shell/battery.c', 'src/shell/volume.c', 'src/shell/bluetooth.c', 'src/shell/media.c', 'src/shell/recording.c', 'src/shell/control.c', 'src/shell/futurista.c', 'src/effects/dock.c', 'src/renderer/dock-transform.c', 'src/animation/transition.c', futurista_resources, 'src/toolkit/painter.c', 'src/effects/glass.c', 'src/renderer/blur.c', client_layer_header, client_layer_code, client_xdg_code,
+    c_args: ['-Wno-overlength-strings'], dependencies: [client, cursor, cairo, pango, fontconfig, math, dependency('gio-2.0'), dependency('gio-unix-2.0'), dependency('librsvg-2.0')], install: true)
+  preferences_test = executable('jlinux-test-shell-preferences', 'tests/shell-preferences.c', 'src/shell/preferences.c', dependencies: glib)
+  test('shell-preferences', preferences_test)
+  media_test = executable('jlinux-test-media', 'tests/media.c', 'src/shell/media.c', dependencies: [dependency('gio-2.0')])
+  test('media-mpris', find_program('dbus-run-session'), args: ['--', media_test], timeout: 15)
+  icons_test = executable('jlinux-test-shell-icons', 'tests/shell-icons.c', 'src/shell/apps.c', 'src/shell/apps-launch.c', dependencies: [cairo, dependency('gio-unix-2.0'), dependency('librsvg-2.0')])
+  test('shell-app-icons', icons_test)
+  volume_test = executable('jlinux-test-volume', 'tests/volume.c', 'src/shell/volume.c', dependencies: [glib, math])
+  test('volume-response', volume_test)
+  bluetooth_test = executable('jlinux-test-bluetooth', 'tests/bluetooth.c', 'src/shell/bluetooth.c', dependencies: glib)
+  test('bluetooth-response', bluetooth_test)
+  blur_test = executable('jlinux-test-blur', 'tests/blur.c', 'src/renderer/blur.c', dependencies: cairo)
+  test('blur-image', blur_test)
+  test('glass-preview', find_program('scripts/smoke-glass.py'), args: [shell], timeout: 20)
+  session = executable('jlinux-session', 'src/session/main.c', 'src/session/locale.c', install: true)
+  locale_test = executable('jlinux-test-session-locale', 'tests/session-locale.c', 'src/session/locale.c')
+  test('session-locale', locale_test)
+  session_smoke = find_program('scripts/smoke-session.py')
+  test('session-headless', session_smoke, args: [session], timeout: 20)
+  test('session-audio-overrides', session_smoke, args: [session], env: ['PULSE_SERVER=unix:/tmp/jlinux-test-custom-pulse', 'PIPEWIRE_RUNTIME_DIR=/tmp/jlinux-test-custom-pipewire'], timeout: 20)
+  shell_smoke = find_program('scripts/smoke-shell.py')
 endif
 smoke = find_program('scripts/smoke-compositor.sh')
 test('compositor-headless', smoke, args: [meson.current_build_dir() / 'jlinux-compositor'], timeout: 15)
+foot = find_program('foot', required: false)
+wtype = find_program('wtype', required: false)
+if foot.found() and wtype.found()
+  client_dep = dependency('wayland-client')
+  pointer_header = custom_target('virtual-pointer-header',
+    input: 'protocols/wlr-virtual-pointer-unstable-v1.xml', output: 'virtual-pointer-client.h',
+    command: [scanner, 'client-header', '@INPUT@', '@OUTPUT@'])
+  pointer_code = custom_target('virtual-pointer-code',
+    input: 'protocols/wlr-virtual-pointer-unstable-v1.xml', output: 'virtual-pointer-protocol.c',
+    command: [scanner, 'private-code', '@INPUT@', '@OUTPUT@'])
+  pointer_test = executable('jlinux-test-pointer', 'tests/pointer-client.c', pointer_header, pointer_code,
+    dependencies: client_dep)
+  if get_option('shell')
+    test('files-headless', find_program('scripts/smoke-files.py'), args: [compositor, files, pointer_test, wtype], timeout: 30)
+    test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
+    test('dock-settings-headless', find_program('scripts/smoke-dock-settings.py'), args: [compositor, shell, pointer_test], timeout: 30)
+    test('futurista-headless', find_program('scripts/smoke-futurista.py'), args: [compositor, shell, wtype, pointer_test], timeout: 30)
+    test('dock-reduced-motion', find_program('scripts/smoke-futurista.py'), args: [compositor, shell, wtype, pointer_test], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 30)
+    test('shell-headless', shell_smoke, args: [compositor, shell, pointer_test], timeout: 20)
+    test('bluetooth-headless', find_program('scripts/smoke-bluetooth.py'), args: [compositor, shell, pointer_test], timeout: 25)
+    test('volume-headless', find_program('scripts/smoke-volume.py'), args: [compositor, shell, pointer_test], timeout: 35)
+    test('power-menu-headless', find_program('scripts/smoke-power.py'), args: [compositor, shell, pointer_test], timeout: 35)
+  endif
+  if get_option('shell')
+    layout_client = executable('jlinux-test-layout-client', 'tests/layout-client.c', client_xdg_header, client_xdg_code,
+      dependencies: client_dep)
+    test('window-motion-sync', find_program('scripts/smoke-motion-sync.py'), args: [compositor, layout_client, pointer_test], timeout: 20)
+    test('window-transitions', find_program('scripts/smoke-window-transitions.py'), args: [compositor, layout_client], timeout: 20)
+    test('window-reduced-motion', find_program('scripts/smoke-window-transitions.py'), args: [compositor, layout_client], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 20)
+    test('window-overview', find_program('scripts/smoke-overview.py'), args: [compositor, layout_client, wtype, pointer_test, shell], timeout: 40)
+    test('overview-no-blur', find_program('scripts/smoke-overview.py'), args: [compositor, layout_client, wtype, pointer_test, shell], env: ['JLINUX_GLASS_BLUR=0'], timeout: 40)
+    test('window-layout-constraints', find_program('scripts/smoke-layout-constraints.py'), args: [compositor, layout_client, wtype, pointer_test], timeout: 25)
+  endif
+  test('window-side-snap', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], timeout: 40)
+  test('snap-reduced-motion', find_program('scripts/smoke-side-snap.py'), args: [compositor, shell, pointer_test, foot, wtype], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 40)
+  test('dock-single-window', find_program('scripts/smoke-dock-single.py'), args: [compositor, foot, wtype], timeout: 30)
+  test('window-minimize', find_program('scripts/smoke-minimize.py'), args: [compositor, foot, wtype, pointer_test, layout_client], timeout: 25)
+  test('minimize-reduced-motion', find_program('scripts/smoke-minimize.py'), args: [compositor, foot, wtype, pointer_test, layout_client], env: ['JLINUX_REDUCED_MOTION=1'], timeout: 25)
+  test('window-frame-input', find_program('scripts/smoke-window-frame.py'), args: [compositor, pointer_test, foot, wtype], timeout: 35)
+  terminal_test = find_program('scripts/smoke-terminal.py')
+  test('terminal-input-headless', terminal_test, args: [compositor, pointer_test, foot, wtype], timeout: 40)
+else
+  warning('Teste de terminal/entrada indisponível: instale foot e wtype')
+  if get_option('shell')
+    test('files-headless', find_program('scripts/smoke-files.py'), args: [compositor, files, pointer_test, wtype], timeout: 30)
+    test('login-flow-headless', find_program('scripts/smoke-login-flow.py'), args: [compositor, greeter, wtype], timeout: 25)
+    test('futurista-headless', find_program('scripts/smoke-futurista.py'), args: [compositor, shell, wtype, pointer_test], timeout: 30)
+    test('shell-headless', shell_smoke, args: [compositor, shell], timeout: 15)
+  endif
+endif
+
+test('decoration-advertisement', find_program('scripts/smoke-decorations.py'), args: [compositor], timeout: 15)
+
+test('remote-protocols-opt-in', find_program('extras/connect/tests/smoke-protocols.py'), args: [compositor], timeout: 15)
+
+install_data('scripts/jlinux-screenshot', install_dir: get_option('bindir'), install_mode: 'rwxr-xr-x')
+if foot.found() and wtype.found()
+  test('print-screen-clipboard', find_program('scripts/smoke-screenshot.py'), args: [compositor, wtype, foot], timeout: 25)
+endif
+
+if get_option('shell') and foot.found() and wtype.found() and find_program('wf-recorder', required: false).found() and find_program('ffprobe', required: false).found() and find_program('grim', required: false).found()
+  test('screen-recording', find_program('scripts/smoke-recording.py'), args: [compositor, shell, wtype, foot], timeout: 35)
+endif
+
+if get_option('shell')
+  test('headless-startup', find_program('scripts/smoke-headless-startup.py'), args: [compositor, shell], timeout: 25)
+endif
