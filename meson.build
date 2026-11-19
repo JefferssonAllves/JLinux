@@ -177,3 +177,7 @@ endif
 if get_option('shell') and foot.found() and wtype.found() and find_program('wf-recorder', required: false).found() and find_program('ffprobe', required: false).found() and find_program('grim', required: false).found()
   test('screen-recording', find_program('scripts/smoke-recording.py'), args: [compositor, shell, wtype, foot], timeout: 35)
 endif
+
+if get_option('shell')
+  test('headless-startup', find_program('scripts/smoke-headless-startup.py'), args: [compositor, shell], timeout: 25)
+endif

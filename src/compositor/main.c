@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <wayland-server-core.h>
 #include <wlr/backend.h>
+#include <wlr/backend/headless.h>
+#include <wlr/backend/multi.h>
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
@@ -29,7 +31,8 @@
 
 struct desktop {
     struct wl_display *display;
-    struct wlr_backend *backend;
+    struct wlr_backend *backend, *fallback_backend;
+    struct wlr_output *fallback_output;
     struct wlr_session *session;
     struct jlinux_renderer render;
     struct wlr_output_layout *layout;
@@ -266,6 +269,11 @@ static void add_output(struct wl_listener *listener, void *data) {
     wl_signal_add(&output->events.destroy, &monitor->destroy);
     wl_list_insert(desktop->monitors.prev, &monitor->link);
     desktop->output_count++;
+    if (desktop->fallback_output && !wlr_output_is_headless(output)) {
+        struct wlr_output *fallback = desktop->fallback_output;
+        desktop->fallback_output = NULL;
+        wlr_output_destroy(fallback);
+    }
     arrange_desktop(desktop);
     wlr_output_schedule_frame(output);
     wlr_log(WLR_INFO, "Saída ativa: %s", output->name);
@@ -297,6 +305,12 @@ int main(void) {
     struct wl_event_loop *loop = wl_display_get_event_loop(desktop.display);
     desktop.backend = wlr_backend_autocreate(loop, &desktop.session);
     if (!desktop.backend) { goto cleanup; }
+    desktop.fallback_backend = wlr_headless_backend_create(loop);
+    if (!desktop.fallback_backend) { goto cleanup; }
+    if (!wlr_multi_backend_add(desktop.backend, desktop.fallback_backend)) {
+        wlr_backend_destroy(desktop.fallback_backend);
+        goto cleanup;
+    }
     if (!jlinux_renderer_init(&desktop.render, desktop.backend, desktop.display)) { goto cleanup; }
     desktop.layout = wlr_output_layout_create(desktop.display);
     desktop.scene = wlr_scene_create();
@@ -338,8 +352,9 @@ int main(void) {
     const char *socket = wl_display_add_socket_auto(desktop.display);
     if (!socket || !wlr_backend_start(desktop.backend)) { goto cleanup; }
     if (desktop.output_count == 0) {
-        wlr_log(WLR_ERROR, "%s", "Nenhuma saída ativa; encerrando o protótipo");
-        goto cleanup;
+        desktop.fallback_output = wlr_headless_add_output(desktop.fallback_backend, 1920, 1080);
+        if (!desktop.fallback_output || desktop.output_count == 0) { goto cleanup; }
+        wlr_log(WLR_INFO, "%s", "Sem monitor conectado; tela virtual 1920x1080 ativada");
     }
     if (setenv("WAYLAND_DISPLAY", socket, 1) != 0) { goto cleanup; }
     const char *ready_value = getenv("JLINUX_READY_FD");
