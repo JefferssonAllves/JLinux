@@ -10,7 +10,7 @@ static const struct {const char *name, *desktop, *icon;} apps[] = {
     {"Arquivos", "org.jlinux.Files.desktop", "system-file-manager"},
     {"Configurações", NULL, "preferences-system"},
     {"Roblox", "org.vinegarhq.Sober.desktop", "org.vinegarhq.Sober"},
-    {"Monitor", "btop.desktop", "btop"},
+    {"Godot", "org.godotengine.Godot.desktop", "godot"},
     {"Spotube", "com.github.KRTirtho.Spotube.desktop", "org.jlinux.Spotube"},
     {"WhatsApp", "org.jlinux.WhatsApp.desktop", "org.jlinux.WhatsAppDock"},
     {"Netflix", "org.jlinux.Netflix.desktop", "org.jlinux.Netflix"},
@@ -26,7 +26,7 @@ bool dock_app_matches(int index,const char *id,const char *title){
     if(index == 2){return !strcmp(id,"org.jlinux.Neovim")||!strcmp(id,"nvim")||!strcmp(id,"Neovim-Code");}
     if(index == 3){return !strcmp(id,"org.jlinux.Files");}
     if(index == 5){return !strcmp(id,"org.vinegarhq.Sober")||!g_ascii_strcasecmp(id,"sober");}
-    if(index == 6){return !strcmp(id,"org.jlinux.Monitor");}
+    if(index == 6){return !g_ascii_strcasecmp(id,"org.godotengine.Godot")||!g_ascii_strcasecmp(id,"Godot");}
     if(index == 7){char *lower=g_ascii_strdown(id,-1);bool match=strstr(lower,"spotube")!=NULL;g_free(lower);return match;}
     if(index == 8){return !strcmp(id,"org.jlinux.WhatsApp")||g_str_has_prefix(id,"brave-web.whatsapp.com")||((!g_ascii_strcasecmp(id,"brave-browser")||!g_ascii_strcasecmp(id,"brave"))&&title&&strstr(title,"WhatsApp"));}
     if(index == 9){return !strcmp(id,"org.jlinux.Netflix")||g_str_has_prefix(id,"brave-www.netflix.com")||g_str_has_prefix(id,"brave-netflix.com")||((!g_ascii_strcasecmp(id,"brave-browser")||!g_ascii_strcasecmp(id,"brave"))&&title&&strstr(title,"Netflix"));}
@@ -35,9 +35,8 @@ bool dock_app_matches(int index,const char *id,const char *title){
 static void reset_signals(gpointer data) { (void)data; sigset_t empty; sigemptyset(&empty); sigprocmask(SIG_SETMASK, &empty, NULL); }
 bool dock_app_launch(int index, GError **error) {
     if (index < 0 || index >= DOCK_APP_COUNT || index == 4) { return false; }
-    if (index == 1 || index == 6) {
-        char *terminal[] = {"foot", "--term=xterm-256color", index == 6?"--title=Monitor do sistema":"--title=JLinux Terminal", index == 6?"--app-id=org.jlinux.Monitor":"--app-id=org.jlinux.Terminal", NULL, NULL, NULL};
-        if (index == 6) { terminal[4] = "-e"; terminal[5] = "btop"; }
+    if (index == 1) {
+        char *terminal[] = {"foot", "--term=xterm-256color", "--title=JLinux Terminal", "--app-id=org.jlinux.Terminal", NULL};
         return g_spawn_async(NULL, terminal, NULL, G_SPAWN_SEARCH_PATH, reset_signals, NULL, NULL, error);
     }
     GDesktopAppInfo *info = g_desktop_app_info_new(apps[index].desktop);

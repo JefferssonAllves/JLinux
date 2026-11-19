@@ -448,7 +448,7 @@ static void settings(struct futurista *s, cairo_t *cr) {
         }
         text(cr,"Preferências salvas para as próximas sessões.",640,650,16,false,0xb2c2e8);
     }else{
-        const char *actions[]={"Som e volume","Pasta pessoal","Monitor do sistema"};
+        const char *actions[]={"Som e volume","Pasta pessoal","Godot"};
         for(int i=0;i<3;i++){
             material(cr,635,300+i*90,695,72,16,false,s->glass);
             text(cr,actions[i],655,322+i*90,20,true,0xf1edff);

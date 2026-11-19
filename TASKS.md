@@ -1,5 +1,9 @@
 # Plano central do JLinux
 
+## Godot no dock — feature/godot-dock
+
+Godot substitui o Monitor/btop na posição 6 do dock circular, incluindo nome, ícone, lançamento desktop e reconhecimento de janela existente. O atalho correspondente nas configurações acompanha o catálogo. Fixtures de lançamento e testes de ícone/foco atualizados; 52 testes release/headless passaram antes da atualização do rótulo. Aplicação no próximo login: a sessão atual não suporta recarga segura do shell/compositor.
+
 ## Gravador de tela — feature/screen-recorder
 
 **Implementado e validado na branch:** Shift+Print inicia/para MP4, indicador REC/tempo na top bar, nomes exclusivos e finalização do processo. 51 testes release passaram; integração de gravação também passou em ASan/UBSan. Instalação/ativação e limites em docs/validation-screen-recorder.md.

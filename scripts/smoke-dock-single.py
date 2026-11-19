@@ -11,6 +11,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-dock-single-') as directory:
  config=root/'config';config.mkdir()
  apps_dir=root/'data/applications';apps_dir.mkdir(parents=True)
  (apps_dir/'org.vinegarhq.Sober.desktop').write_text(f'[Desktop Entry]\nType=Application\nName=Roblox test\nExec={mock}\n')
+ (apps_dir/'org.godotengine.Godot.desktop').write_text(f'[Desktop Entry]\nType=Application\nName=Godot test\nExec={mock}\n')
  env=dict(os.environ,PATH=str(commands)+os.pathsep+os.environ['PATH'],XDG_CONFIG_HOME=str(config),XDG_DATA_HOME=str(root/'data'),XDG_RUNTIME_DIR=directory,WLR_BACKENDS='headless',WLR_RENDERER='pixman',WLR_HEADLESS_OUTPUTS='1',JLINUX_TEST_INPUT='1')
  def log():return logfile.read_text(errors='replace')
  def request(index):
@@ -22,7 +23,7 @@ with tempfile.TemporaryDirectory(prefix='jlinux-dock-single-') as directory:
    wait(lambda:'JLinux compositor pronto:' in log(),processes,'ready')
    env['WAYLAND_DISPLAY']=next(p.name for p in root.glob('wayland-*') if p.is_socket())
    assert (root/'jlinux-window-control').stat().st_mode&0o777==0o600
-   apps=((0,'brave-browser'),(1,'org.jlinux.Terminal'),(2,'org.jlinux.Neovim'),(3,'org.jlinux.Files'),(5,'org.vinegarhq.Sober'),(6,'org.jlinux.Monitor'),(7,'org-spotube-spotube-MainKt'),(8,'brave-web.whatsapp.com__-Default'),(9,'brave-www.netflix.com__-Default'))
+   apps=((0,'brave-browser'),(1,'org.jlinux.Terminal'),(2,'org.jlinux.Neovim'),(3,'org.jlinux.Files'),(5,'org.vinegarhq.Sober'),(6,'org.godotengine.Godot'),(7,'org-spotube-spotube-MainKt'),(8,'brave-web.whatsapp.com__-Default'),(9,'brave-www.netflix.com__-Default'))
    for index,appid in apps:
     title=f'Dock-{index}'
     client=subprocess.Popen([foot,'--config=/dev/null','--app-id='+appid,'--title='+title,'sh'],env=env,stdout=out,stderr=out);processes.append(client)

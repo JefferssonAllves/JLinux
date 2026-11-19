@@ -31,7 +31,7 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
 ''');mock.chmod(0o755)
     (commands/'foot').symlink_to(mock)
     entries={'brave-browser.desktop':'brave','Neovim-Code.desktop':'nvim',
-             'org.jlinux.Files.desktop':'files','org.jlinux.WhatsApp.desktop':'whatsapp',
+             'org.jlinux.Files.desktop':'files','org.godotengine.Godot.desktop':'godot','org.jlinux.WhatsApp.desktop':'whatsapp',
              'com.github.KRTirtho.Spotube.desktop':'spotube','org.vinegarhq.Sober.desktop':'roblox','org.jlinux.Netflix.desktop':'netflix'}
     for entry,name in entries.items():
         (apps/entry).write_text(f'[Desktop Entry]\nType=Application\nName={name}\nExec=dock-test {name} %f\n')
@@ -57,8 +57,7 @@ with pathlib.Path(os.environ['DOCK_TEST'],'calls').open('a') as out:out.write(js
                 before=len(recorded());click(*positions[i])
                 wait(lambda:len(recorded())>before,processes,f'app {i}')
             data=recorded()
-            for name in ('brave','nvim','files','spotube','whatsapp','roblox','netflix'):assert any(name in row for row in data),name
-            assert any('btop' in row for row in data),'monitor command'
+            for name in ('brave','nvim','files','spotube','whatsapp','roblox','netflix','godot'):assert any(name in row for row in data),name
             click(*positions[4]);wait(lambda:'Configurações abertas.' in log(),processes,'settings gear')
             click(1260,350)
             preference=config/'jlinux'/'shell.ini'
