@@ -2,7 +2,7 @@
 
 ## Godot no dock — feature/godot-dock
 
-Godot substitui o Monitor/btop na posição 6 do dock circular, incluindo nome, ícone, lançamento desktop e reconhecimento de janela existente. O atalho correspondente nas configurações acompanha o catálogo. Fixtures de lançamento e testes de ícone/foco atualizados; 52 testes release/headless passaram antes da atualização do rótulo. Aplicação no próximo login: a sessão atual não suporta recarga segura do shell/compositor.
+Godot substitui o Monitor/btop na posição 6 do dock circular, incluindo nome, ícone, lançamento desktop e reconhecimento de janela existente. O atalho correspondente nas configurações acompanha o catálogo. Fixtures de lançamento e testes de ícone/foco atualizados; 52 testes release/headless e os 52 checks do pacote passaram; configurações/renderização também foram repetidos após o ajuste do rótulo. Pacote `jlinux-desktop-git 0.5.0.r152.g8aa9cff-1` instalado, com 34 arquivos sem ausências. Backup do pacote anterior em `/var/backups/jlinux-before-godot-8aa9cff/`. PR #133. Aplicação no próximo login: a sessão atual não suporta recarga segura do shell/compositor.
 
 ## Gravador de tela — feature/screen-recorder
 
