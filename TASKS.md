@@ -2,7 +2,7 @@
 
 ## Teste de microfone — feature/microphone-test
 
-Configurações → Microfone contém Gravar (8 segundos) e Reproduzir. Usa a entrada e saída padrão do PipeWire, arquivo temporário privado, feedback de operação e bloqueio de cliques concorrentes. Fechar a tela/trocar de seção durante a operação cancela o teste; fechar o shell remove o áudio. 53 testes release/headless passaram, incluindo fixtures de falha, repetição e limpeza; prévia nativa inspecionada. Instalação e ativação serão registradas após empacotamento.
+Configurações → Microfone contém Gravar (8 segundos) e Reproduzir. Usa a entrada e saída padrão do PipeWire, arquivo temporário privado, feedback de operação e bloqueio de cliques concorrentes. Fechar a tela/trocar de seção durante a operação cancela o teste; fechar o shell remove o áudio. 53 testes release/headless passaram, incluindo fixtures de falha, repetição e limpeza; prévia nativa inspecionada. Os 53 checks do pacote também passaram. Instalado `jlinux-desktop-git 0.5.0.r154.gebdc3f0-1` (34 arquivos sem ausências); prévia do binário instalado validada. Backup em `/var/backups/jlinux-before-microphone-ebdc3f0/`. PR #134, dependente do #133. Ativação no próximo login; sessão atual preservada. Áudio físico pelos botões ainda não validado.
 
 ## Godot no dock — feature/godot-dock
 
