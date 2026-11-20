@@ -1,5 +1,9 @@
 # Plano central do JLinux
 
+## Teste de microfone — feature/microphone-test
+
+Configurações → Microfone contém Gravar (8 segundos) e Reproduzir. Usa a entrada e saída padrão do PipeWire, arquivo temporário privado, feedback de operação e bloqueio de cliques concorrentes. Fechar a tela/trocar de seção durante a operação cancela o teste; fechar o shell remove o áudio. 53 testes release/headless passaram, incluindo fixtures de falha, repetição e limpeza; prévia nativa inspecionada. Instalação e ativação serão registradas após empacotamento.
+
 ## Godot no dock — feature/godot-dock
 
 Godot substitui o Monitor/btop na posição 6 do dock circular, incluindo nome, ícone, lançamento desktop e reconhecimento de janela existente. O atalho correspondente nas configurações acompanha o catálogo. Fixtures de lançamento e testes de ícone/foco atualizados; 52 testes release/headless e os 52 checks do pacote passaram; configurações/renderização também foram repetidos após o ajuste do rótulo. Pacote `jlinux-desktop-git 0.5.0.r152.g8aa9cff-1` instalado, com 34 arquivos sem ausências. Backup do pacote anterior em `/var/backups/jlinux-before-godot-8aa9cff/`. PR #133. Aplicação no próximo login: a sessão atual não suporta recarga segura do shell/compositor.

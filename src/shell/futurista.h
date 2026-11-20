@@ -4,6 +4,7 @@
 #include "preferences.h"
 #include "apps.h"
 #include "media.h"
+#include "microphone.h"
 #include <time.h>
 enum { FUTURISTA_PANEL_HEIGHT = 40 };
 struct futurista {
@@ -12,6 +13,7 @@ struct futurista {
     cairo_surface_t *wallpaper, *blurred, *icons[DOCK_APP_COUNT];
     struct jlinux_glass glass;
     struct media *media;
+    struct microphone *microphone;
     int selected, wifi, battery, settings_category;
     bool settings_open;
     struct shell_preferences prefs;

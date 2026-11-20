@@ -73,6 +73,7 @@ struct app {
     struct bluetooth bluetooth;
     struct media media;
     struct recording recording;
+    struct microphone microphone;
     struct surface *pointer_surface;
     struct wl_list buffers;
     double pointer_x, pointer_y;
@@ -359,6 +360,7 @@ static void request_power(struct app *app) {
     app->power.dirty = true;
 }
 static void destroy_launcher(struct app *app) {
+    microphone_finish(&app->microphone);
     if (app->dock_frame) { wl_callback_destroy(app->dock_frame); app->dock_frame = NULL; }
     app->dock_closing = false;
     if (!app->launcher.wl) {
@@ -376,6 +378,7 @@ static void destroy_launcher(struct app *app) {
     fprintf(stderr, "%s\n",app->showing_controls?"Painel de controle fechado.":"Dock circular fechado.");
 }
 static void close_launcher(struct app *app) {
+    microphone_finish(&app->microphone);
     app->volume_dragging = false;
     if (!app->launcher.wl || app->dock_closing) { return; }
     if (app->reduced_motion) { destroy_launcher(app); return; }
@@ -448,7 +451,19 @@ static bool bluetooth_manager_open(GError **error) {
     bool opened=g_app_info_launch(G_APP_INFO(info),NULL,NULL,error);g_object_unref(info);return opened;
 }
 static void launcher_action(struct app *app, int hit) {
-    if(app->futurista.settings_open && hit>=100 && hit<=102){app->futurista.settings_category=hit-100;app->launcher.dirty=true;return;}
+    if(app->futurista.settings_open && hit>=100 && hit<=103){
+        if(app->microphone.pid && hit!=103){microphone_finish(&app->microphone);}
+        app->futurista.settings_category=hit-100;app->futurista.message[0]=0;app->launcher.dirty=true;return;
+    }
+    if(app->futurista.settings_open && app->futurista.settings_category==3 && (hit==140 || hit==141)){
+        if(app->microphone.pid || (hit==141 && !app->microphone.ready)){return;}
+        GError *error=NULL;
+        if(!microphone_start(&app->microphone,hit==141,&error)){
+            snprintf(app->futurista.message,sizeof(app->futurista.message),"%s",error?error->message:"Teste de microfone indisponível.");
+            g_clear_error(&error);
+        }else{app->futurista.message[0]=0;fprintf(stderr,"Teste de microfone: %s.\n",hit==141?"reproduzindo":"gravando");}
+        app->launcher.dirty=true;return;
+    }
     if(app->futurista.settings_open && ((hit>=110 && hit<=112)||(hit>=120 && hit<=122))){
         struct shell_preferences old=app->futurista.prefs;
         struct shell_preferences *p=&app->futurista.prefs;
@@ -647,7 +662,7 @@ static int preview(const char *path) {
     ui_finish();
     return status == CAIRO_STATUS_SUCCESS ? 0 : 1;
 }
-static int preview_futurista(const char *path, bool controls, bool settings, bool dock_crop) {
+static int preview_futurista(const char *path, bool controls, int settings_category, bool dock_crop) {
     struct futurista scene;
     struct jlinux_glass effects;
     if (!jlinux_glass_settings(&effects)) { return 1; }
@@ -655,7 +670,8 @@ static int preview_futurista(const char *path, bool controls, bool settings, boo
     scene.wifi = 1;
     scene.battery = 75;
     scene.charging = true; /* Illustrative status for the component preview. */
-    scene.settings_open = settings;
+    scene.settings_open = settings_category >= 0;
+    scene.settings_category = MAX(0,settings_category);
     scene.volume = .40;
     scene.brightness = .53;
     cairo_surface_t *image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, dock_crop ? 1254 : 1672, dock_crop ? 1254 : 941);
@@ -694,10 +710,11 @@ int main(int argc, char **argv) {
     if(argc>1&&g_str_has_prefix(argv[1],"--preview")){setenv("JLINUX_STATIC_PREVIEW","1",1);}
     if (argc == 3 && !strcmp(argv[1], "--preview-volume")) { return preview_power(argv[2], true); }
     if (argc == 3 && !strcmp(argv[1], "--preview-power")) { return preview_power(argv[2], false); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-dock")) { return preview_futurista(argv[2],false,false,true); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-settings")) { return preview_futurista(argv[2],true,true,false); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-control-center")) { return preview_futurista(argv[2],true,false,false); }
-    if (argc == 3 && !strcmp(argv[1], "--preview-futurista")) { return preview_futurista(argv[2],false,false,false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-dock")) { return preview_futurista(argv[2],false,-1,true); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-microphone")) { return preview_futurista(argv[2],true,3,false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-settings")) { return preview_futurista(argv[2],true,0,false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-control-center")) { return preview_futurista(argv[2],true,-1,false); }
+    if (argc == 3 && !strcmp(argv[1], "--preview-futurista")) { return preview_futurista(argv[2],false,-1,false); }
     if (argc == 3 && !strcmp(argv[1], "--preview")) { return preview(argv[2]); }
     if (argc != 1 && !power_panel && !volume_panel) { fprintf(stderr, "Uso: jlinux-shell [--preview arquivo.png | --preview-power arquivo.png | --power-panel | --volume-panel]\n"); return 1; }
     struct app app = {.running = true, .power_panel = power_panel, .volume_panel = volume_panel, .power_action = -1, .timer = -1, .signals = -1, .control = -1}; wl_list_init(&app.buffers);
@@ -741,6 +758,7 @@ int main(int argc, char **argv) {
     if (timerfd_settime(app.timer, 0, &timer, NULL)) { goto cleanup; }
     app.futurista.bluetooth=-1;
     media_init(&app.media);app.futurista.media=&app.media;
+    app.futurista.microphone=&app.microphone;
     while (app.running) {
         while(g_main_context_iteration(NULL,false)){}
         if(app.media.dirty){app.panel.dirty=true;app.media.dirty=false;}
@@ -769,7 +787,7 @@ int main(int argc, char **argv) {
         memcpy(fds,base_fds,sizeof(base_fds));
         for(int i=0;i<count;i++){fds[i+4]=(struct pollfd){gio_fds[i].fd,gio_fds[i].events,0};}
         if(immediate){timeout=0;}
-        if((app.volume.pid||app.bluetooth.pid)&&(timeout<0||timeout>100)){timeout=100;}
+        if((app.volume.pid||app.bluetooth.pid||app.microphone.pid)&&(timeout<0||timeout>100)){timeout=100;}
         int ready = poll(fds, 4+count, timeout);
         for(int i=0;i<count;i++){gio_fds[i].revents=fds[i+4].revents;}
         if(ready>=0&&g_main_context_check(context,priority,gio_fds,count)){g_main_context_dispatch(context);}
@@ -781,6 +799,7 @@ int main(int argc, char **argv) {
             struct timespec now; clock_gettime(CLOCK_MONOTONIC, &now);
             if ((now.tv_sec - app.volume.started.tv_sec) * 1000000000LL + now.tv_nsec - app.volume.started.tv_nsec >= 3000000000LL) { kill(app.volume.pid, SIGKILL); }
         }
+        if(app.microphone.pid && g_get_monotonic_time()-app.microphone.started>=12*G_USEC_PER_SEC){kill(app.microphone.pid,SIGKILL);}
         if(app.bluetooth.pid){
             struct timespec now;clock_gettime(CLOCK_MONOTONIC,&now);
             if((now.tv_sec-app.bluetooth.started.tv_sec)*1000000000LL+now.tv_nsec-app.bluetooth.started.tv_nsec>=5000000000LL){kill(app.bluetooth.pid,SIGKILL);}
@@ -828,6 +847,13 @@ int main(int argc, char **argv) {
                             if(app.bluetooth.error[0]){snprintf(app.futurista.message,sizeof(app.futurista.message),"%s",app.bluetooth.error);}
                             else{app.futurista.message[0]=0;}
                             app.launcher.dirty=app.launcher.wl!=NULL;
+                        } else if (child == app.microphone.pid) {
+                            bool playing=app.microphone.playing;
+                            bool ok=microphone_complete(&app.microphone,status);
+                            snprintf(app.futurista.message,sizeof(app.futurista.message),"%s",ok?"":
+                                playing?"Não foi possível reproduzir. Verifique a saída de som.":"Não foi possível gravar. Verifique o microfone e tente novamente.");
+                            fprintf(stderr,"Teste de microfone: %s.\n",ok?(playing?"reprodução concluída":"gravação pronta"):"falhou");
+                            app.launcher.dirty=app.launcher.wl!=NULL;
                         } else if (child == app.recording.pid) {
                             bool saved=recording_complete(&app.recording,status);
                             recording_status(&app);
@@ -854,6 +880,7 @@ cleanup:
     if(app.dock_frame){wl_callback_destroy(app.dock_frame);app.dock_frame=NULL;}
     if (result) { fprintf(stderr, "Shell falhou: Wayland=%d, errno=%d\n", app.display ? wl_display_get_error(app.display) : 0, errno); }
     if(app.media.cancel){media_finish(&app.media);}
+    microphone_finish(&app.microphone);
     recording_finish(&app.recording);
     shell_control_close(app.control);
     futurista_finish(&app.futurista);
