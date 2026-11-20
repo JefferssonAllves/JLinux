@@ -427,8 +427,8 @@ static void settings(struct futurista *s, cairo_t *cr) {
     if(s->glass.reflection){jlinux_glass_window_reflections(cr,panel,24,70);}
     text(cr,"Configurações",385,165,28,true,0xf2edff);
     text(cr,"×",1315,160,32,false,0xbfdfff);
-    const char *categories[]={"Dock","Aparência","Sistema"};
-    for(int i=0;i<3;i++){
+    const char *categories[]={"Dock","Aparência","Sistema","Microfone"};
+    for(int i=0;i<4;i++){
         material(cr,380,270+i*92,215,66,14,i==s->settings_category,s->glass);
         text(cr,categories[i],405,290+i*92,21,true,0xebeeff);
     }
@@ -447,6 +447,22 @@ static void settings(struct futurista *s, cairo_t *cr) {
             cairo_set_source_rgb(cr,.9,.95,1);circle(cr,states[i]?1289:1259,y+39,10);cairo_fill(cr);
         }
         text(cr,"Preferências salvas para as próximas sessões.",640,650,16,false,0xb2c2e8);
+    }else if(s->settings_category==3){
+        const struct microphone *mic=s->microphone;
+        bool busy=mic && mic->pid, ready=mic && mic->ready;
+        text(cr,"Teste seu microfone",655,310,22,true,0xf2eeff);
+        text(cr,"Grave 8 segundos e ouça sua voz na saída de som atual.",655,355,17,false,0xb2c2e8);
+        for(int i=0;i<2;i++){
+            bool enabled=!busy && (i==0 || ready);
+            cairo_save(cr);cairo_push_group(cr);
+            material(cr,635+i*355,405,340,76,16,enabled,s->glass);
+            text(cr,i==0?"Gravar":"Reproduzir",665+i*355,429,22,true,0xf2eeff);
+            cairo_pop_group_to_source(cr);cairo_paint_with_alpha(cr,enabled?1:.45);cairo_restore(cr);
+        }
+        const char *status=busy?(mic->playing?"Reproduzindo…":"Gravando… Fale por 8 segundos."):
+            ready?"Gravação pronta. Clique em Reproduzir para ouvir.":"Clique em Gravar para começar.";
+        text(cr,status,655,520,18,true,0xebedff);
+        text(cr,"O áudio fica neste computador e é apagado ao fechar a tela.",655,580,16,false,0xb2c2e8);
     }else{
         const char *actions[]={"Som e volume","Pasta pessoal","Godot"};
         for(int i=0;i<3;i++){
@@ -607,10 +623,14 @@ int futurista_settings_hit(double x,double y,int width,int height,int category) 
     if(l.scale<=0){return -1;}
     x=(x-l.x)/l.scale;y=(y-l.y)/l.scale;
     if(x>=1310 && y>=155 && y<210){return -1;}
-    for(int i=0;i<3;i++){
+    for(int i=0;i<4;i++){
         if(x>=380 && x<595 && y>=270+i*92 && y<336+i*92){return 100+i;}
-        if(category<2 && x>=635 && x<1330 && y>=310+i*100 && y<390+i*100){return 110+category*10+i;}
-        if(category==2 && x>=635 && x<1330 && y>=300+i*90 && y<372+i*90){return 130+i;}
+        if(i<3 && category<2 && x>=635 && x<1330 && y>=310+i*100 && y<390+i*100){return 110+category*10+i;}
+        if(i<3 && category==2 && x>=635 && x<1330 && y>=300+i*90 && y<372+i*90){return 130+i;}
+    }
+    if(category==3 && y>=405 && y<481){
+        if(x>=635 && x<975){return 140;}
+        if(x>=990 && x<1330){return 141;}
     }
     if(category==2 && x>=635 && x<1330 && y>=610 && y<680){return 33+(int)((x-635)/235);}
     if(x<350 || x>1370 || y<140 || y>790){return -1;}
